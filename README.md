@@ -2,13 +2,13 @@
 currently logging anything related to q2-fondue here with the goal of transforming this to a qiime2 plugin in the future
 
 ## Setup on MacOS
-(currently required for fondue-demo that includes extraction of sequences & metadata)
+(currently required for `fondue-demo/demo.ipynb` that includes extraction of sequences & metadata)
 
 ````
-conda create -n entrezpy python=3.8
-conda activate entrezpy
+conda create -n fondue python=3.8
+conda activate fondue
 conda install --file requirements.txt
-pip install entrezpy
+pip install fondue
 ````
 
 To get the sra toolkit run (more info available [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit)): 
