@@ -1,8 +1,8 @@
 # q2-fondue plugin development
 currently logging anything related to q2-fondue here with the goal of transforming this to a qiime2 plugin in the future
 
-## Setup
-(currently required for entrezpy-demo)
+## Setup on MacOS
+(currently required for fondue-demo that includes extraction of sequences & metadata)
 
 ````
 conda create -n entrezpy python=3.8
@@ -10,6 +10,26 @@ conda activate entrezpy
 conda install --file requirements.txt
 pip install entrezpy
 ````
+
+To get the sra toolkit run (more info available [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit)): 
+````
+curl -OL http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-mac64.tar.gz
+tar -vxzf sratoolkit.current-mac64.tar.gz
+export PATH=$PATH:$PWD/sratoolkit.2.11.0-mac64/bin
+````
+or just add absolute location of `sratoolkit.2.11.0-mac64/bin` to .zshrc, as in:
+`export PATH=$PATH:ABSOLUTE_LOC//sratoolkit.2.11.0-mac64/bin`
+
+! beware to export the path with the correct sratoolkit version number installed on your local machine (above illustrated with `2.11.0`)
+! also if you are using an IDE - best to restart it after updating the PATH variable
+
+
+test if sra toolkit installation worked by:
+````
+which fasterq-dump
+````
+should return path exported above
+
 
 ## Funfacts: 
 

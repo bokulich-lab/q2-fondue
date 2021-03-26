@@ -70,3 +70,8 @@ target/
 .DS_store
 .idea
 .vscode
+
+
+fasterq.tmp.*/**
+**.fastq
+sratoolkit**/**
