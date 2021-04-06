@@ -42,3 +42,6 @@ table1 in https://academic.oup.com/nar/article/45/D1/D12/2605705
 https://entrezpy.readthedocs.io/en/master/
 https://anaconda.org/bioconda/entrezpy 
 https://pypi.org/project/entrezpy/ 
+
+
+Lena just tried this out. 
