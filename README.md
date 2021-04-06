@@ -8,7 +8,7 @@ currently logging anything related to q2-fondue here with the goal of transformi
 conda create -n fondue python=3.8
 conda activate fondue
 conda install --file requirements.txt
-pip install fondue
+pip install entrezpy
 ````
 
 To get the sra toolkit run (more info available [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit)): 
