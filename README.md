@@ -1,4 +1,5 @@
-# q2-fondue ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yaml/badge.svg)
+# q2-fondue 
+![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
 
 ### Installation
 
