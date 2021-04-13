@@ -1,0 +1,37 @@
+# revert to proper versioning when ready for the first release
+{% set data = load_setup_py_data() %}
+{% set version = '2021.4.0.dev0' %}
+{% set release = '2021.4' %}
+
+package:
+  name: q2-fondue
+  version: {{ version }}
+
+source:
+  path: ../..
+
+build:
+  script: make install
+
+requirements:
+  host:
+    - python {{ python }}
+    - setuptools
+
+  run:
+    - python {{ python }}
+    - xmltodict
+    - entrezpy ~=2.1.2
+    - sra-tools ~=2.10.1
+    - q2-types {{ release }}.*
+    - qiime2 {{ release }}.*
+
+test:
+  imports:
+    - q2_fondue
+    - qiime2.plugins.fondue
+
+about:
+  home: https://github.com/bokulich-lab/q2-fondue
+  license: BSD-3-Clause
+  license_family: BSD

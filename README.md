@@ -1,47 +1,25 @@
-# q2-fondue plugin development
-currently logging anything related to q2-fondue here with the goal of transforming this to a qiime2 plugin in the future
+# q2-fondue ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yaml/badge.svg)
 
-## Setup on MacOS
-(currently required for `fondue-demo/demo.ipynb` that includes extraction of sequences & metadata)
+### Installation
 
-````
-conda create -n fondue python=3.8
+Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine:
+
+```shell
+conda create -y -n fondue
 conda activate fondue
-conda install --file requirements.txt
-pip install entrezpy
-````
+conda install \
+  -c conda-forge -c bioconda -c qiime2 -c defaults \
+  qiime2 q2cli q2-types "entrezpy ~=2.1.2" "sra-tools ~=2.10.1" xmltodict
+```
 
-To get the sra toolkit run (more info available [here](https://github.com/ncbi/sra-tools/wiki/02.-Installing-SRA-Toolkit)): 
-````
-curl -OL http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-mac64.tar.gz
-tar -vxzf sratoolkit.current-mac64.tar.gz
-export PATH=$PATH:$PWD/sratoolkit.2.11.0-mac64/bin
-````
-or just add absolute location of `sratoolkit.2.11.0-mac64/bin` to .zshrc, as in:
-`export PATH=$PATH:ABSOLUTE_LOC//sratoolkit.2.11.0-mac64/bin`
+The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
-! beware to export the path with the correct sratoolkit version number installed on your local machine (above illustrated with `2.11.0`)
-! also if you are using an IDE - best to restart it after updating the PATH variable
+#### DEV note:
+Until QIIME 2 2021.4 is officially released, replace `-c qiime2` in the command above with
+`-c https://packages.qiime2.org/qiime2/2021.4/staged` to fetch the lastest dev version instead.
 
-
-test if sra toolkit installation worked by:
-````
-which fasterq-dump
-````
-should return path exported above
-
-
-## Funfacts: 
-
-* NCBI maintains Entrez databases which can be access programmatically via
-E-utilities &  Entrez-direct.
-* Entrezpy = first Python library to offer the same functionalities as Entrez-direct, but as a Python library
-* List of all available NCBI databases: https://www.ncbi.nlm.nih.gov/search/ and  
-table1 in https://academic.oup.com/nar/article/45/D1/D12/2605705
-* Further resources:
-https://entrezpy.readthedocs.io/en/master/
-https://anaconda.org/bioconda/entrezpy 
-https://pypi.org/project/entrezpy/ 
-
-
-Lena just tried this out. 
+## Useful resources:
+* List of all available NCBI databases: 
+  - https://www.ncbi.nlm.nih.gov/search/
+  - table1 in https://academic.oup.com/nar/article/45/D1/D12/2605705
+* EntrezPy: https://entrezpy.readthedocs.io/en/master/
