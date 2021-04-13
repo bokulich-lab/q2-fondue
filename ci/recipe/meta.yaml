@@ -1,7 +1,7 @@
 # revert to proper versioning when ready for the first release
 {% set data = load_setup_py_data() %}
-{% set version = '2021.4.0.dev0' %}
-{% set release = '2021.4' %}
+{% set version = '2021.8.0.dev0' %}
+{% set release = '2021.8' %}
 
 package:
   name: q2-fondue
@@ -21,8 +21,8 @@ requirements:
   run:
     - python {{ python }}
     - xmltodict
-    - entrezpy ~=2.1.2
-    - sra-tools ~=2.10.1
+    - entrezpy >=2.1.2
+    - sra-tools ==2.9.6
     - q2-types {{ release }}.*
     - qiime2 {{ release }}.*
 
