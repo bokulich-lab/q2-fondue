@@ -8,4 +8,10 @@
 
 from ._version import get_versions
 __version__ = get_versions()['version']
+
+from .metadata import TestMetadataFormat, TestMetadataDirFmt
+
 del get_versions
+
+
+__all__ = ['TestMetadataFormat', 'TestMetadataDirFmt']

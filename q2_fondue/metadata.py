@@ -10,9 +10,29 @@ import json
 
 import pandas as pd
 import pprint
+
+import entrezpy.efetch.efetcher as ef
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
+from qiime2.core.type import SemanticType
+from qiime2.plugin import model
 from xmltodict import parse as parsexml
+
+
+# TODO: clean up those formats/types
+class TestMetadataFormat(model.TextFileFormat):
+    def _validate(self, n_records=None):
+        pass
+
+    def _validate_(self, level):
+        self._validate()
+
+
+TestMetadataDirFmt = model.SingleFileDirectoryFormat(
+    'TestMetadataDirFmt', 'metadata.tsv', TestMetadataFormat
+)
+
+TestMetadata = SemanticType('TestMetadata')
 
 
 class DuplicateKeyError:
@@ -41,7 +61,9 @@ class EFetchResult(EutilsResult):
         return {}
 
     def to_df(self):
-        return pd.DataFrame.from_dict(self.metadata, orient='index')
+        df = pd.DataFrame.from_dict(self.metadata, orient='index')
+        df.index.name = 'ID'
+        return df
 
     @staticmethod
     def _process_single_run(attributes_dict):
@@ -105,3 +127,24 @@ class EFetchAnalyzer(EutilsAnalyzer):
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
         self.analyze_result(response, request)
+
+
+def get_metadata(
+        study_ids: list, email: str, n_jobs: int = 1) -> pd.DataFrame:
+    efetcher = ef.Efetcher(
+        'efetcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None
+    )
+
+    # TODO: some error handling here
+    metadata_response = efetcher.inquire(
+        {
+            'db': 'sra',
+            'id': study_ids,  # this has to be a list
+            'rettype': 'xml',
+            'retmode': 'text'
+        }, analyzer=EFetchAnalyzer()
+    )
+    metadata_df = metadata_response.result.to_df()
+
+    return metadata_df
