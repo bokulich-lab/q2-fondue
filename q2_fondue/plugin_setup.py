@@ -38,7 +38,7 @@ plugin.register_semantic_type_to_format(
 def _1(data: pd.DataFrame) -> (TestMetadataFormat):
     ff = TestMetadataFormat()
     with ff.open() as fh:
-        data.to_csv(fh, sep='\t', header=False)
+        data.to_csv(fh, sep='\t', header=True)
     return ff
 
 

@@ -1,0 +1,146 @@
+{
+  "EXPERIMENT": {
+    "@accession": "ERX3980916",
+    "@alias": "ena-EXPERIMENT-UNIVERSITY OF HOHENHEIM-06-03-2020-13:37:12:076-1",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERX3980916"
+    },
+    "TITLE": "Illumina MiSeq sequencing",
+    "STUDY_REF": {
+      "@accession": "ERP120343",
+      "IDENTIFIERS": {
+        "PRIMARY_ID": "ERP120343",
+        "EXTERNAL_ID": {
+          "@namespace": "BioProject",
+          "#text": "PRJEB37054"
+        }
+      }
+    },
+    "DESIGN": {
+      "DESIGN_DESCRIPTION": "None",
+      "SAMPLE_DESCRIPTOR": {
+        "@accession": "ERS4372624",
+        "IDENTIFIERS": {
+          "PRIMARY_ID": "ERS4372624",
+          "EXTERNAL_ID": {
+            "@namespace": "BioSample",
+            "#text": "SAMEA6608408"
+          }
+        }
+      },
+      "LIBRARY_DESCRIPTOR": {
+        "LIBRARY_NAME": "unspecified",
+        "LIBRARY_STRATEGY": "AMPLICON",
+        "LIBRARY_SOURCE": "METAGENOMIC",
+        "LIBRARY_SELECTION": "PCR",
+        "LIBRARY_LAYOUT": {
+          "SINGLE": "None"
+        }
+      }
+    },
+    "PLATFORM": {
+      "ILLUMINA": {
+        "INSTRUMENT_MODEL": "Illumina MiSeq"
+      }
+    }
+  },
+  "STUDY": {
+    "@accession": "ERP120343",
+    "@alias": "ena-STUDY-UNIVERSITY OF HOHENHEIM-04-03-2020-12:54:47:240-944",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERP120343",
+      "EXTERNAL_ID": {
+        "@namespace": "BioProject",
+        "#text": "PRJEB37054"
+      }
+    },
+    "DESCRIPTOR": {
+      "STUDY_TITLE": "The microbial load, diversity and composition of\n                    the wine microbiota is affected by wine type and\n                    environmental-stress factors",
+      "STUDY_TYPE": {
+        "@existing_study_type": "Other"
+      },
+      "STUDY_ABSTRACT": "In order to improve the understanding of the\n                    composition, organization and temporal dynamics of the wine\n                    microbiota, the relative and absolute bacterial wine\n                    microbiota composition during the first week of\n                    fermentation was determined, including distinct red and\n                    white wine cultivars, by 16S rRNA gene amplicon sequencing.",
+      "CENTER_PROJECT_NAME": "Wine microbiota analysis during\n                    fermentation",
+      "STUDY_DESCRIPTION": "In order to improve the understanding of the\n                    composition, organization and temporal dynamics of the wine\n                    microbiota, the relative and absolute bacterial wine\n                    microbiota composition during the first week of\n                    fermentation was determined, including distinct red and\n                    white wine cultivars, by 16S rRNA gene amplicon sequencing."
+    },
+    "STUDY_ATTRIBUTES": {
+      "STUDY_ATTRIBUTE": [
+        {
+          "TAG": "ENA-FIRST-PUBLIC",
+          "VALUE": "2020-05-31"
+        },
+        {
+          "TAG": "ENA-LAST-UPDATE",
+          "VALUE": "2020-03-04"
+        }
+      ]
+    }
+  },
+  "SAMPLE": {
+    "@accession": "ERS4372624",
+    "@alias": "BAC1.D1.0.32A",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERS4372624",
+      "EXTERNAL_ID": {
+        "@namespace": "BioSample",
+        "#text": "SAMEA6608408"
+      }
+    },
+    "TITLE": "Vitis vinifera",
+    "SAMPLE_NAME": {
+      "TAXON_ID": "29760",
+      "SCIENTIFIC_NAME": "Vitis vinifera",
+      "COMMON_NAME": "wine grape"
+    },
+    "SAMPLE_ATTRIBUTES": {
+      "SAMPLE_ATTRIBUTE": [
+        {
+          "TAG": "environment (biome)",
+          "VALUE": "berry plant"
+        },
+        {
+          "TAG": "geographic location (country and/or sea)",
+          "VALUE": "Germany"
+        },
+        {
+          "TAG": "sample storage temperature",
+          "VALUE": "-80",
+          "UNITS": "°C"
+        }
+      ]
+    }
+  },
+  "RUN_SET": {
+    "RUN": {
+      "@static_data_available": "1",
+      "IDENTIFIERS": {
+        "PRIMARY_ID": "FAKEID1"
+      },
+      "RUN_ATTRIBUTES": {
+        "RUN_ATTRIBUTE": [
+          {
+            "TAG": "ENA-FIRST-PUBLIC",
+            "VALUE": "2020-05-31"
+          },
+          {
+            "TAG": "ENA-LAST-UPDATE",
+            "VALUE": "2020-03-06"
+          }
+        ]
+      },
+      "Statistics": {
+        "@nreads": "1",
+        "@nspots": "39323",
+        "Read": {
+          "@index": "0",
+          "@count": "39323",
+          "@average": "293.77",
+          "@stdev": "20.23"
+        }
+      }
+    }
+  }
+}

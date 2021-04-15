@@ -7,9 +7,9 @@
 # ----------------------------------------------------------------------------
 
 import json
+from typing import List
 
 import pandas as pd
-import pprint
 
 import entrezpy.efetch.efetcher as ef
 from entrezpy.base.analyzer import EutilsAnalyzer
@@ -35,7 +35,7 @@ TestMetadataDirFmt = model.SingleFileDirectoryFormat(
 TestMetadata = SemanticType('TestMetadata')
 
 
-class DuplicateKeyError:
+class DuplicateKeyError(Exception):
     pass
 
 
@@ -69,7 +69,7 @@ class EFetchResult(EutilsResult):
     def _process_single_run(attributes_dict):
         processed_meta = {}
 
-        keys_to_keep = {'SAMPLE', 'STUDY'}
+        keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
         allowed_duplicates = {'ENA-FIRST-PUBLIC', 'ENA-LAST-UPDATE'}
 
         for k1, v1 in attributes_dict.items():
@@ -78,13 +78,17 @@ class EFetchResult(EutilsResult):
                     for attr in v1[f'{k1}_ATTRIBUTES'][f'{k1}_ATTRIBUTE']:
                         if attr['TAG'] in processed_meta.keys() and \
                                 attr['TAG'] not in allowed_duplicates:
-                            raise DuplicateKeyError
+                            raise DuplicateKeyError(
+                                f'One of the metadata keys ({attr["TAG"]}) '
+                                f'is duplicated.')
                         processed_meta[attr['TAG']] = attr.get('VALUE')
                 except Exception as e:
-                    print(f'Exception has occurred: {e}. '
-                          f'Contents of the metadata was:')
-                    pprinter = pprint.PrettyPrinter(indent=4, compact=True)
-                    pprinter.pprint(attributes_dict)
+                    if not isinstance(e, DuplicateKeyError):
+                        # TODO: convert this to a proper logger
+                        print(f'Exception has occurred when processing {k1} '
+                              f'attributes: "{e}". Contents of the metadata '
+                              f'was: {attributes_dict}.')
+                    raise
 
         return processed_meta
 
@@ -122,20 +126,15 @@ class EFetchAnalyzer(EutilsAnalyzer):
         self.init_result(response, request)
         self.result.add_metadata(response, request.uids)
 
-    # cheating a bit here
+    # override the base method to enable parsing when retmode=text
     def parse(self, raw_response, request):
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
         self.analyze_result(response, request)
 
 
-def get_metadata(
-        study_ids: list, email: str, n_jobs: int = 1) -> pd.DataFrame:
-    efetcher = ef.Efetcher(
-        'efetcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None
-    )
-
+def _efetcher_inquire(
+        efetcher: ef.Efetcher, study_ids: List[str]) -> pd.DataFrame:
     # TODO: some error handling here
     metadata_response = efetcher.inquire(
         {
@@ -145,6 +144,14 @@ def get_metadata(
             'retmode': 'text'
         }, analyzer=EFetchAnalyzer()
     )
-    metadata_df = metadata_response.result.to_df()
+    return metadata_response.result.to_df()
 
-    return metadata_df
+
+def get_metadata(
+        study_ids: list, email: str, n_jobs: int = 1) -> pd.DataFrame:
+    efetcher = ef.Efetcher(
+        'efetcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None
+    )
+
+    return _efetcher_inquire(efetcher, study_ids)

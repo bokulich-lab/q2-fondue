@@ -29,7 +29,9 @@ setup(
     },
     package_data={
         'q2_fondue': [
-            'citations.bib'
+            'citations.bib',
+            'tests/*',
+            'tests/data/*'
         ],
     },
     zip_safe=False,
