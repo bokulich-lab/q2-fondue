@@ -78,6 +78,9 @@ class EFetchResult(EutilsResult):
         # add experiment metadata
         processed_meta.update(self._extract_experiment_info(attributes_dict))
 
+        # add run set metadata
+        processed_meta.update(self._extract_run_set_info(attributes_dict))
+
         return processed_meta
 
     @staticmethod
@@ -154,8 +157,22 @@ class EFetchResult(EutilsResult):
             'Platform': platform,
             'SRA Study': exp_meta['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
         }
-
         return exp_meta_proc
+
+    @staticmethod
+    def _extract_run_set_info(attributes_info):
+        runset_meta = attributes_info['RUN_SET']['RUN']
+        runset_meta_proc = {
+            'Bases': runset_meta['Bases'].get('@count'),
+            'Bytes': runset_meta.get('@size'),
+        }
+        if runset_meta.get('@is_public') == 'true':
+            runset_meta_proc['Consent'] = 'public'
+        else:
+            runset_meta_proc['Consent'] = 'private'
+        runset_meta_proc['Center Name'] = \
+            attributes_info['SUBMISSION'].get('@center_name')
+        return runset_meta_proc
 
     def add_metadata(self, metadata, uids):
         # use json to quickly get rid of OrderedDicts

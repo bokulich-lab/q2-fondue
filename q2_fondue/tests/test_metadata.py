@@ -9,7 +9,6 @@
 import io
 import json
 from unittest.mock import patch
-from urllib.error import HTTPError
 
 import pandas as pd
 import entrezpy.efetch.efetcher as ef
@@ -81,7 +80,8 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         numeric_cols = {
             'amount or size of sample collected', 'collection day',
             'collection hours', 'sample storage temperature',
-            'sample volume or weight for DNA extraction', 'AvgSpotLen'
+            'sample volume or weight for DNA extraction', 'AvgSpotLen',
+            'Bases', 'Bytes'
         }
         for col in numeric_cols:
             exp_df[col] = exp_df[col].astype(str)
@@ -136,7 +136,11 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
             "Experiment": "ERX3980916",
             "Instrument": "Illumina MiSeq",
             "Platform": "ILLUMINA",
-            "SRA Study": "ERP120343"
+            "SRA Study": "ERP120343",
+            "Bases": "11552099",
+            "Bytes": "3914295",
+            "Consent": "public",
+            "Center Name": "UNIVERSITY OF HOHENHEIM"
         }
         self.assertDictEqual(exp, obs)
 

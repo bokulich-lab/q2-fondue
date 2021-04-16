@@ -34,7 +34,11 @@
     "Experiment": "ERX3980916",
     "Instrument": "Illumina MiSeq",
     "Platform": "ILLUMINA",
-    "SRA Study": "ERP120343"
+    "SRA Study": "ERP120343",
+    "Bases": "11552099",
+    "Bytes": "3914295",
+    "Consent": "public",
+    "Center Name": "UNIVERSITY OF HOHENHEIM"
   },
   "FAKEID2": {
     "ENA-FIRST-PUBLIC": "2020-05-31",
@@ -71,6 +75,10 @@
     "Experiment": "ERX3980917",
     "Instrument": "Illumina MiSeq",
     "Platform": "ILLUMINA",
-    "SRA Study": "ERP120343"
+    "SRA Study": "ERP120343",
+    "Bases": "17523267",
+    "Bytes": "5879896",
+    "Consent": "public",
+    "Center Name": "UNIVERSITY OF HOHENHEIM"
   }
 }
