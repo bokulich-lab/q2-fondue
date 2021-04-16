@@ -28,7 +28,13 @@
     "Library Source": "METAGENOMIC",
     "AvgSpotLen": "293",
     "Organism": "Vitis vinifera",
-    "Sample Name": "BAC1.D1.0.32A"
+    "Sample Name": "BAC1.D1.0.32A",
+    "BioSample": "SAMEA6608408",
+    "BioProject": "PRJEB37054",
+    "Experiment": "ERX3980916",
+    "Instrument": "Illumina MiSeq",
+    "Platform": "ILLUMINA",
+    "SRA Study": "ERP120343"
   },
   "FAKEID2": {
     "ENA-FIRST-PUBLIC": "2020-05-31",
@@ -59,6 +65,12 @@
     "Library Source": "METAGENOMIC",
     "AvgSpotLen": "293",
     "Organism": "Vitis vinifera",
-    "Sample Name": "BAC1.D1.1.33A"
+    "Sample Name": "BAC1.D1.1.33A",
+    "BioSample": "SAMEA6608409",
+    "BioProject": "PRJEB37054",
+    "Experiment": "ERX3980917",
+    "Instrument": "Illumina MiSeq",
+    "Platform": "ILLUMINA",
+    "SRA Study": "ERP120343"
   }
 }

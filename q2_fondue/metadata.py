@@ -75,6 +75,9 @@ class EFetchResult(EutilsResult):
         # add pool metadata
         processed_meta.update(self._extract_pool_info(attributes_dict))
 
+        # add experiment metadata
+        processed_meta.update(self._extract_experiment_info(attributes_dict))
+
         return processed_meta
 
     @staticmethod
@@ -124,6 +127,35 @@ class EFetchResult(EutilsResult):
             'Sample Name': pool_meta.get('@sample_name')
         }
         return pool_meta_proc
+
+    @staticmethod
+    def _extract_experiment_info(attributes_info):
+        biosample_id, bioproject_id = None, None
+        exp_meta = attributes_info['EXPERIMENT']
+
+        biosample = exp_meta[
+            'DESIGN']['SAMPLE_DESCRIPTOR']['IDENTIFIERS'].get('EXTERNAL_ID')
+        bioproject = exp_meta[
+            'STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
+        # TODO: should this raise an error if not present?
+        if biosample and biosample['@namespace'] == 'BioSample':
+            biosample_id = biosample['#text']
+        if bioproject and bioproject['@namespace'] == 'BioProject':
+            bioproject_id = bioproject['#text']
+
+        platform = list(exp_meta['PLATFORM'].keys())[0]
+        instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
+
+        exp_meta_proc = {
+            'BioSample': biosample_id,
+            'BioProject': bioproject_id,
+            'Experiment': exp_meta['IDENTIFIERS'].get('PRIMARY_ID'),
+            'Instrument': instrument,
+            'Platform': platform,
+            'SRA Study': exp_meta['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
+        }
+
+        return exp_meta_proc
 
     def add_metadata(self, metadata, uids):
         # use json to quickly get rid of OrderedDicts

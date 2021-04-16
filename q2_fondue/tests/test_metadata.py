@@ -130,7 +130,13 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
             "Library Source": "METAGENOMIC",
             "AvgSpotLen": "293",
             "Organism": "Vitis vinifera",
-            "Sample Name": "BAC1.D1.0.32A"
+            "Sample Name": "BAC1.D1.0.32A",
+            "BioSample": "SAMEA6608408",
+            "BioProject": "PRJEB37054",
+            "Experiment": "ERX3980916",
+            "Instrument": "Illumina MiSeq",
+            "Platform": "ILLUMINA",
+            "SRA Study": "ERP120343"
         }
         self.assertDictEqual(exp, obs)
 
