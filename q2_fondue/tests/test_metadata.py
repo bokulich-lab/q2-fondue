@@ -76,6 +76,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             path_or_buf=self.get_data_path('metadata_processed_multi.json'),
             orient='index'
         )
+        exp_df.index.name = 'ID'
         numeric_cols = {
             'amount or size of sample collected', 'collection day',
             'collection hours', 'sample storage temperature',
@@ -89,8 +90,9 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
 class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
     package = 'q2_fondue.tests'
 
-    def test_efresult_process_single_run(self):
-        obs = self.efetch_result_single._process_single_run(self.metadata_dict)
+    def test_efresult_extract_custom_attributes(self):
+        obs = self.efetch_result_single._extract_custom_attributes(
+            self.metadata_dict)
         exp = {
             "ENA-FIRST-PUBLIC": "2020-05-31",
             "ENA-LAST-UPDATE": "2020-03-04",
@@ -100,7 +102,7 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
         }
         self.assertDictEqual(exp, obs)
 
-    def test_efresult_process_single_run_duplicated_attribute(self):
+    def test_efresult_extract_custom_attributes_duplicated_attribute(self):
         self.metadata_dict['STUDY']['STUDY_ATTRIBUTES'][
             'STUDY_ATTRIBUTE'].append({
             "TAG": "environment (biome)",
@@ -110,7 +112,23 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
         with self.assertRaisesRegexp(
                 DuplicateKeyError,
                 '.*keys \(environment \(biome\)\).*duplicated\.'):
-            self.efetch_result_single._process_single_run(self.metadata_dict)
+            self.efetch_result_single._extract_custom_attributes(
+                self.metadata_dict)
+
+    def test_efresult_process_single_run(self):
+        obs = self.efetch_result_single._process_single_run(self.metadata_dict)
+        exp = {
+            "ENA-FIRST-PUBLIC": "2020-05-31",
+            "ENA-LAST-UPDATE": "2020-03-04",
+            "environment (biome)": "berry plant",
+            "geographic location (country and/or sea)": "Germany",
+            "sample storage temperature": "-80",
+            "Library Name": "unspecified",
+            "Library Layout": "SINGLE",
+            "Library Selection": "PCR",
+            "Library Source": "METAGENOMIC"
+        }
+        self.assertDictEqual(exp, obs)
 
     # def test_efresult_process_single_run_unkown_error(self):
     #     pass
@@ -156,7 +174,8 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
 
         obs = self.efetch_result_single.to_df()
         exp = self.generate_expected_df()
-        pd.testing.assert_frame_equal(exp, obs)
+        pd.testing.assert_frame_equal(
+            exp.sort_index(axis=1), obs.sort_index(axis=1))
 
     def test_efanalyzer_analyze_result(self):
         self.efetch_analyzer.analyze_result(
@@ -195,7 +214,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             self.assertEqual(
                 getattr(exp_request, arg), getattr(obs_request, arg))
         mock_request.assert_called_once()
-        pd.testing.assert_frame_equal(exp_df, obs_df)
+        pd.testing.assert_frame_equal(
+            exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
 
     def test_efetcher_inquire_multi(self):
         with patch.object(Requester, 'request') as mock_request:
@@ -211,4 +231,5 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             self.assertEqual(
                 getattr(exp_request, arg), getattr(obs_request, arg))
         mock_request.assert_called_once()
-        pd.testing.assert_frame_equal(exp_df, obs_df)
+        pd.testing.assert_frame_equal(
+            exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))

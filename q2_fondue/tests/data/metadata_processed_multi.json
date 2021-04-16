@@ -21,7 +21,11 @@
     "sample volume or weight for DNA extraction": "0.5",
     "sequencing method": "Illumina MiSeq",
     "subspecific genetic lineage": "Bacchus1",
-    "target subfragment": "16S rRNA gene"
+    "target subfragment": "16S rRNA gene",
+    "Library Name": "unspecified",
+    "Library Layout": "SINGLE",
+    "Library Selection": "PCR",
+    "Library Source": "METAGENOMIC"
   },
     "FAKEID2": {
       "ENA-FIRST-PUBLIC": "2020-05-31",
@@ -45,6 +49,10 @@
       "sample volume or weight for DNA extraction": "0.5",
       "sequencing method": "Illumina MiSeq",
       "subspecific genetic lineage": "Bacchus1",
-      "target subfragment": "16S rRNA gene"
+      "target subfragment": "16S rRNA gene",
+      "Library Name": "unspecified",
+      "Library Layout": "SINGLE",
+      "Library Selection": "PCR",
+      "Library Source": "METAGENOMIC"
   }
 }

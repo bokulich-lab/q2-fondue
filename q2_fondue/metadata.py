@@ -65,13 +65,20 @@ class EFetchResult(EutilsResult):
         df.index.name = 'ID'
         return df
 
-    @staticmethod
-    def _process_single_run(attributes_dict):
-        processed_meta = {}
+    def _process_single_run(self, attributes_dict):
+        processed_meta = self._extract_custom_attributes(
+            attributes_dict)
 
+        # add library-specific information
+        processed_meta.update(self._extract_library_info(attributes_dict))
+
+        return processed_meta
+
+    @staticmethod
+    def _extract_custom_attributes(attributes_dict):
+        processed_meta = {}
         keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
         allowed_duplicates = {'ENA-FIRST-PUBLIC', 'ENA-LAST-UPDATE'}
-
         for k1, v1 in attributes_dict.items():
             if k1 in keys_to_keep and f'{k1}_ATTRIBUTES' in v1.keys():
                 try:
@@ -89,8 +96,20 @@ class EFetchResult(EutilsResult):
                               f'attributes: "{e}". Contents of the metadata '
                               f'was: {attributes_dict}.')
                     raise
-
         return processed_meta
+
+    @staticmethod
+    def _extract_library_info(attributes_dict):
+        lib_meta_proc = {}
+        lib_meta = attributes_dict['EXPERIMENT']['DESIGN'].get(
+            'LIBRARY_DESCRIPTOR')
+        if lib_meta:
+            for n in {f'LIBRARY_{x}' for x in ['NAME', 'SELECTION', 'SOURCE']}:
+                new_key = " ".join(n.lower().split('_')).title()
+                lib_meta_proc[new_key] = lib_meta.get(n)
+            lib_meta_proc['Library Layout'] = list(lib_meta.get(
+                'LIBRARY_LAYOUT').keys())[0]
+        return lib_meta_proc
 
     def add_metadata(self, metadata, uids):
         # use json to quickly get rid of OrderedDicts
