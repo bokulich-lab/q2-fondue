@@ -51,6 +51,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         with open(self.get_data_path('metadata_response_small.json'),
                   'r') as ff:
             self.metadata_dict = json.load(ff)
+        self.maxDiff = None
 
     def xml_to_response(self, kind):
         path = self.get_data_path(f'metadata_response_{kind}.xml')
@@ -80,7 +81,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         numeric_cols = {
             'amount or size of sample collected', 'collection day',
             'collection hours', 'sample storage temperature',
-            'sample volume or weight for DNA extraction'
+            'sample volume or weight for DNA extraction', 'AvgSpotLen'
         }
         for col in numeric_cols:
             exp_df[col] = exp_df[col].astype(str)
@@ -126,7 +127,10 @@ class TestEntrezComponents(_TestPluginWithEntrezFakeComponents):
             "Library Name": "unspecified",
             "Library Layout": "SINGLE",
             "Library Selection": "PCR",
-            "Library Source": "METAGENOMIC"
+            "Library Source": "METAGENOMIC",
+            "AvgSpotLen": "293",
+            "Organism": "Vitis vinifera",
+            "Sample Name": "BAC1.D1.0.32A"
         }
         self.assertDictEqual(exp, obs)
 

@@ -69,8 +69,11 @@ class EFetchResult(EutilsResult):
         processed_meta = self._extract_custom_attributes(
             attributes_dict)
 
-        # add library-specific information
+        # add library metadata
         processed_meta.update(self._extract_library_info(attributes_dict))
+
+        # add pool metadata
+        processed_meta.update(self._extract_pool_info(attributes_dict))
 
         return processed_meta
 
@@ -110,6 +113,17 @@ class EFetchResult(EutilsResult):
             lib_meta_proc['Library Layout'] = list(lib_meta.get(
                 'LIBRARY_LAYOUT').keys())[0]
         return lib_meta_proc
+
+    @staticmethod
+    def _extract_pool_info(attributes_info):
+        pool_meta = attributes_info['Pool'].get('Member')
+        bases, spots = pool_meta.get('@bases'), pool_meta.get('@spots')
+        pool_meta_proc = {
+            'AvgSpotLen': str(int(int(bases)/int(spots))),
+            'Organism': pool_meta.get('@organism'),
+            'Sample Name': pool_meta.get('@sample_name')
+        }
+        return pool_meta_proc
 
     def add_metadata(self, metadata, uids):
         # use json to quickly get rid of OrderedDicts
