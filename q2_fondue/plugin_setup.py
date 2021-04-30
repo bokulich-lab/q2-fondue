@@ -6,9 +6,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import (Plugin, Citations)
+from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range)
 
 from q2_fondue import __version__
+from q2_types.sample_data import SampleData
+from q2_types.per_sample_sequences import Sequences
+from q2_fondue.sequences import get_sequences, SequencesDirFmt
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -23,4 +26,36 @@ plugin = Plugin(
     short_description='Plugin for fetching sequences and metadata.',
 )
 
-# TODO: register all the methods below
+plugin.methods.register_function(
+    function=get_sequences,
+    inputs={},
+    parameters={
+        'study_ids': List[Str],
+        'general_retries': Int % Range(1, None),
+        'threads': Int % Range(1, None)
+    },
+    outputs=[('sequences', SampleData[Sequences])],
+    input_descriptions={},
+    parameter_descriptions={
+        'study_ids': 'A list of study IDs for which the sequences should '
+                     'be fetched.',
+        'general_retries': 'Number of retries to fetch sequences (default:2).',
+        'threads': 'Number of threads when fetching sequences (default:6).'
+    },
+    output_descriptions={
+        'sequences': 'Artifact containing fastq.gz files for all the '
+        'requested studies.'
+    },
+    name='Fetch sequences based on study ID.',
+    description=(
+        'Fetch sequence data of all study IDs.'
+    ),
+    citations=[]
+)
+
+plugin.register_semantic_type_to_format(
+    SampleData[Sequences],
+    artifact_format=SequencesDirFmt
+)
+
+plugin.register_formats(SequencesDirFmt)

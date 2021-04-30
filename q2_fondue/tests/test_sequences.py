@@ -6,11 +6,45 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import tempfile
 from qiime2.plugin.testing import TestPluginBase
+from q2_fondue.sequences import get_sequences
 
 
 class TestSequenceFetching(TestPluginBase):
     package = 'q2_fondue.tests'
 
-    def test_placeholder(self):
-        pass
+    def setUp(self):
+        super().setUp()
+        self.temp_dir = tempfile.TemporaryDirectory(
+            prefix='q2-fondue-test-temp-')
+        # todo use temp_dir for output_dir
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_method_get_one_sequence(self):
+        # todo verify output
+        study_ids = ['ERR3978173']
+        get_sequences(study_ids)
+
+    def test_method_get_multiple_sequences(self):
+        study_ids = [
+            'ERR3978173', 'ERR3978174']
+        get_sequences(study_ids)
+
+    def test_method_get_paired_sequences(self):
+        study_ids = [
+            'SRR000001']
+        get_sequences(study_ids)
+
+    def test_method_invalid_acc(self):
+        study_ids = ['ERR39781ab']
+        with self.assertRaisesRegex(
+                ValueError, 'could not be downloaded with'):
+            get_sequences(study_ids=study_ids)
+
+    # def test_action(self):
+    #     study_ids = [
+    #         'ERR3978173', 'ERR3978174']
+    #     q2_fondue.actions.get_sequences(study_ids)
