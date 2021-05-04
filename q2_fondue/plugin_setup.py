@@ -31,6 +31,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'study_ids': List[Str],
+        'output_dir': Str,
         'general_retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
@@ -39,6 +40,7 @@ plugin.methods.register_function(
     parameter_descriptions={
         'study_ids': 'A list of study IDs for which the sequences should '
                      'be fetched.',
+        'output_dir': 'directory name for downloaded sequence files',
         'general_retries': 'Number of retries to fetch sequences (default:2).',
         'threads': 'Number of threads when fetching sequences (default:6).'
     },

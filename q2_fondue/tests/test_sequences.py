@@ -23,26 +23,27 @@ class TestSequenceFetching(TestPluginBase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_method_get_one_sequence(self):
-        # todo verify output
+    def test_method_get_one_single_sequence(self):
+        # todo add verification of test outputs!
         study_ids = ['ERR3978173']
-        get_sequences(study_ids)
+        get_sequences(study_ids, output_dir=self.temp_dir.name)
 
-    def test_method_get_multiple_sequences(self):
+    def test_method_get_multiple_single_sequences(self):
         study_ids = [
             'ERR3978173', 'ERR3978174']
-        get_sequences(study_ids)
+        get_sequences(study_ids, output_dir=self.temp_dir.name)
 
-    def test_method_get_paired_sequences(self):
+    def test_method_get_single_and_paired_sequences(self):
+        # ! currently only single reads supported
         study_ids = [
-            'SRR000001']
-        get_sequences(study_ids)
+            'SRR000001', 'ERR3978173']
+        get_sequences(study_ids=study_ids, output_dir=self.temp_dir.name)
 
     def test_method_invalid_acc(self):
         study_ids = ['ERR39781ab']
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
-            get_sequences(study_ids=study_ids)
+            get_sequences(study_ids=study_ids, output_dir=self.temp_dir.name)
 
     # def test_action(self):
     #     study_ids = [
