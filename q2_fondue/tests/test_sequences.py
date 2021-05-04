@@ -34,7 +34,7 @@ class TestSequenceFetching(TestPluginBase):
         get_sequences(study_ids, output_dir=self.temp_dir.name)
 
     def test_method_get_single_and_paired_sequences(self):
-        # ! currently only single reads supported
+        # ! currently only single reads
         study_ids = [
             'SRR000001', 'ERR3978173']
         get_sequences(study_ids=study_ids, output_dir=self.temp_dir.name)

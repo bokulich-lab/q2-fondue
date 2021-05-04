@@ -9,31 +9,33 @@
 import os
 import re
 from subprocess import run
-from qiime2.plugin import model
-from q2_types.per_sample_sequences import FastqGzFormat
+# from qiime2.plugin import model
+from q2_types.per_sample_sequences import \
+    (CasavaOneEightSingleLanePerSampleDirFmt)
 
 
-class SequencesDirFmt(model.DirectoryFormat):
-    # ? lacks attribute '__name__' - must be implemented wrongly..
-    sequences = model.FileCollection(
-        r'*\.fastq\.gz', format=FastqGzFormat)
+# class SequencesDirFmt(model.DirectoryFormat):
+#     # ? lacks attribute '__name__' - must be implemented wrongly..
+#     sequences = model.FileCollection(
+#         r'*\.fastq\.gz', format=FastqGzFormat)
 
-    @sequences.set_path_maker
-    def sequences_path_maker(self, acc):
-        return '%s.fastq.gz' % (acc)
+#     @sequences.set_path_maker
+#     def sequences_path_maker(self, acc):
+#         return '%s.fastq.gz' % (acc)
 
 
 def get_sequences(study_ids: list,
                   output_dir: str,
                   general_retries: int = 2,
-                  threads: int = 6) -> SequencesDirFmt():
+                  threads:
+                  int = 6) -> CasavaOneEightSingleLanePerSampleDirFmt():
     """
     Function to run SRA toolkit fasterq-dump to get sequences of accessions
     in `study_ids`. Supports mulitple tries (`general_retries`) and can use
     multiple `threads`.
     """
     # todo: make helper function out of below components
-    results = SequencesDirFmt()  # todo add some DirFmt()
+    results = CasavaOneEightSingleLanePerSampleDirFmt()
 
     # func: _download_sequences(tmpdirname, acc, general_retries, threads)
     # with tempfile.TemporaryDirectory() as tmpdirname:
@@ -51,11 +53,6 @@ def get_sequences(study_ids: list,
                        "-O", output_dir,
                        "-e", str(threads),
                        acc]
-        # todo adjust below according to _denoise_single()
-        # todo cmd run here:
-        # todo https://github.com/qiime2/q2-dada2/blob/
-        # todo b8daa524e4d91e1ae09c6e10e9889b20a9d7ae60/
-        # todo q2_dada2/_denoise.py
 
         # try "retries" times to get sequence data
         while retries >= 0:
@@ -92,19 +89,27 @@ def get_sequences(study_ids: list,
                     print('Paired end reads are not supported yet, '
                           'so {} will not be processed any further.'
                           .format(acc))
+                    os.remove(os.path.join(output_dir, filename))
                 else:
-                    # read number = 1 for single read
-                    new_name = '%s_00_R%d_001.fastq.gz' % (acc, 1)
-                    print(new_name)
-
+                    # convert to casava
+                    new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
                     os.rename(os.path.join(output_dir, filename),
                               os.path.join(output_dir, new_name))
 
-            # read fastq.gz and return
-            # fh = gzip.open(filepath, 'rt')
-            # print(result_gzip)
+            # # read fastq.gz and return
+            # fh = gzip.open(os.path.join(output_dir, new_name), 'rt')
 
-    # once all acc were downloaded and zipped
-    # ? somehow return them as qza file
-    # os.rename(tmpdirname, str(result))
+        # try:
+        #     artifact = sdk.Artifact.import_data(
+        # 'SampleData[SequencesWithQuality]',
+        #  output_dir,
+        #  view_type='CasavaOneEightSingleLanePerSampleDirFmt')
+        #     artifact.save(output_dir)
+        # except Exception:
+        #     print('Exception occurred')
+        # once all acc were downloaded and zipped
+        # ? somehow return them as qza file
+        # os.rename(tmpdirname, str(result))
+        # util.duplicate(output_dir, str(result))
+
     return results

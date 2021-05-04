@@ -10,8 +10,8 @@ from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range)
 
 from q2_fondue import __version__
 from q2_types.sample_data import SampleData
-from q2_types.per_sample_sequences import Sequences
-from q2_fondue.sequences import get_sequences, SequencesDirFmt
+from q2_types.per_sample_sequences import SequencesWithQuality
+from q2_fondue.sequences import get_sequences
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -35,7 +35,7 @@ plugin.methods.register_function(
         'general_retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
-    outputs=[('sequences', SampleData[Sequences])],
+    outputs=[('sequences', SampleData[SequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
         'study_ids': 'A list of study IDs for which the sequences should '
@@ -54,10 +54,3 @@ plugin.methods.register_function(
     ),
     citations=[]
 )
-
-plugin.register_semantic_type_to_format(
-    SampleData[Sequences],
-    artifact_format=SequencesDirFmt
-)
-
-plugin.register_formats(SequencesDirFmt)
