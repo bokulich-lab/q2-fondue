@@ -7,21 +7,78 @@
 # ----------------------------------------------------------------------------
 
 import os
+import glob
 import re
+# import pathlib
+# import pandas as pd
 from subprocess import run
-# from qiime2.plugin import model
 from q2_types.per_sample_sequences import \
-    (CasavaOneEightSingleLanePerSampleDirFmt)
+    (CasavaOneEightSingleLanePerSampleDirFmt)  # , FastqManifestFormat, _util)
 
 
-# class SequencesDirFmt(model.DirectoryFormat):
-#     # ? lacks attribute '__name__' - must be implemented wrongly..
-#     sequences = model.FileCollection(
-#         r'*\.fastq\.gz', format=FastqGzFormat)
+# todo move below functions starting with '_' to util.py
+def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
+                     general_retries: int):
+    """
+    Helper function running fasterq-dump 'general_retries' times
+    """
 
-#     @sequences.set_path_maker
-#     def sequences_path_maker(self, acc):
-#         return '%s.fastq.gz' % (acc)
+    print("Downloading sequences of study: {}...".format(acc))
+
+    retries = general_retries
+
+    acc_fastq_single = os.path.join(output_dir,
+                                    acc + '.fastq')
+    acc_fastq_paired = os.path.join(output_dir,
+                                    acc + '_1.fastq')
+    # todo: add temp folder path as well
+    cmd_fasterq = ["fasterq-dump",
+                   "-O", output_dir,
+                   "-e", str(threads),
+                   acc]
+
+    # try "retries" times to get sequence data
+    while retries >= 0:
+        result = run(cmd_fasterq, text=True, capture_output=True)
+
+        if not (os.path.isfile(acc_fastq_single) |
+                os.path.isfile(acc_fastq_paired)):
+            retries -= 1
+            print('retrying {} times'.format(retries+1))
+        else:
+            retries = -1
+
+    return result
+
+
+def _process_downloaded_sequences(output_dir):
+    # todo: clean up function
+
+    # remove paired sequence reads in output_dir
+    ls_seq_paired_1 = glob.glob(os.path.join(
+        output_dir, '*_1.fastq'), recursive=True)
+    ls_seq_paired_2 = glob.glob(os.path.join(
+        output_dir, '*_2.fastq'), recursive=True)
+
+    for seq_file in (ls_seq_paired_1 + ls_seq_paired_2):
+        print('Paired end reads are not supported yet, '
+              'so {} will not be processed any further.'
+              .format(seq_file))
+        os.remove(seq_file)
+
+    # gzip all remaining files in folder
+    cmd_gzip = ["gzip",
+                "-r", output_dir]
+    run(cmd_gzip, text=True, capture_output=True)
+
+    # rename all files to casava format
+    for filename in os.listdir(output_dir):
+        acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
+
+        # convert to casava
+        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
+        os.rename(os.path.join(output_dir, filename),
+                  os.path.join(output_dir, new_name))
 
 
 def get_sequences(study_ids: list,
@@ -34,82 +91,54 @@ def get_sequences(study_ids: list,
     in `study_ids`. Supports mulitple tries (`general_retries`) and can use
     multiple `threads`.
     """
-    # todo: make helper function out of below components
     results = CasavaOneEightSingleLanePerSampleDirFmt()
 
-    # func: _download_sequences(tmpdirname, acc, general_retries, threads)
-    # with tempfile.TemporaryDirectory() as tmpdirname:
     # get all study ids sequences + tmp files into tmpdirname
+    # ? maybe add: with tempfile.TemporaryDirectory() as tmpdirname:
     for acc in study_ids:
-        print("Downloading sequences of study: {}...".format(acc))
-        retries = general_retries
+        result = _run_cmd_fasterq(acc, output_dir, threads,
+                                  general_retries)
 
-        acc_fastq_single = os.path.join(output_dir,
-                                        acc + '.fastq')
-        acc_fastq_paired = os.path.join(output_dir,
-                                        acc + '_1.fastq')
-
-        cmd_fasterq = ["fasterq-dump",
-                       "-O", output_dir,
-                       "-e", str(threads),
-                       acc]
-
-        # try "retries" times to get sequence data
-        while retries >= 0:
-            result = run(cmd_fasterq, text=True, capture_output=True)
-
-            if not (os.path.isfile(acc_fastq_single) |
-                    os.path.isfile(acc_fastq_paired)):
-                retries -= 1
-                print('retrying {} times'.format(retries+1))
-            else:
-                retries = -1
-
-        # raise error if all three attempts failed - else gzip files
-        if not (os.path.isfile(acc_fastq_single) |
-                os.path.isfile(acc_fastq_paired)):
+        if len(os.listdir(output_dir)) == 0:
+            # raise error if all general_retries attempts failed
             raise ValueError('{} could not be downloaded with the '
                              'following fasterq-dump error '
                              'returned: {}'
                              .format(acc, result.stderr))
-
         else:
-            # gzip all files in folder
-            cmd_gzip = ["gzip",
-                        "-r", output_dir]
-            run(cmd_gzip, text=True, capture_output=True)
+            continue
 
-            # rename all files in folder (depending on single or paired read)
-            # to casava format
-            # todo create helper func: _rename()
-            for filename in os.listdir(output_dir):
-                print(filename)
-                acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-                if acc.endswith('_1') or acc.endswith('_2'):
-                    print('Paired end reads are not supported yet, '
-                          'so {} will not be processed any further.'
-                          .format(acc))
-                    os.remove(os.path.join(output_dir, filename))
-                else:
-                    # convert to casava
-                    new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
-                    os.rename(os.path.join(output_dir, filename),
-                              os.path.join(output_dir, new_name))
+    _process_downloaded_sequences(output_dir)
 
-            # # read fastq.gz and return
-            # fh = gzip.open(os.path.join(output_dir, new_name), 'rt')
+    # # Experiment: define manifest file propriately
+    # str4manifest = 'sample-id,filename,direction\n'
+    # in func: process_downloded_sequences extend string to:
+    #   += '%s,%s,forward\n' % (acc, new_name)
 
-        # try:
-        #     artifact = sdk.Artifact.import_data(
-        # 'SampleData[SequencesWithQuality]',
-        #  output_dir,
-        #  view_type='CasavaOneEightSingleLanePerSampleDirFmt')
-        #     artifact.save(output_dir)
-        # except Exception:
-        #     print('Exception occurred')
-        # once all acc were downloaded and zipped
-        # ? somehow return them as qza file
-        # os.rename(tmpdirname, str(result))
-        # util.duplicate(output_dir, str(result))
+    # tmp_manifest = FastqManifestFormat()
+    # with tmp_manifest.open() as fh:
+    #     fh.write(str4manifest)
+    # manifest = tmp_manifest.view(pd.DataFrame)
+    # manifest.to_csv(os.path.join(output_dir, 'MANIFEST'))
+    # df_manifest = _util._manifest_to_df(tmp_manifest, output_dir)
+
+    # # Experiment for manifest file
+    # def munge_fn_closure(val):
+    #     if val is not None:
+    #         return pathlib.Path(val).name
+    #     return val
+
+    # for column in {'forward'}:
+    #     manifest[column] = manifest[column].apply(munge_fn_closure)
+
+    # # Experiment for reading artifact
+    # try:
+    #     artifact = sdk.Artifact.import_data(
+    #         'SampleData[SequencesWithQuality]',
+    #         output_dir,
+    #         view_type='CasavaOneEightSingleLanePerSampleDirFmt')
+    #     artifact.save(output_dir)
+    # except Exception:
+    #     print('Exception occurred')
 
     return results

@@ -46,6 +46,7 @@ class TestSequenceFetching(TestPluginBase):
             get_sequences(study_ids=study_ids, output_dir=self.temp_dir.name)
 
     # def test_action(self):
+    #     # todo add testing of action
     #     study_ids = [
     #         'ERR3978173', 'ERR3978174']
     #     q2_fondue.actions.get_sequences(study_ids)
