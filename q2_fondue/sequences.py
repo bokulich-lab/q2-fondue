@@ -11,6 +11,7 @@ import glob
 import re
 import gzip
 import itertools
+import tempfile
 # import pathlib
 # import pandas as pd
 from subprocess import run
@@ -54,7 +55,11 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
 
 
 def _process_downloaded_sequences(output_dir):
-    # todo: clean up function
+    """
+    Helper function that removes paired read sequences
+    (not supported yet) and renames single read sequences
+    according to casava file format
+    """
 
     # remove paired sequence reads in output_dir
     ls_seq_paired_1 = glob.glob(os.path.join(
@@ -76,99 +81,68 @@ def _process_downloaded_sequences(output_dir):
     # rename all files to casava format
     for filename in os.listdir(output_dir):
         acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-
-        # convert to casava
         new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
+
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
 
 
-def get_sequences(study_ids: list,
-                  output_dir: str,
-                  general_retries: int = 2,
-                  threads:
-                  int = 6) -> CasavaOneEightSingleLanePerSampleDirFmt():
+def _read_fastq_seqs(filepath):
+    # function copied from q2_demux._demux import _read_fastq_seqs
+
+    # Originally func is adapted from @jairideout's SO post:
+    # http://stackoverflow.com/a/39302117/3424666
+    fh = gzip.open(filepath, 'rt')
+    for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
+        yield (seq_header.strip(), seq.strip(), qual_header.strip(),
+               qual.strip())
+
+
+def _write2casava_dir(tmpdirname, casava_result_path):
     """
-    Function to run SRA toolkit fasterq-dump to get sequences of accessions
-    in `study_ids`. Supports mulitple tries (`general_retries`) and can use
-    multiple `threads`.
+    Helper function that writes downloaded sequence files
+    from tmpdirname to casava_result_path
     """
-    results = CasavaOneEightSingleLanePerSampleDirFmt()
-
-    # get all study ids sequences + tmp files into tmpdirname
-    # ? maybe add: with tempfile.TemporaryDirectory() as tmpdirname:
-    # ? rename output_dir to tmpdirname
-    for acc in study_ids:
-        result = _run_cmd_fasterq(acc, output_dir, threads,
-                                  general_retries)
-
-        if len(os.listdir(output_dir)) == 0:
-            # raise error if all general_retries attempts failed
-            raise ValueError('{} could not be downloaded with the '
-                             'following fasterq-dump error '
-                             'returned: {}'
-                             .format(acc, result.stderr))
-        else:
-            continue
-
-    _process_downloaded_sequences(output_dir)
-
-    # todo write to _write_sequences()
-    def _read_fastq_seqs(filepath):
-        # function copied from q2_demux._demux import _read_fastq_seqs
-        # This function is adapted from @jairideout's SO post:
-        # http://stackoverflow.com/a/39302117/3424666
-        fh = gzip.open(filepath, 'rt')
-        for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
-            yield (seq_header.strip(), seq.strip(), qual_header.strip(),
-                   qual.strip())
-
-    for filename in os.listdir(output_dir):
-        fwd_path_in = os.path.join(output_dir, filename)
-        fwd_path_out = str(results.path / filename)
+    for filename in os.listdir(tmpdirname):
+        fwd_path_in = os.path.join(tmpdirname, filename)
+        fwd_path_out = str(casava_result_path.path / filename)
 
         with gzip.open(str(fwd_path_out), mode='w') as fwd:
             for fwd_rec in _read_fastq_seqs(fwd_path_in):
                 fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
-    # for _, fwd_path in manifest.itertuples():
-    #     fwd_name = os.path.basename(fwd_path)
-    #     fwd_path_in = str(sequences.path / fwd_name)
-    #     fwd_path_out = str(results.path / fwd_name)
-    #     with gzip.open(str(fwd_path_out), mode='w') as fwd:
-    #         for fwd_rec in _read_fastq_seqs(fwd_path_in):
-    #             if random.random() <= fraction:
-    #                 fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
-    # # Experiment: define manifest file propriately
-    # str4manifest = 'sample-id,filename,direction\n'
-    # in func: process_downloded_sequences extend string to:
-    #   += '%s,%s,forward\n' % (acc, new_name)
+def get_sequences(study_ids: list,
+                  general_retries: int = 2,
+                  threads:
+                  int = 6) -> (
+        CasavaOneEightSingleLanePerSampleDirFmt):
+    """
+    Function to run SRA toolkit fasterq-dump to get sequences of accessions
+    in `study_ids`. Supports mulitple tries (`general_retries`) and can use
+    multiple `threads`.
+    """
+    casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
 
-    # tmp_manifest = FastqManifestFormat()
-    # with tmp_manifest.open() as fh:
-    #     fh.write(str4manifest)
-    # manifest = tmp_manifest.view(pd.DataFrame)
-    # manifest.to_csv(os.path.join(output_dir, 'MANIFEST'))
-    # df_manifest = _util._manifest_to_df(tmp_manifest, output_dir)
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        # run fasterq-dump for all accessions
+        for acc in study_ids:
+            result = _run_cmd_fasterq(acc, tmpdirname, threads,
+                                      general_retries)
 
-    # # Experiment for manifest file
-    # def munge_fn_closure(val):
-    #     if val is not None:
-    #         return pathlib.Path(val).name
-    #     return val
+            if len(os.listdir(tmpdirname)) == 0:
+                # raise error if all general_retries attempts failed
+                raise ValueError('{} could not be downloaded with the '
+                                 'following fasterq-dump error '
+                                 'returned: {}'
+                                 .format(acc, result.stderr))
+            else:
+                continue
 
-    # for column in {'forward'}:
-    #     manifest[column] = manifest[column].apply(munge_fn_closure)
+        # processing downloaded files
+        _process_downloaded_sequences(tmpdirname)
 
-    # # Experiment for reading artifact
-    # try:
-    #     artifact = sdk.Artifact.import_data(
-    #         'SampleData[SequencesWithQuality]',
-    #         output_dir,
-    #         view_type='CasavaOneEightSingleLanePerSampleDirFmt')
-    #     artifact.save(output_dir)
-    # except Exception:
-    #     print('Exception occurred')
+        # write downloaded seqs from tmp to casava dir
+        _write2casava_dir(tmpdirname, casava_out)
 
-    return results
+    return casava_out
