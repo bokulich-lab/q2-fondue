@@ -9,6 +9,8 @@
 import os
 import glob
 import re
+import gzip
+import itertools
 # import pathlib
 # import pandas as pd
 from subprocess import run
@@ -95,6 +97,7 @@ def get_sequences(study_ids: list,
 
     # get all study ids sequences + tmp files into tmpdirname
     # ? maybe add: with tempfile.TemporaryDirectory() as tmpdirname:
+    # ? rename output_dir to tmpdirname
     for acc in study_ids:
         result = _run_cmd_fasterq(acc, output_dir, threads,
                                   general_retries)
@@ -109,6 +112,33 @@ def get_sequences(study_ids: list,
             continue
 
     _process_downloaded_sequences(output_dir)
+
+    # todo write to _write_sequences()
+    def _read_fastq_seqs(filepath):
+        # function copied from q2_demux._demux import _read_fastq_seqs
+        # This function is adapted from @jairideout's SO post:
+        # http://stackoverflow.com/a/39302117/3424666
+        fh = gzip.open(filepath, 'rt')
+        for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
+            yield (seq_header.strip(), seq.strip(), qual_header.strip(),
+                   qual.strip())
+
+    for filename in os.listdir(output_dir):
+        fwd_path_in = os.path.join(output_dir, filename)
+        fwd_path_out = str(results.path / filename)
+
+        with gzip.open(str(fwd_path_out), mode='w') as fwd:
+            for fwd_rec in _read_fastq_seqs(fwd_path_in):
+                fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
+
+    # for _, fwd_path in manifest.itertuples():
+    #     fwd_name = os.path.basename(fwd_path)
+    #     fwd_path_in = str(sequences.path / fwd_name)
+    #     fwd_path_out = str(results.path / fwd_name)
+    #     with gzip.open(str(fwd_path_out), mode='w') as fwd:
+    #         for fwd_rec in _read_fastq_seqs(fwd_path_in):
+    #             if random.random() <= fraction:
+    #                 fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
     # # Experiment: define manifest file propriately
     # str4manifest = 'sample-id,filename,direction\n'

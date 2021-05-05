@@ -25,7 +25,7 @@ class TestSequenceFetching(TestPluginBase):
 
     def test_method_get_one_single_sequence(self):
         # todo add verification of test outputs!
-        study_ids = ['ERR3978173']
+        study_ids = ['SRR000001']
         get_sequences(study_ids, output_dir=self.temp_dir.name)
 
     def test_method_get_multiple_single_sequences(self):
