@@ -8,6 +8,7 @@
 
 from qiime2.plugin.testing import TestPluginBase
 from q2_fondue.sequences import get_sequences
+from qiime2.plugins import fondue
 
 
 class TestSequenceFetching(TestPluginBase):
@@ -17,17 +18,19 @@ class TestSequenceFetching(TestPluginBase):
         super().setUp()
 
     def test_method_get_one_single_sequence(self):
-        # todo add proper verification of test outputs!
+        # todo add proper verification of test outputs below!
         study_ids = ['SRR000001']
         get_sequences(study_ids)
 
     def test_method_get_multiple_single_sequences(self):
+        # todo add verification
         study_ids = [
             'ERR3978173', 'ERR3978174']
         get_sequences(study_ids)
 
     def test_method_get_single_and_paired_sequences(self):
-        # ! currently only single reads
+        # ! currently only single reads supported
+        # todo add verification
         study_ids = [
             'SRR000001', 'ERR3978173']
         get_sequences(study_ids)
@@ -38,8 +41,8 @@ class TestSequenceFetching(TestPluginBase):
                 ValueError, 'could not be downloaded with'):
             get_sequences(study_ids)
 
-    # def test_action(self):
-    #     # todo add testing of qiime2 action
-    #     study_ids = [
-    #         'ERR3978173', 'ERR3978174']
-    #     q2_fondue.actions.get_sequences(study_ids)
+    def test_action(self):
+        # todo add verification
+        study_ids = [
+            'ERR3978173', 'ERR3978174']
+        fondue.actions.get_sequences(study_ids)
