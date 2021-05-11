@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import json
+import unittest
 
 import pandas as pd
 
@@ -129,3 +130,7 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
             exp = json.load(f)
             del exp['FAKEID2']
         self.assertDictEqual(exp, self.efetch_analyzer.result.metadata)
+
+
+if __name__ == "__main__":
+    unittest.main()

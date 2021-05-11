@@ -28,11 +28,9 @@ setup(
         ['q2-fondue=q2_fondue.plugin_setup:plugin']
     },
     package_data={
-        'q2_fondue': [
-            'citations.bib',
-            'tests/*',
-            'tests/data/*'
-        ],
+        'q2_fondue': ['citations.bib'],
+        'q2_fondue.tests': ['data/*'],
+        'q2_fondue.types.tests': ['data/*']
     },
     zip_safe=False,
 )

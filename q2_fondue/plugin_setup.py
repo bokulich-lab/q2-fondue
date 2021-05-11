@@ -6,12 +6,14 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pandas as pd
+import importlib
+
 from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range)
 
 from q2_fondue import __version__
-from q2_fondue.metadata import (get_metadata, TestMetadataFormat,
-                                TestMetadataDirFmt, TestMetadata)
+from q2_fondue.metadata import get_metadata
+from q2_fondue.types._format import SRAMetadataFormat, SRAMetadataDirFmt
+from q2_fondue.types._type import SRAMetadata
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -28,18 +30,10 @@ plugin = Plugin(
 
 # TODO: register all the methods below
 
-plugin.register_formats(TestMetadataFormat, TestMetadataDirFmt)
-plugin.register_semantic_types(TestMetadata)
+plugin.register_formats(SRAMetadataFormat, SRAMetadataDirFmt)
+plugin.register_semantic_types(SRAMetadata)
 plugin.register_semantic_type_to_format(
-    TestMetadata, artifact_format=TestMetadataDirFmt)
-
-
-@plugin.register_transformer
-def _1(data: pd.DataFrame) -> (TestMetadataFormat):
-    ff = TestMetadataFormat()
-    with ff.open() as fh:
-        data.to_csv(fh, sep='\t', header=True)
-    return ff
+    SRAMetadata, artifact_format=SRAMetadataDirFmt)
 
 
 plugin.methods.register_function(
@@ -50,7 +44,7 @@ plugin.methods.register_function(
         'email': Str,
         'n_jobs': Int % Range(1, None)
     },
-    outputs=[('metadata', TestMetadata)],
+    outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
         'study_ids': 'A list of study IDs for which the metadata should '
@@ -68,3 +62,5 @@ plugin.methods.register_function(
     ),
     citations=[]
 )
+
+importlib.import_module('q2_fondue.types._transformer')

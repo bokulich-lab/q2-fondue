@@ -7,35 +7,14 @@
 # ----------------------------------------------------------------------------
 
 from typing import List
-
 import pandas as pd
-
 import entrezpy.efetch.efetcher as ef
-from qiime2.core.type import SemanticType
-from qiime2.plugin import model
 
-# TODO: clean up those formats/types
 from q2_fondue._entrezpy_clients import EFetchAnalyzer
-
-
-class TestMetadataFormat(model.TextFileFormat):
-    def _validate(self, n_records=None):
-        pass
-
-    def _validate_(self, level):
-        self._validate()
-
-
-TestMetadataDirFmt = model.SingleFileDirectoryFormat(
-    'TestMetadataDirFmt', 'metadata.tsv', TestMetadataFormat
-)
-
-TestMetadata = SemanticType('TestMetadata')
 
 
 def _efetcher_inquire(
         efetcher: ef.Efetcher, study_ids: List[str]) -> pd.DataFrame:
-    # TODO: some error handling here
     metadata_response = efetcher.inquire(
         {
             'db': 'sra',

@@ -6,10 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import unittest
 from unittest.mock import patch
 
-import pandas as pd
 import entrezpy.efetch.efetcher as ef
+import pandas as pd
 from entrezpy.requester.requester import Requester
 
 from q2_fondue.metadata import (_efetcher_inquire)
@@ -58,3 +59,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_request.assert_called_once()
         pd.testing.assert_frame_equal(
             exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
+
+
+if __name__ == "__main__":
+    unittest.main()
