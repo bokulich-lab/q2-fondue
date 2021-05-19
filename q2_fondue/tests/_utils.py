@@ -47,8 +47,8 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             self.metadata_dict = json.load(ff)
         self.maxDiff = None
 
-    def xml_to_response(self, kind):
-        path = self.get_data_path(f'metadata_response_{kind}.xml')
+    def xml_to_response(self, kind, suffix=''):
+        path = self.get_data_path(f'metadata_response_{kind}{suffix}.xml')
         response = io.open(path, "rb", buffering=0)
         return response
 
@@ -76,7 +76,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             'amount or size of sample collected', 'collection day',
             'collection hours', 'sample storage temperature',
             'sample volume or weight for DNA extraction', 'AvgSpotLen',
-            'Bases', 'Bytes'
+            'Bases', 'Bytes', 'Spots', 'Tax ID'
         }
         for col in numeric_cols:
             exp_df[col] = exp_df[col].astype(str)

@@ -55,6 +55,8 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
             "Library Layout": "SINGLE",
             "Library Selection": "PCR",
             "Library Source": "METAGENOMIC",
+            "Spots": "39323",
+            "Tax ID": "29760",
             "AvgSpotLen": "293",
             "Organism": "Vitis vinifera",
             "Sample Name": "BAC1.D1.0.32A",
@@ -67,16 +69,26 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
             "Bases": "11552099",
             "Bytes": "3914295",
             "Consent": "public",
-            "Center Name": "UNIVERSITY OF HOHENHEIM"
+            "Center Name": "UNIVERSITY OF HOHENHEIM",
+            "Sample Accession": "ERS4372624",
+            "Sample Title": "Vitis vinifera",
         }
         self.assertDictEqual(exp, obs)
-
-    # def test_efresult_process_single_run_unkown_error(self):
-    #     pass
 
     def test_efresult_add_metadata_single_study(self):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('single'), ['FAKEID1'])
+
+        obs = self.efetch_result_single.metadata
+        with open(
+                self.get_data_path('metadata_processed_multi.json'), 'r') as f:
+            exp = json.load(f)
+            del exp['FAKEID2']
+        self.assertDictEqual(exp, obs)
+
+    def test_efresult_add_metadata_single_study_complex(self):
+        self.efetch_result_single.add_metadata(
+            self.xml_to_response('single', "_complex"), ['FAKEID1'])
 
         obs = self.efetch_result_single.metadata
         with open(

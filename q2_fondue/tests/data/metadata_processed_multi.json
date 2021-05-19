@@ -38,7 +38,11 @@
     "Bases": "11552099",
     "Bytes": "3914295",
     "Consent": "public",
-    "Center Name": "UNIVERSITY OF HOHENHEIM"
+    "Center Name": "UNIVERSITY OF HOHENHEIM",
+    "Sample Accession": "ERS4372624",
+    "Sample Title": "Vitis vinifera",
+    "Spots": "39323",
+    "Tax ID": "29760"
   },
   "FAKEID2": {
     "ENA-FIRST-PUBLIC": "2020-05-31",
@@ -79,6 +83,10 @@
     "Bases": "17523267",
     "Bytes": "5879896",
     "Consent": "public",
-    "Center Name": "UNIVERSITY OF HOHENHEIM"
+    "Center Name": "UNIVERSITY OF HOHENHEIM",
+    "Sample Accession": "ERS4372625",
+    "Sample Title": "Vitis vinifera",
+    "Spots": "59799",
+    "Tax ID": "29760"
   }
 }

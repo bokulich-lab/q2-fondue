@@ -44,7 +44,7 @@ class EFetchResult(EutilsResult):
         df.index.name = 'ID'
         return df
 
-    def _process_single_run(self, attributes_dict):
+    def _process_single_run(self, attributes_dict, extract_id=None):
         processed_meta = self._extract_custom_attributes(
             attributes_dict)
 
@@ -58,7 +58,8 @@ class EFetchResult(EutilsResult):
         processed_meta.update(self._extract_experiment_info(attributes_dict))
 
         # add run set metadata
-        processed_meta.update(self._extract_run_set_info(attributes_dict))
+        processed_meta.update(
+            self._extract_run_set_info(attributes_dict, extract_id))
 
         return processed_meta
 
@@ -103,33 +104,46 @@ class EFetchResult(EutilsResult):
     def _extract_pool_info(attributes_info):
         pool_meta = attributes_info['Pool'].get('Member')
         bases, spots = pool_meta.get('@bases'), pool_meta.get('@spots')
+        external_id = pool_meta['IDENTIFIERS'].get('EXTERNAL_ID')
+        if isinstance(external_id, list):
+            external_id = next(
+                (x for x in external_id if x['@namespace'] == 'BioSample')
+            )
         pool_meta_proc = {
+            'Bases': bases,
+            'Spots': spots,
             'AvgSpotLen': str(int(int(bases)/int(spots))),
             'Organism': pool_meta.get('@organism'),
-            'Sample Name': pool_meta.get('@sample_name')
+            'Tax ID': pool_meta.get('@tax_id'),
+            'Sample Name': pool_meta.get('@sample_name'),
+            'Sample Accession': pool_meta.get('@accession'),
+            'Sample Title': pool_meta.get('@sample_title'),
+            'BioSample': external_id.get('#text')
         }
         return pool_meta_proc
 
     @staticmethod
     def _extract_experiment_info(attributes_info):
-        biosample_id, bioproject_id = None, None
         exp_meta = attributes_info['EXPERIMENT']
-
-        biosample = exp_meta[
-            'DESIGN']['SAMPLE_DESCRIPTOR']['IDENTIFIERS'].get('EXTERNAL_ID')
-        bioproject = exp_meta[
-            'STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
-        # TODO: should this raise an error if not present?
-        if biosample and biosample['@namespace'] == 'BioSample':
-            biosample_id = biosample['#text']
+        bioproject = exp_meta['STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
         if bioproject and bioproject['@namespace'] == 'BioProject':
             bioproject_id = bioproject['#text']
+        elif not bioproject:  # if not found, try elsewhere:
+            study_ids = attributes_info[
+                'STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
+            if isinstance(study_ids, list):
+                bioproject_id = next(
+                    (x for x in study_ids if x['@namespace'] == 'BioProject')
+                ).get('#text')
+            else:
+                bioproject_id = study_ids.get('#text')
+        else:
+            bioproject_id = None
 
         platform = list(exp_meta['PLATFORM'].keys())[0]
         instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
 
         exp_meta_proc = {
-            'BioSample': biosample_id,
             'BioProject': bioproject_id,
             'Experiment': exp_meta['IDENTIFIERS'].get('PRIMARY_ID'),
             'Instrument': instrument,
@@ -139,10 +153,17 @@ class EFetchResult(EutilsResult):
         return exp_meta_proc
 
     @staticmethod
-    def _extract_run_set_info(attributes_info):
+    def _extract_run_set_info(attributes_info, extract_id=None):
         runset_meta = attributes_info['RUN_SET']['RUN']
+        if isinstance(runset_meta, list):
+            if extract_id:
+                runset_meta = next(
+                    (x for x in runset_meta if x['@accession'] == extract_id)
+                )
+            else:
+                raise NotImplementedError('Extracting all runs from the run'
+                                          ' set is currently not supported')
         runset_meta_proc = {
-            'Bases': runset_meta['Bases'].get('@count'),
             'Bytes': runset_meta.get('@size'),
         }
         if runset_meta.get('@is_public') == 'true':
@@ -159,13 +180,15 @@ class EFetchResult(EutilsResult):
         parsed_results = self.metadata_raw[
             'EXPERIMENT_PACKAGE_SET']['EXPERIMENT_PACKAGE']
 
+        # TODO: we should also handle extracting multiple runs
+        #  from the same experiment
         if isinstance(parsed_results, list):
             for i, uid in enumerate(uids):
                 self.metadata[uid] = self._process_single_run(
-                    parsed_results[i])
+                    parsed_results[i], extract_id=uid)
         else:
             self.metadata[uids[0]] = self._process_single_run(
-                parsed_results)
+                parsed_results, extract_id=uids[0])
 
 
 class EFetchAnalyzer(EutilsAnalyzer):

@@ -28,8 +28,6 @@ plugin = Plugin(
     short_description='Plugin for fetching sequences and metadata.',
 )
 
-# TODO: register all the methods below
-
 plugin.register_formats(SRAMetadataFormat, SRAMetadataDirFmt)
 plugin.register_semantic_types(SRAMetadata)
 plugin.register_semantic_type_to_format(
