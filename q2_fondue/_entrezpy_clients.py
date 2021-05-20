@@ -250,9 +250,9 @@ class ESearchResult(EutilsResult):
         ambigous_ids = leftover_ids[leftover_ids > 0]
         invalid_ids = leftover_ids[leftover_ids == 0]
 
-        error_msg = 'Some of the IDs are invalid or ambigous:'
+        error_msg = 'Some of the IDs are invalid or ambiugous:'
         if ambigous_ids.shape[0] > 0:
-            error_msg += f'\n Ambigous IDs: {", ".join(ambigous_ids.index)}'
+            error_msg += f'\n Ambiguous IDs: {", ".join(ambigous_ids.index)}'
         if invalid_ids.shape[0] > 0:
             error_msg += f'\n Invalid IDs: {", ".join(invalid_ids.index)}'
         error_msg += '\nPlease check your accession IDs and try again.'
