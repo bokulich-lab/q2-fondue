@@ -178,9 +178,9 @@ class EFetchResult(EutilsResult):
             attributes_info['SUBMISSION'].get('@center_name')
         return runset_meta_proc
 
-    def add_metadata(self, metadata, uids):
+    def add_metadata(self, response, uids):
         # use json to quickly get rid of OrderedDicts
-        self.metadata_raw = json.loads(json.dumps(parsexml(metadata.read())))
+        self.metadata_raw = json.loads(json.dumps(parsexml(response.read())))
         parsed_results = self.metadata_raw[
             'EXPERIMENT_PACKAGE_SET']['EXPERIMENT_PACKAGE']
 

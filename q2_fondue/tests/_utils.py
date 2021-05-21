@@ -53,9 +53,13 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         self.efetch_result_single = self.generate_efetch_result('single')
         self.efetch_result_multi = self.generate_efetch_result('multi')
         self.efetch_analyzer = EFetchAnalyzer()
-        self.request_properties = {'db', 'eutil', 'uids', 'webenv', 'querykey',
-                                   'rettype', 'retmode', 'strand', 'seqstart',
-                                   'seqstop', 'complexity'}
+        self.efetch_request_properties = {
+            'db', 'eutil', 'uids', 'webenv', 'querykey', 'rettype', 'retmode',
+            'strand', 'seqstart', 'seqstop', 'complexity'
+        }
+        self.esearch_request_properties = {
+            'db', 'eutil', 'webenv', 'retmode', 'term'
+        }
         with open(self.get_data_path('metadata_response_small.json'),
                   'r') as ff:
             self.metadata_dict = json.load(ff)
@@ -66,10 +70,13 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         response = io.open(path, "rb", buffering=0)
         return response
 
-    def json_to_response(self, kind, suffix=''):
+    def json_to_response(self, kind, suffix='', raw=False):
         path = self.get_data_path(f'esearch_response_{kind}{suffix}.json')
-        response = json.loads(io.open(path, "rb", buffering=0).read())
-        return response
+        response = io.open(path, "rb", buffering=0)
+        if raw:
+            return response
+        else:
+            return json.loads(io.open(path, "rb", buffering=0).read())
 
     def generate_efetch_request(self, uids, start=0, size=1):
         request_params = FakeParams(self.temp_dir.name, uids=uids)
@@ -105,7 +112,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         request_params = FakeParams(self.temp_dir.name, retmode='json',
                                     term=term, eutil='esearch.fcgi')
         return EsearchRequest(
-            eutil='efetch.fcgi',
+            eutil='esearch.fcgi',
             parameter=request_params,
             start=start,
             size=size)
