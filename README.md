@@ -29,14 +29,14 @@ To fetch metadata associated with a number of runs, execute the following comman
 
 ```shell
 qiime fondue get-metadata \
-              --p-study-ids <id1> <id2> <id3> ... \
+              --p-sample-ids <id1> <id2> <id3> ... \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
 
 where:
-- `--p-study-ids` is a list of accession numbers for all of the runs
+- `--p-sample-ids` is a list of accession numbers for all of the runs
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
