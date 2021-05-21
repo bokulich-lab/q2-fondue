@@ -11,7 +11,7 @@ import pandas as pd
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 
-from q2_fondue._entrezpy_clients import EFetchAnalyzer, ESearchAnalyzer
+from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer, ESearchAnalyzer
 
 
 def _efetcher_inquire(

@@ -13,19 +13,22 @@ import pandas as pd
 from entrezpy.efetch.efetch_request import EfetchRequest
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_fondue._entrezpy_clients import EFetchAnalyzer, EFetchResult
+from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer, EFetchResult
 
 
 class FakeParams:
-    def __init__(self, temp_dir, uids):
+    def __init__(self, temp_dir, uids, terms=None, eutil='efetch.cgi',
+                 rettype='xml', retmode='text'):
         self.query_id = 'some-id-123'
+        self.terms = terms
+        self.usehistory = False
         self.db = 'sra'
-        self.eutil = 'efetch.cgi'
+        self.eutil = eutil
         self.uids = uids
         self.webenv = None
         self.querykey = 0
-        self.rettype = 'xml'
-        self.retmode = 'text'
+        self.rettype = rettype
+        self.retmode = retmode
         self.strand = None
         self.seqstart = None
         self.seqstop = None
@@ -49,6 +52,11 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
 
     def xml_to_response(self, kind, suffix=''):
         path = self.get_data_path(f'metadata_response_{kind}{suffix}.xml')
+        response = io.open(path, "rb", buffering=0)
+        return response
+
+    def json_to_response(self, kind, suffix=''):
+        path = self.get_data_path(f'esearch_response_{kind}{suffix}.json')
         response = io.open(path, "rb", buffering=0)
         return response
 

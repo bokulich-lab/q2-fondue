@@ -11,7 +11,7 @@ import unittest
 
 import pandas as pd
 
-from q2_fondue._entrezpy_clients import DuplicateKeyError, EFetchResult
+from q2_fondue.entrezpy_clients._efetch import DuplicateKeyError, EFetchResult
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
