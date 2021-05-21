@@ -11,7 +11,8 @@ import pandas as pd
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 
-from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer, ESearchAnalyzer
+from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
+from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 
 
 def _efetcher_inquire(
@@ -27,8 +28,8 @@ def _efetcher_inquire(
     return metadata_response.result.to_df()
 
 
-def _validate_esearch_result(esearcher: es.Esearcher, study_ids: List[str]
-                             ) -> bool:
+def _validate_esearch_result(
+        esearcher: es.Esearcher, study_ids: List[str]) -> bool:
     esearch_response = esearcher.inquire(
         {
             'db': 'sra',

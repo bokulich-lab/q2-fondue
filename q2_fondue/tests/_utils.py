@@ -11,25 +11,36 @@ import json
 
 import pandas as pd
 from entrezpy.efetch.efetch_request import EfetchRequest
+from entrezpy.esearch.esearch_request import EsearchRequest
 from qiime2.plugin.testing import TestPluginBase
 
-from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer, EFetchResult
+from q2_fondue.entrezpy_clients._efetch import (EFetchAnalyzer, EFetchResult)
+from q2_fondue.entrezpy_clients._esearch import ESearchResult
 
 
 class FakeParams:
-    def __init__(self, temp_dir, uids, terms=None, eutil='efetch.cgi',
+    def __init__(self, temp_dir, uids=None, term=None, eutil='efetch.cgi',
                  rettype='xml', retmode='text'):
         self.query_id = 'some-id-123'
-        self.terms = terms
+        self.term = term
         self.usehistory = False
         self.db = 'sra'
         self.eutil = eutil
         self.uids = uids
         self.webenv = None
+        self.idtype = None
+        self.datetype = None
+        self.reldate = None
+        self.mindate = None
+        self.maxdate = None
         self.querykey = 0
         self.rettype = rettype
         self.retmode = retmode
         self.strand = None
+        self.sort = None
+        self.field = None
+        self.retstart = 0
+        self.retmax = 0
         self.seqstart = None
         self.seqstop = None
         self.complexity = None
@@ -57,11 +68,11 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
 
     def json_to_response(self, kind, suffix=''):
         path = self.get_data_path(f'esearch_response_{kind}{suffix}.json')
-        response = io.open(path, "rb", buffering=0)
+        response = json.loads(io.open(path, "rb", buffering=0).read())
         return response
 
     def generate_efetch_request(self, uids, start=0, size=1):
-        request_params = FakeParams(self.temp_dir.name, uids)
+        request_params = FakeParams(self.temp_dir.name, uids=uids)
         return EfetchRequest(
             eutil='efetch.fcgi',
             parameter=request_params,
@@ -89,3 +100,17 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         for col in numeric_cols:
             exp_df[col] = exp_df[col].astype(str)
         return exp_df
+
+    def generate_esearch_request(self, term, start=0, size=1):
+        request_params = FakeParams(self.temp_dir.name, retmode='json',
+                                    term=term, eutil='esearch.fcgi')
+        return EsearchRequest(
+            eutil='efetch.fcgi',
+            parameter=request_params,
+            start=start,
+            size=size)
+
+    def generate_esearch_result(self, kind, suffix):
+        return ESearchResult(
+            response=self.json_to_response(kind, suffix),
+            request=self.generate_esearch_request(term="abc OR 123"))

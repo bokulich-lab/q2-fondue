@@ -1,0 +1,38 @@
+{
+  "header": {
+    "type": "esearch",
+    "version": "0.3"
+  },
+  "esearchresult": {
+    "count": "8",
+    "retmax": "0",
+    "retstart": "0",
+    "idlist": [],
+    "translationset": [],
+    "translationstack": [
+      {
+        "term": "SRR000001[All Fields]",
+        "field": "All Fields",
+        "count": "1",
+        "explode": "N"
+      },
+      {
+        "term": "SRR000013[All Fields]",
+        "field": "All Fields",
+        "count": "1",
+        "explode": "N"
+      },
+      "OR",
+      {
+        "term": "SR012[All Fields]",
+        "field": "All Fields",
+        "count": "7",
+        "explode": "N"
+      },
+      "OR"
+    ],
+    "querytranslation": "SRR000001[All Fields] OR SRR000013[All Fields] OR SR012[All Fields]",
+    "errorlist": {
+      "phrasesnotfound": [
+      "ABCD123", "SRR001"
+    ], "fieldsnotfound": []}}}
