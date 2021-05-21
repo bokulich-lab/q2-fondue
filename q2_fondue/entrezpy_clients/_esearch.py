@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import json
+from typing import List
 
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
@@ -16,6 +17,9 @@ from q2_fondue.entrezpy_clients._efetch import InvalidIDs
 
 
 class ESearchResult(EutilsResult):
+    """Entrezpy client for ESearch utility used to validate
+        provided accession IDs.
+    """
     def __init__(self, response, request):
         super().__init__(request.eutil, request.query_id, request.db)
         self.result_raw = None
@@ -37,6 +41,19 @@ class ESearchResult(EutilsResult):
         return {}
 
     def validate_result(self):
+        """Validates hit counts obtained for all the provided UIDs.
+
+        As the expected hit count for a valid SRA accession ID is 1, all the
+        IDs with that value will be considered valid. UIDs with count higher
+        than 1 will be considered 'ambiguous' as they could not be resolved
+        to a single result. Likewise, UIDs with a count of 0 will be considered
+        'invalid' as no result could be found for those.
+
+        Raises:
+            InvalidIDs: An exception is raised when either ambiguous or invalid
+                IDs were encountered.
+
+        """
         # correct id should have count == 1
         leftover_ids = self.result[self.result != 1]
         if leftover_ids.shape[0] == 0:
@@ -52,7 +69,19 @@ class ESearchResult(EutilsResult):
         error_msg += '\nPlease check your accession IDs and try again.'
         raise InvalidIDs(error_msg)
 
-    def parse_search_results(self, response, uids):
+    def parse_search_results(self, response, uids: List[str]):
+        """Parses response received from Esearch a pandas Series object.
+
+        Hit counts obtained in the response will be extracted and assigned to
+        their respective query IDs. IDs not found in the results but present
+        in the UIDs list will get a count of 0.
+
+        Args:
+            response (): Response received from Esearch.
+            uids (List[str]): List of original UIDs that were submitted
+                as a query.
+
+        """
         self.result_raw = response
 
         translation_stack = self.result_raw[

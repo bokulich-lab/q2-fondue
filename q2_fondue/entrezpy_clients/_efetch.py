@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import json
+from typing import List
 
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
@@ -23,6 +24,7 @@ class InvalidIDs(Exception):
 
 
 class EFetchResult(EutilsResult):
+    """Entrezpy client for EFetch utility used to fetch SRA metadata."""
     def __init__(self, response, request):
         super().__init__(request.eutil, request.query_id, request.db)
         self.metadata_raw = None
@@ -43,12 +45,29 @@ class EFetchResult(EutilsResult):
     def get_link_parameter(self, reqnum=0):
         return {}
 
-    def to_df(self):
+    def to_df(self) -> pd.DataFrame:
+        """Converts collected metadata into a DataFrame.
+
+        Returns:
+            pd.DataFrame: Metadata in a form of a DataFrame with an index
+                corresponding to the original accession IDs.
+        """
         df = pd.DataFrame.from_dict(self.metadata, orient='index')
         df.index.name = 'ID'
         return df
 
-    def _process_single_run(self, attributes_dict, extract_id=None):
+    def _process_single_run(
+            self, attributes_dict: dict, extract_id: str = None):
+        """Processes metadata obtained for a single accession ID.
+
+        Args:
+            attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+            extract_id (str): ID of the run/sample for which metadata
+                should be extracted. If None, all the runs from any given
+                run set will be extracted (not implemented).
+
+        """
         processed_meta = self._extract_custom_attributes(
             attributes_dict)
 
@@ -68,7 +87,14 @@ class EFetchResult(EutilsResult):
         return processed_meta
 
     @staticmethod
-    def _extract_custom_attributes(attributes_dict):
+    def _extract_custom_attributes(attributes_dict: dict):
+        """Extracts custom attributes from the metadata dictionary.
+
+        Args:
+            attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+
+        """
         processed_meta = {}
         keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
         allowed_duplicates = {'ENA-FIRST-PUBLIC', 'ENA-LAST-UPDATE'}
@@ -92,7 +118,14 @@ class EFetchResult(EutilsResult):
         return processed_meta
 
     @staticmethod
-    def _extract_library_info(attributes_dict):
+    def _extract_library_info(attributes_dict: dict):
+        """Extracts library-specific information from the metadata dictionary.
+
+        Args:
+            attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+
+        """
         lib_meta_proc = {}
         lib_meta = attributes_dict['EXPERIMENT']['DESIGN'].get(
             'LIBRARY_DESCRIPTOR')
@@ -105,8 +138,20 @@ class EFetchResult(EutilsResult):
         return lib_meta_proc
 
     @staticmethod
-    def _extract_pool_info(attributes_info):
-        pool_meta = attributes_info['Pool'].get('Member')
+    def _extract_pool_info(attributes_dict: dict):
+        """Extracts pool information from the metadata dictionary.
+
+        Information like base and spot count will be retrieved here and the
+        average spot length will be calculated. Moreover, sample attributes
+        (name, accession ID, title, BioSample ID) and organism information
+        will be extracted.
+
+        Args:
+            attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+
+        """
+        pool_meta = attributes_dict['Pool'].get('Member')
         bases, spots = pool_meta.get('@bases'), pool_meta.get('@spots')
         external_id = pool_meta['IDENTIFIERS'].get('EXTERNAL_ID')
         if isinstance(external_id, list):
@@ -127,13 +172,23 @@ class EFetchResult(EutilsResult):
         return pool_meta_proc
 
     @staticmethod
-    def _extract_experiment_info(attributes_info):
-        exp_meta = attributes_info['EXPERIMENT']
+    def _extract_experiment_info(attributes_dict: dict):
+        """Extracts experiment-specific data from the metadata dictionary.
+
+        Information like BioProject ID as well as instrument and platform
+        details are extracted here.
+
+        Args:
+            attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+
+        """
+        exp_meta = attributes_dict['EXPERIMENT']
         bioproject = exp_meta['STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
         if bioproject and bioproject['@namespace'] == 'BioProject':
             bioproject_id = bioproject['#text']
         elif not bioproject:  # if not found, try elsewhere:
-            study_ids = attributes_info[
+            study_ids = attributes_dict[
                 'STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
             if isinstance(study_ids, list):
                 bioproject_id = next(
@@ -157,8 +212,17 @@ class EFetchResult(EutilsResult):
         return exp_meta_proc
 
     @staticmethod
-    def _extract_run_set_info(attributes_info, extract_id=None):
-        runset_meta = attributes_info['RUN_SET']['RUN']
+    def _extract_run_set_info(attributes_dict: dict, extract_id: str = None):
+        """Extracts run data from the run set in the metadata dictionary.
+
+        attributes_dict (dict): Dictionary with all the metadata
+                from the XML response.
+        extract_id (str): ID of the run/sample for which metadata
+            should be extracted. If None, all the runs from any given
+            run set will be extracted (not implemented).
+
+        """
+        runset_meta = attributes_dict['RUN_SET']['RUN']
         if isinstance(runset_meta, list):
             if extract_id:
                 runset_meta = next(
@@ -175,10 +239,21 @@ class EFetchResult(EutilsResult):
         else:
             runset_meta_proc['Consent'] = 'private'
         runset_meta_proc['Center Name'] = \
-            attributes_info['SUBMISSION'].get('@center_name')
+            attributes_dict['SUBMISSION'].get('@center_name')
         return runset_meta_proc
 
-    def add_metadata(self, response, uids):
+    def add_metadata(self, response, uids: List[str]):
+        """Processes response received from Efetch into metadata dictionary.
+
+        Dictionary keys represent original accession IDs and the values
+        correspond to corresponding metadata extracted from the XML response.
+
+        Args:
+            response (): Response received from Efetch.
+            uids (List[str]): List of accession IDs for which
+                the data was fetched.
+
+        """
         # use json to quickly get rid of OrderedDicts
         self.metadata_raw = json.loads(json.dumps(parsexml(response.read())))
         parsed_results = self.metadata_raw[

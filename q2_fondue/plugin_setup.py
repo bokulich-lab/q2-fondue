@@ -33,20 +33,19 @@ plugin.register_semantic_types(SRAMetadata)
 plugin.register_semantic_type_to_format(
     SRAMetadata, artifact_format=SRAMetadataDirFmt)
 
-
 plugin.methods.register_function(
     function=get_metadata,
     inputs={},
     parameters={
-        'study_ids': List[Str],
+        'sample_ids': List[Str],
         'email': Str,
         'n_jobs': Int % Range(1, None)
     },
     outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'study_ids': 'A list of study IDs for which the metadata should '
-                     'be fetched.',
+        'sample_ids': 'A list of sample IDs for which the metadata should '
+                      'be fetched.',
         'email': 'Your e-mail address (required by NCBI).',
         'n_jobs': 'Number of concurrent download jobs. Defaults to 1.'
     },
