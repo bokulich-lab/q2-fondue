@@ -1,0 +1,291 @@
+{
+  "EXPERIMENT": {
+    "@accession": "ERX3980916",
+    "@alias": "ena-EXPERIMENT-UNIVERSITY OF HOHENHEIM-06-03-2020-13:37:12:076-1",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERX3980916"
+    },
+    "TITLE": "Illumina MiSeq sequencing",
+    "STUDY_REF": {
+      "@accession": "ERP120343",
+      "IDENTIFIERS": {
+        "PRIMARY_ID": "ERP120343",
+        "EXTERNAL_ID": {
+          "@namespace": "BioProject",
+          "#text": "PRJEB37054"
+        }
+      }
+    },
+    "DESIGN": {
+      "DESIGN_DESCRIPTION": null,
+      "SAMPLE_DESCRIPTOR": {
+        "@accession": "ERS4372624",
+        "IDENTIFIERS": {
+          "PRIMARY_ID": "ERS4372624",
+          "EXTERNAL_ID": {
+            "@namespace": "BioSample",
+            "#text": "SAMEA6608408"
+          }
+        }
+      },
+      "LIBRARY_DESCRIPTOR": {
+        "LIBRARY_NAME": "unspecified",
+        "LIBRARY_STRATEGY": "AMPLICON",
+        "LIBRARY_SOURCE": "METAGENOMIC",
+        "LIBRARY_SELECTION": "PCR",
+        "LIBRARY_LAYOUT": {
+          "SINGLE": null
+        }
+      }
+    },
+    "PLATFORM": {
+      "ILLUMINA": {
+        "INSTRUMENT_MODEL": "Illumina MiSeq"
+      }
+    }
+  },
+  "SUBMISSION": {
+    "@accession": "ERA2402167",
+    "@alias": "ena-SUBMISSION-UNIVERSITY OF HOHENHEIM-06-03-2020-13:27:09:756-1",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "@lab_name": "European Nucleotide Archive",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERA2402167"
+    },
+    "TITLE": "Submitted by UNIVERSITY OF HOHENHEIM on 06-MAR-2020"
+  },
+  "Organization": {
+    "@type": "center",
+    "Name": {
+      "@abbr": "University of Hohenheim",
+      "#text": "University of Hohenheim"
+    }
+  },
+  "STUDY": {
+    "@accession": "ERP120343",
+    "@alias": "ena-STUDY-UNIVERSITY OF HOHENHEIM-04-03-2020-12:54:47:240-944",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERP120343",
+      "EXTERNAL_ID": {
+        "@namespace": "BioProject",
+        "#text": "PRJEB37054"
+      }
+    },
+    "DESCRIPTOR": {
+      "STUDY_TITLE": "The microbial load, diversity and composition of\n                    the wine microbiota is affected by wine type and\n                    environmental-stress factors",
+      "STUDY_TYPE": {
+        "@existing_study_type": "Other"
+      },
+      "STUDY_ABSTRACT": "In order to improve the understanding of the\n                    composition, organization and temporal dynamics of the wine\n                    microbiota, the relative and absolute bacterial wine\n                    microbiota composition during the first week of\n                    fermentation was determined, including distinct red and\n                    white wine cultivars, by 16S rRNA gene amplicon sequencing.",
+      "CENTER_PROJECT_NAME": "Wine microbiota analysis during\n                    fermentation",
+      "STUDY_DESCRIPTION": "In order to improve the understanding of the\n                    composition, organization and temporal dynamics of the wine\n                    microbiota, the relative and absolute bacterial wine\n                    microbiota composition during the first week of\n                    fermentation was determined, including distinct red and\n                    white wine cultivars, by 16S rRNA gene amplicon sequencing."
+    },
+    "STUDY_ATTRIBUTES": {
+      "STUDY_ATTRIBUTE": [
+        {
+          "TAG": "ENA-FIRST-PUBLIC",
+          "VALUE": "2020-05-31"
+        },
+        {
+          "TAG": "ENA-LAST-UPDATE",
+          "VALUE": "2020-03-04"
+        }
+      ]
+    }
+  },
+  "SAMPLE": {
+    "@accession": "ERS4372624",
+    "@alias": "BAC1.D1.0.32A",
+    "@center_name": "UNIVERSITY OF HOHENHEIM",
+    "IDENTIFIERS": {
+      "PRIMARY_ID": "ERS4372624",
+      "EXTERNAL_ID": {
+        "@namespace": "BioSample",
+        "#text": "SAMEA6608408"
+      }
+    },
+    "TITLE": "Vitis vinifera",
+    "SAMPLE_NAME": {
+      "TAXON_ID": "29760",
+      "SCIENTIFIC_NAME": "Vitis vinifera",
+      "COMMON_NAME": "wine grape"
+    },
+    "SAMPLE_ATTRIBUTES": {
+      "SAMPLE_ATTRIBUTE": [
+        {
+          "TAG": "environment (biome)",
+          "VALUE": "berry plant"
+        },
+        {
+          "TAG": "geographic location (country and/or sea)",
+          "VALUE": "Germany"
+        },
+        {
+          "TAG": "sample storage temperature",
+          "VALUE": "-80",
+          "UNITS": "°C"
+        }
+      ]
+    }
+  },
+  "Pool": {
+    "Member": {
+      "@member_name": "",
+      "@accession": "ERS4372624",
+      "@sample_name": "BAC1.D1.0.32A",
+      "@sample_title": "Vitis vinifera",
+      "@spots": "39323",
+      "@bases": "11552099",
+      "@tax_id": "29760",
+      "@organism": "Vitis vinifera",
+      "IDENTIFIERS": {
+        "PRIMARY_ID": "ERS4372624",
+        "EXTERNAL_ID": {
+          "@namespace": "BioSample",
+          "#text": "SAMEA6608408"
+        }
+      }
+    }
+  },
+  "RUN_SET": {
+    "RUN": {
+      "@accession": "FAKEID1",
+      "@alias": "ena-RUN-UNIVERSITY OF HOHENHEIM-06-03-2020-13:37:12:076-1",
+      "@center_name": "UNIVERSITY OF HOHENHEIM",
+      "@total_spots": "39323",
+      "@total_bases": "11552099",
+      "@size": "3914295",
+      "@load_done": "true",
+      "@published": "2020-06-01 17:54:43",
+      "@is_public": "true",
+      "@cluster_name": "public",
+      "@static_data_available": "1",
+      "IDENTIFIERS": {
+        "PRIMARY_ID": "FAKEID1"
+      },
+      "TITLE": "Illumina MiSeq sequencing",
+      "EXPERIMENT_REF": {
+        "@accession": "ERX3980916",
+        "IDENTIFIERS": {
+          "PRIMARY_ID": "ERX3980916"
+        }
+      },
+      "RUN_ATTRIBUTES": {
+        "RUN_ATTRIBUTE": [
+          {
+            "TAG": "ENA-FIRST-PUBLIC",
+            "VALUE": "2020-05-31"
+          },
+          {
+            "TAG": "ENA-LAST-UPDATE",
+            "VALUE": "2020-03-06"
+          }
+        ]
+      },
+      "Pool": {
+        "Member": {
+          "@member_name": "",
+          "@accession": "ERS4372624",
+          "@sample_name": "BAC1.D1.0.32A",
+          "@sample_title": "Vitis vinifera",
+          "@spots": "39323",
+          "@bases": "11552099",
+          "@tax_id": "29760",
+          "@organism": "Vitis vinifera",
+          "IDENTIFIERS": {
+            "PRIMARY_ID": "ERS4372624",
+            "EXTERNAL_ID": {
+              "@namespace": "BioSample",
+              "#text": "SAMEA6608408"
+            }
+          }
+        }
+      },
+      "SRAFiles": {
+        "SRAFile": {
+          "@cluster": "public",
+          "@filename": "FAKEID1",
+          "@url": "https://sra-download.ncbi.nlm.nih.gov/traces/era16/ERR/ERR3978/FAKEID1",
+          "@size": "3915680",
+          "@date": "2020-06-01 19:51:45",
+          "@md5": "d92e4c21e26e5f2bd2cdaf56cfcfeaa0",
+          "@semantic_name": "run",
+          "@supertype": "Primary ETL",
+          "@sratoolkit": "1",
+          "Alternatives": [
+            {
+              "@url": "https://sra-download.ncbi.nlm.nih.gov/traces/era16/ERR/ERR3978/FAKEID1",
+              "@free_egress": "worldwide",
+              "@access_type": "anonymous",
+              "@org": "NCBI"
+            },
+            {
+              "@url": "https://sra-pub-run-odp.s3.amazonaws.com/sra/FAKEID1/FAKEID1",
+              "@free_egress": "worldwide",
+              "@access_type": "anonymous",
+              "@org": "AWS"
+            },
+            {
+              "@url": "gs://sra-pub-run-8/FAKEID1/FAKEID1.1",
+              "@free_egress": "gs.US",
+              "@access_type": "gcp identity",
+              "@org": "GCP"
+            }
+          ]
+        }
+      },
+      "CloudFiles": {
+        "CloudFile": [
+          {
+            "@filetype": "run",
+            "@provider": "gs",
+            "@location": "gs.US"
+          },
+          {
+            "@filetype": "run",
+            "@provider": "s3",
+            "@location": "s3.us-east-1"
+          }
+        ]
+      },
+      "Statistics": {
+        "@nreads": "1",
+        "@nspots": "39323",
+        "Read": {
+          "@index": "0",
+          "@count": "39323",
+          "@average": "293.77",
+          "@stdev": "20.23"
+        }
+      },
+      "Bases": {
+        "@cs_native": "false",
+        "@count": "11552099",
+        "Base": [
+          {
+            "@value": "A",
+            "@count": "3143257"
+          },
+          {
+            "@value": "C",
+            "@count": "2405184"
+          },
+          {
+            "@value": "G",
+            "@count": "3867631"
+          },
+          {
+            "@value": "T",
+            "@count": "2136027"
+          },
+          {
+            "@value": "N",
+            "@count": "0"
+          }
+        ]
+      }
+    }
+  }
+}

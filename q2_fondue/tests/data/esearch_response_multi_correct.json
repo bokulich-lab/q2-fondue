@@ -1,0 +1,36 @@
+{
+  "header": {
+    "type": "esearch",
+    "version": "0.3"
+  },
+  "esearchresult": {
+    "count": "2",
+    "retmax": "0",
+    "retstart": "0",
+    "idlist": [],
+    "translationset": [],
+    "translationstack": [
+      {
+        "term": "SRR000001[All Fields]",
+        "field": "All Fields",
+        "count": "1",
+        "explode": "N"
+      },
+      {
+        "term": "SRR000013[All Fields]",
+        "field": "All Fields",
+        "count": "1",
+        "explode": "N"
+      },
+      "OR",
+      {
+        "term": "ERR3978173[All Fields]",
+        "field": "All Fields",
+        "count": "1",
+        "explode": "N"
+      },
+      "OR"
+    ],
+    "querytranslation": "SRR000001[All Fields] OR SRR000013[All Fields] OR ERR3978173[All Fields]"
+  }
+}

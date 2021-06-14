@@ -1,0 +1,297 @@
+<?xml version="1.0"  ?>
+<EXPERIMENT_PACKAGE_SET>
+    <EXPERIMENT_PACKAGE>
+        <EXPERIMENT accession="ERX3980916"
+                    alias="ena-EXPERIMENT-UNIVERSITY OF HOHENHEIM-06-03-2020-13:37:12:076-1"
+                    center_name="UNIVERSITY OF HOHENHEIM">
+            <IDENTIFIERS>
+                <PRIMARY_ID>ERX3980916</PRIMARY_ID>
+            </IDENTIFIERS>
+            <TITLE>Illumina MiSeq sequencing</TITLE>
+            <STUDY_REF accession="ERP120343">
+                <IDENTIFIERS>
+                    <PRIMARY_ID>ERP120343</PRIMARY_ID>
+                    <EXTERNAL_ID namespace="BioProject">PRJEB37054
+                    </EXTERNAL_ID>
+                </IDENTIFIERS>
+            </STUDY_REF>
+            <DESIGN>
+                <DESIGN_DESCRIPTION/>
+                <SAMPLE_DESCRIPTOR accession="ERS4372624">
+                    <IDENTIFIERS>
+                        <PRIMARY_ID>ERS4372624</PRIMARY_ID>
+                        <EXTERNAL_ID namespace="BioSample">SAMEA6608408
+                        </EXTERNAL_ID>
+                    </IDENTIFIERS>
+                </SAMPLE_DESCRIPTOR>
+                <LIBRARY_DESCRIPTOR>
+                    <LIBRARY_NAME>unspecified</LIBRARY_NAME>
+                    <LIBRARY_STRATEGY>AMPLICON</LIBRARY_STRATEGY>
+                    <LIBRARY_SOURCE>METAGENOMIC</LIBRARY_SOURCE>
+                    <LIBRARY_SELECTION>PCR</LIBRARY_SELECTION>
+                    <LIBRARY_LAYOUT>
+                        <SINGLE/>
+                    </LIBRARY_LAYOUT>
+                </LIBRARY_DESCRIPTOR>
+            </DESIGN>
+            <PLATFORM>
+                <ILLUMINA>
+                    <INSTRUMENT_MODEL>Illumina MiSeq</INSTRUMENT_MODEL>
+                </ILLUMINA>
+            </PLATFORM>
+        </EXPERIMENT>
+        <SUBMISSION accession="ERA2402167"
+                    alias="ena-SUBMISSION-UNIVERSITY OF HOHENHEIM-06-03-2020-13:27:09:756-1"
+                    center_name="UNIVERSITY OF HOHENHEIM"
+                    lab_name="European Nucleotide Archive">
+            <IDENTIFIERS>
+                <PRIMARY_ID>ERA2402167</PRIMARY_ID>
+            </IDENTIFIERS>
+            <TITLE>Submitted by UNIVERSITY OF HOHENHEIM on 06-MAR-2020</TITLE>
+        </SUBMISSION>
+        <Organization type="center">
+            <Name abbr="University of Hohenheim">University of Hohenheim</Name>
+        </Organization>
+        <STUDY accession="ERP120343"
+               alias="ena-STUDY-UNIVERSITY OF HOHENHEIM-04-03-2020-12:54:47:240-944"
+               center_name="UNIVERSITY OF HOHENHEIM">
+            <IDENTIFIERS>
+                <PRIMARY_ID>ERP120343</PRIMARY_ID>
+                <EXTERNAL_ID namespace="BioProject">PRJEB37054</EXTERNAL_ID>
+            </IDENTIFIERS>
+            <DESCRIPTOR>
+                <STUDY_TITLE>The microbial load, diversity and composition of
+                    the wine microbiota is affected by wine type and
+                    environmental-stress factors
+                </STUDY_TITLE>
+                <STUDY_TYPE existing_study_type="Other"/>
+                <STUDY_ABSTRACT>In order to improve the understanding of the
+                    composition, organization and temporal dynamics of the wine
+                    microbiota, the relative and absolute bacterial wine
+                    microbiota composition during the first week of
+                    fermentation was determined, including distinct red and
+                    white wine cultivars, by 16S rRNA gene amplicon sequencing.
+                </STUDY_ABSTRACT>
+                <CENTER_PROJECT_NAME>Wine microbiota analysis during
+                    fermentation
+                </CENTER_PROJECT_NAME>
+                <STUDY_DESCRIPTION>In order to improve the understanding of the
+                    composition, organization and temporal dynamics of the wine
+                    microbiota, the relative and absolute bacterial wine
+                    microbiota composition during the first week of
+                    fermentation was determined, including distinct red and
+                    white wine cultivars, by 16S rRNA gene amplicon sequencing.
+                </STUDY_DESCRIPTION>
+            </DESCRIPTOR>
+            <STUDY_ATTRIBUTES>
+                <STUDY_ATTRIBUTE>
+                    <TAG>ENA-FIRST-PUBLIC</TAG>
+                    <VALUE>2020-05-31</VALUE>
+                </STUDY_ATTRIBUTE>
+                <STUDY_ATTRIBUTE>
+                    <TAG>ENA-LAST-UPDATE</TAG>
+                    <VALUE>2020-03-04</VALUE>
+                </STUDY_ATTRIBUTE>
+            </STUDY_ATTRIBUTES>
+        </STUDY>
+        <SAMPLE accession="ERS4372624" alias="BAC1.D1.0.32A"
+                center_name="UNIVERSITY OF HOHENHEIM">
+            <IDENTIFIERS>
+                <PRIMARY_ID>ERS4372624</PRIMARY_ID>
+                <EXTERNAL_ID namespace="BioSample">SAMEA6608408</EXTERNAL_ID>
+            </IDENTIFIERS>
+            <TITLE>Vitis vinifera</TITLE>
+            <SAMPLE_NAME>
+                <TAXON_ID>29760</TAXON_ID>
+                <SCIENTIFIC_NAME>Vitis vinifera</SCIENTIFIC_NAME>
+                <COMMON_NAME>wine grape</COMMON_NAME>
+            </SAMPLE_NAME>
+            <SAMPLE_ATTRIBUTES>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>amount or size of sample collected</TAG>
+                    <VALUE>50</VALUE>
+                    <UNITS>L</UNITS>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>collection date</TAG>
+                    <VALUE>2015-09-28</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>collection day</TAG>
+                    <VALUE>1</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>collection hours</TAG>
+                    <VALUE>0</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>environment (biome)</TAG>
+                    <VALUE>berry plant</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>environment (feature)</TAG>
+                    <VALUE>grape plant</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>environment (material)</TAG>
+                    <VALUE>wine must</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>geographic location (country and/or sea)</TAG>
+                    <VALUE>Germany</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>geographic location (latitude)</TAG>
+                    <VALUE>48.71 N</VALUE>
+                    <UNITS>DD</UNITS>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>geographic location (longitude)</TAG>
+                    <VALUE>9.12 E</VALUE>
+                    <UNITS>DD</UNITS>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>investigation type</TAG>
+                    <VALUE>metagenome</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>multiplex identifiers</TAG>
+                    <VALUE>TAGATCGCTCGCCTTA</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>pcr primers</TAG>
+                    <VALUE>GTGCCAGCMGCCGCGGTAAGGACTACHVGGGTWTCTAAT</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>plant-associated environmental package</TAG>
+                    <VALUE>plant-associated</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>project name</TAG>
+                    <VALUE>wine must microbiota analysis during fermentation
+                    </VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>sample storage temperature</TAG>
+                    <VALUE>-80</VALUE>
+                    <UNITS>°C</UNITS>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>sample volume or weight for DNA extraction</TAG>
+                    <VALUE>0.5</VALUE>
+                    <UNITS>g</UNITS>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>sequencing method</TAG>
+                    <VALUE>Illumina MiSeq</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>subspecific genetic lineage</TAG>
+                    <VALUE>Bacchus1</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>target subfragment</TAG>
+                    <VALUE>16S rRNA gene</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>ENA-FIRST-PUBLIC</TAG>
+                    <VALUE>2020-05-31</VALUE>
+                </SAMPLE_ATTRIBUTE>
+                <SAMPLE_ATTRIBUTE>
+                    <TAG>ENA-LAST-UPDATE</TAG>
+                    <VALUE>2020-03-06</VALUE>
+                </SAMPLE_ATTRIBUTE>
+            </SAMPLE_ATTRIBUTES>
+        </SAMPLE>
+        <Pool>
+            <Member member_name="" accession="ERS4372624"
+                    sample_name="BAC1.D1.0.32A" sample_title="Vitis vinifera"
+                    spots="39323" bases="11552099" tax_id="29760"
+                    organism="Vitis vinifera">
+                <IDENTIFIERS>
+                    <PRIMARY_ID>ERS4372624</PRIMARY_ID>
+                    <EXTERNAL_ID namespace="BioSample">SAMEA6608408
+                    </EXTERNAL_ID>
+                </IDENTIFIERS>
+            </Member>
+        </Pool>
+        <RUN_SET>
+            <RUN accession="FAKEID1"
+                 alias="ena-RUN-UNIVERSITY OF HOHENHEIM-06-03-2020-13:37:12:076-1"
+                 center_name="UNIVERSITY OF HOHENHEIM" total_spots="39323"
+                 total_bases="11552099" size="3914295" load_done="true"
+                 published="2020-06-01 17:54:43" is_public="true"
+                 cluster_name="public" static_data_available="1">
+                <IDENTIFIERS>
+                    <PRIMARY_ID>FAKEID1</PRIMARY_ID>
+                </IDENTIFIERS>
+                <TITLE>Illumina MiSeq sequencing</TITLE>
+                <EXPERIMENT_REF accession="ERX3980916">
+                    <IDENTIFIERS>
+                        <PRIMARY_ID>ERX3980916</PRIMARY_ID>
+                    </IDENTIFIERS>
+                </EXPERIMENT_REF>
+                <RUN_ATTRIBUTES>
+                    <RUN_ATTRIBUTE>
+                        <TAG>ENA-FIRST-PUBLIC</TAG>
+                        <VALUE>2020-05-31</VALUE>
+                    </RUN_ATTRIBUTE>
+                    <RUN_ATTRIBUTE>
+                        <TAG>ENA-LAST-UPDATE</TAG>
+                        <VALUE>2020-03-06</VALUE>
+                    </RUN_ATTRIBUTE>
+                </RUN_ATTRIBUTES>
+                <Pool>
+                    <Member member_name="" accession="ERS4372624"
+                            sample_name="BAC1.D1.0.32A"
+                            sample_title="Vitis vinifera" spots="39323"
+                            bases="11552099" tax_id="29760"
+                            organism="Vitis vinifera">
+                        <IDENTIFIERS>
+                            <PRIMARY_ID>ERS4372624</PRIMARY_ID>
+                            <EXTERNAL_ID namespace="BioSample">SAMEA6608408
+                            </EXTERNAL_ID>
+                        </IDENTIFIERS>
+                    </Member>
+                </Pool>
+                <SRAFiles>
+                    <SRAFile cluster="public" filename="FAKEID1"
+                             url="https://sra-download.ncbi.nlm.nih.gov/traces/era16/ERR/ERR3978/FAKEID1"
+                             size="3915680" date="2020-06-01 19:51:45"
+                             md5="d92e4c21e26e5f2bd2cdaf56cfcfeaa0"
+                             semantic_name="run" supertype="Primary ETL"
+                             sratoolkit="1">
+                        <Alternatives
+                                url="https://sra-download.ncbi.nlm.nih.gov/traces/era16/ERR/ERR3978/FAKEID1"
+                                free_egress="worldwide" access_type="anonymous"
+                                org="NCBI"/>
+                        <Alternatives
+                                url="https://sra-pub-run-odp.s3.amazonaws.com/sra/FAKEID1/FAKEID1"
+                                free_egress="worldwide" access_type="anonymous"
+                                org="AWS"/>
+                        <Alternatives
+                                url="gs://sra-pub-run-8/FAKEID1/FAKEID1.1"
+                                free_egress="gs.US" access_type="gcp identity"
+                                org="GCP"/>
+                    </SRAFile>
+                </SRAFiles>
+                <CloudFiles>
+                    <CloudFile filetype="run" provider="gs" location="gs.US"/>
+                    <CloudFile filetype="run" provider="s3"
+                               location="s3.us-east-1"/>
+                </CloudFiles>
+                <Statistics nreads="1" nspots="39323">
+                    <Read index="0" count="39323" average="293.77"
+                          stdev="20.23"/>
+                </Statistics>
+                <Bases cs_native="false" count="11552099">
+                    <Base value="A" count="3143257"/>
+                    <Base value="C" count="2405184"/>
+                    <Base value="G" count="3867631"/>
+                    <Base value="T" count="2136027"/>
+                    <Base value="N" count="0"/>
+                </Bases>
+            </RUN>
+        </RUN_SET>
+    </EXPERIMENT_PACKAGE>
+</EXPERIMENT_PACKAGE_SET>
