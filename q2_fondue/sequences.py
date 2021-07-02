@@ -81,7 +81,7 @@ def _process_downloaded_sequences(output_dir):
     # rename all files to casava format
     for filename in os.listdir(output_dir):
         acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)  
+        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
         # todo: adjust to R2 if double-reads
 
         os.rename(os.path.join(output_dir, filename),
