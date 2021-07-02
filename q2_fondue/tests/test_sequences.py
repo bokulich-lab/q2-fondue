@@ -14,23 +14,24 @@ from q2_types.per_sample_sequences import (
     FastqGzFormat)
 
 
-class TestSequenceFetching(TestPluginBase):
+class SequenceTests(TestPluginBase):
+    # class is inspired by class SubsampleTest in
+    # q2_demux.tests.test_subsample
     package = 'q2_fondue.tests'
 
-    def setUp(self):
-        super().setUp()
-
-    def test_method_get_single_sequences(self):
-        # todo: test currently dependent on this one accession id: ERR3978173
-        # todo: check how to adjust test to loose dependency
-        study_ids = ['ERR3978173']
-        single_read_output = get_sequences(study_ids)
-
-        single_samples = single_read_output.sequences.iter_views(FastqGzFormat)
+    def _validate_sequences_in_samples(self, read_output):
         nb_obs_samples = 0
+        ls_seq_length = []
+        samples = read_output.sequences.iter_views(FastqGzFormat)
 
-        for (_, file_loc) in single_samples:
-            self.assertTrue('R1' in str(file_loc))
+        # iterate over each sample
+        for (_, file_loc) in samples:
+            # # Process forward only if `forward==True`
+            # if 'R1' in str(file_loc):
+            #     seq_type = 'single'
+            # # Process rev only if `forward==False`
+            # if 'R2' in str(file_loc):
+            #     seq_type = 'double'
 
             # assemble sequences
             nb_obs_samples += 1
@@ -39,9 +40,26 @@ class TestSequenceFetching(TestPluginBase):
             # Assemble expected sequences, per-sample
             file_seqs = [r for r in itertools.zip_longest(*[file_fh] * 4)]
 
-            self.assertTrue(len(file_seqs) == 39323)
+            ls_seq_length.append(len(file_seqs))
+
+        return nb_obs_samples, ls_seq_length
+
+
+class TestSequenceFetching(SequenceTests):
+    def setUp(self):
+        super().setUp()
+
+    def test_method_get_single_sequences(self):
+        # test currently dependent on this one accession id: ERR3978173
+        # todo: check how to adjust test to lose this dependency
+        study_ids = ['ERR3978173']
+        single_read_output = get_sequences(study_ids)
+
+        nb_obs_samples, ls_seq_length = self._validate_sequences_in_samples(
+            single_read_output)
 
         self.assertTrue(nb_obs_samples == 1)
+        self.assertTrue(ls_seq_length == [39323])
 
     def test_method_get_single_and_paired_sequences(self):
         # ! currently only single reads supported
