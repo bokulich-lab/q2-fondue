@@ -17,12 +17,13 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 
 # todo move below functions starting with '_' to util.py
+# todo rename study-ids to sample-ids
 
 
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
                      general_retries: int):
     """
-    Helper function running fasterq-dump 'general_retries' times
+    Helper function running fasterq-dump `general_retries` times
     """
 
     print("Downloading sequences of study: {}...".format(acc))
@@ -80,7 +81,8 @@ def _process_downloaded_sequences(output_dir):
     # rename all files to casava format
     for filename in os.listdir(output_dir):
         acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
+        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)  
+        # todo: adjust to R2 if double-reads
 
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
