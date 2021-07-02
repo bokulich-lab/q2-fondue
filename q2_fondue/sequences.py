@@ -61,31 +61,48 @@ def _process_downloaded_sequences(output_dir):
     according to casava file format
     """
 
-    # remove paired sequence reads in output_dir
-    ls_seq_paired_1 = glob.glob(os.path.join(
-        output_dir, '*_1.fastq'), recursive=True)
-    ls_seq_paired_2 = glob.glob(os.path.join(
-        output_dir, '*_2.fastq'), recursive=True)
+    # # remove paired sequence reads in output_dir
+    # ls_seq_paired_1 = glob.glob(os.path.join(
+    #     output_dir, '*_1.fastq'), recursive=True)
+    # ls_seq_paired_2 = glob.glob(os.path.join(
+    #     output_dir, '*_2.fastq'), recursive=True)
 
-    for seq_file in (ls_seq_paired_1 + ls_seq_paired_2):
-        print('Paired end reads are not supported yet, '
-              'so {} will not be processed any further.'
-              .format(seq_file))
-        os.remove(seq_file)
+    # for seq_file in (ls_seq_paired_1 + ls_seq_paired_2):
+    #     print('Paired end reads are not supported yet, '
+    #           'so {} will not be processed any further.'
+    #           .format(seq_file))
+    #     os.remove(seq_file)
 
     # gzip all remaining files in folder
     cmd_gzip = ["gzip",
                 "-r", output_dir]
     run(cmd_gzip, text=True, capture_output=True)
 
-    # rename all files to casava format
+    # rename all files to casava format & save single and paired
+    # file names to list
+    ls_single, ls_paired = [], []
+
     for filename in os.listdir(output_dir):
-        acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-        new_name = '%s_00_L001_R%d_001.fastq.gz' % (acc, 1)
-        # todo: adjust to R2 if double-reads
+        if filename.endswith('_1.fastq.gz'):
+            # double read _1
+            acc = re.search(r'(.*)_1\.fastq\.gz$', filename).group(1)
+            new_name = '%s_00_L001_R2_001.fastq.gz' % (acc)
+            ls_paired.append(new_name)
+        elif filename.endswith('_2.fastq.gz'):
+            # double read _2
+            acc = re.search(r'(.*)_2\.fastq\.gz$', filename).group(1)
+            new_name = '%s_00_L001_R2_002.fastq.gz' % (acc)
+            ls_paired.append(new_name)
+        else:
+            # single reads
+            acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
+            new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+            ls_single.append(new_name)
 
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
+
+    return ls_single, ls_paired
 
 
 def _read_fastq_seqs(filepath):
@@ -99,18 +116,21 @@ def _read_fastq_seqs(filepath):
                qual.strip())
 
 
-def _write2casava_dir(tmpdirname, casava_result_path):
+def _write2casava_dir_single(tmpdirname, casava_result_path,
+                             ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
+    in ls_files_2_consider
     from tmpdirname to casava_result_path
     """
     for filename in os.listdir(tmpdirname):
-        fwd_path_in = os.path.join(tmpdirname, filename)
-        fwd_path_out = str(casava_result_path.path / filename)
+        if filename in ls_files_2_consider:
+            fwd_path_in = os.path.join(tmpdirname, filename)
+            fwd_path_out = str(casava_result_path.path / filename)
 
-        with gzip.open(str(fwd_path_out), mode='w') as fwd:
-            for fwd_rec in _read_fastq_seqs(fwd_path_in):
-                fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
+            with gzip.open(str(fwd_path_out), mode='w') as fwd:
+                for fwd_rec in _read_fastq_seqs(fwd_path_in):
+                    fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
 
 def get_sequences(study_ids: list,
@@ -141,9 +161,11 @@ def get_sequences(study_ids: list,
                 continue
 
         # processing downloaded files
-        _process_downloaded_sequences(tmpdirname)
-
+        ls_single_files, ls_paired_files = _process_downloaded_sequences(
+            tmpdirname)
         # write downloaded seqs from tmp to casava dir
-        _write2casava_dir(tmpdirname, casava_out)
+        if len(ls_single_files) > 0:
+            _write2casava_dir_single(tmpdirname, casava_out, ls_single_files)
+        # todo: write also paired sequences to file
 
     return casava_out

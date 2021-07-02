@@ -15,7 +15,8 @@ from q2_fondue.metadata import get_metadata
 from q2_fondue.types._format import SRAMetadataFormat, SRAMetadataDirFmt
 from q2_fondue.types._type import SRAMetadata
 from q2_types.sample_data import SampleData
-from q2_types.per_sample_sequences import SequencesWithQuality
+from q2_types.per_sample_sequences import (
+    SequencesWithQuality, PairedEndSequencesWithQuality)
 from q2_fondue.sequences import get_sequences
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -73,7 +74,8 @@ plugin.methods.register_function(
         'general_retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
-    outputs=[('sequences', SampleData[SequencesWithQuality])],
+    outputs=[('sequences', SampleData[SequencesWithQuality |
+                                      PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
         'study_ids': 'A list of study IDs for which the sequences should '
