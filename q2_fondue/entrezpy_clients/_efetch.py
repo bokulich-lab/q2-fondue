@@ -188,14 +188,14 @@ class EFetchResult(EutilsResult):
         if bioproject and bioproject['@namespace'] == 'BioProject':
             bioproject_id = bioproject['#text']
         elif not bioproject:  # if not found, try elsewhere:
-            study_ids = attributes_dict[
+            sample_ids = attributes_dict[
                 'STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
-            if isinstance(study_ids, list):
+            if isinstance(sample_ids, list):
                 bioproject_id = next(
-                    (x for x in study_ids if x['@namespace'] == 'BioProject')
+                    (x for x in sample_ids if x['@namespace'] == 'BioProject')
                 ).get('#text')
             else:
-                bioproject_id = study_ids.get('#text')
+                bioproject_id = sample_ids.get('#text')
         else:
             bioproject_id = None
 

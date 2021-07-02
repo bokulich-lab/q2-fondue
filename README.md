@@ -44,8 +44,21 @@ where:
 The resulting artifact will contain a TSV file containing all the available metadata fields
 for all of the requested runs.
 
-## Useful resources:
-* List of all available NCBI databases: 
-  - https://www.ncbi.nlm.nih.gov/search/
-  - table1 in https://academic.oup.com/nar/article/45/D1/D12/2605705
-* EntrezPy: https://entrezpy.readthedocs.io/en/master/
+### Fetching sequences
+To get single-read sequences associated with a number of runs, execute this command:
+```shell
+qiime fondue get-single-read-sequences \
+              --p-sample-ids <id1> <id2> <id3> ... \
+              --o-sequences output_dir 
+```
+To get double-read sequences associated with a number of runs, execute this command:
+```shell
+qiime fondue get-double-read-sequences \
+              --p-sample-ids <id1> <id2> <id3> ... \
+              --o-sequences output_dir 
+```
+where:
+- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--o-sequences` is a list of accession numbers for all of the runs
+
+The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
