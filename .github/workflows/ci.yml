@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - main
-      - issue-2-get-sequences
 
 jobs:
   lint:
