@@ -39,9 +39,6 @@ class SequenceTests(TestPluginBase):
 
 
 class TestSequenceFetching(SequenceTests):
-    def setUp(self):
-        super().setUp()
-
     def test_method_get_single_sequences(self):
         # test currently dependent on this one accession id: ERR3978173
         # ! other less ID dependent ideas are welcome

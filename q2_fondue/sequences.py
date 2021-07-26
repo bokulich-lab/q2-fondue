@@ -12,20 +12,18 @@ import re
 import gzip
 import itertools
 import tempfile
-from subprocess import run
+from subprocess import run, CalledProcessError
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 
 
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
-                     general_retries: int):
+                     retries: int):
     """
     Helper function running fasterq-dump `general_retries` times
     """
 
-    print("Downloading sequences of study: {}...".format(acc))
-
-    retries = general_retries
+    print("Downloading sequences of sample: {}...".format(acc))
 
     acc_fastq_single = os.path.join(output_dir,
                                     acc + '.fastq')
@@ -85,7 +83,7 @@ def _process_single_sequences(output_dir):
         output_dir, '*_2.fastq'), recursive=True)
 
     for seq_file in (ls_seq_paired_1 + ls_seq_paired_2):
-        print('Paired reads are processed with another action '
+        print('Paired reads should be processed with another action '
               '"get_paired_sequences" so {} will not be processed '
               'any further.'
               .format(seq_file))
@@ -94,7 +92,10 @@ def _process_single_sequences(output_dir):
     # gzip all remaining files in folder
     cmd_gzip = ["gzip",
                 "-r", output_dir]
-    run(cmd_gzip, text=True, capture_output=True)
+    try:
+        run(cmd_gzip, text=True, check=True, capture_output=True)
+    except CalledProcessError as e:
+        print(e.stderr)
 
     # rename all files to casava format
     for filename in os.listdir(output_dir):
@@ -119,7 +120,7 @@ def _process_double_sequences(output_dir):
     ls_single = list(set(ls_pot_single1).intersection(ls_pot_single2))
 
     for seq_file in ls_single:
-        print('Single reads are processed with another action '
+        print('Single reads should be processed with another action '
               '"get_single_sequences" so {} will not be processed '
               'any further.'
               .format(seq_file))
@@ -128,7 +129,10 @@ def _process_double_sequences(output_dir):
     # gzip all remaining files in folder
     cmd_gzip = ["gzip",
                 "-r", output_dir]
-    run(cmd_gzip, text=True, capture_output=True)
+    try:
+        run(cmd_gzip, text=True, check=True, capture_output=True)
+    except CalledProcessError as e:
+        print(e.stderr)
 
     # rename all files to casava format
     for filename in os.listdir(output_dir):
