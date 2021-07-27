@@ -7,12 +7,11 @@
 # ----------------------------------------------------------------------------
 
 import os
-import glob
 import re
 import gzip
 import itertools
 import tempfile
-from subprocess import run, CalledProcessError
+from subprocess import run
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 
@@ -69,86 +68,46 @@ def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
             continue
 
 
-def _process_single_sequences(output_dir):
+def _process_downloaded_sequences(output_dir):
     """
-    Helper function that removes all double-read sequences,
-    gzips and renames remaining sequences
-    according to casava file format.
+    Helper function that renames single-read and
+    paired-end sequences according to casava file format
+    and outputs list of single-read and paired-end sequence
+    filenames.
     """
-
-    # remove paired sequence reads in output_dir
-    ls_seq_paired_1 = glob.glob(os.path.join(
-        output_dir, '*_1.fastq'), recursive=True)
-    ls_seq_paired_2 = glob.glob(os.path.join(
-        output_dir, '*_2.fastq'), recursive=True)
-
-    for seq_file in (ls_seq_paired_1 + ls_seq_paired_2):
-        print('Paired reads should be processed with another action '
-              '"get_paired_sequences" so {} will not be processed '
-              'any further.'
-              .format(seq_file))
-        os.remove(seq_file)
 
     # gzip all remaining files in folder
+    # todo: verify if gzip can be left out
     cmd_gzip = ["gzip",
                 "-r", output_dir]
-    try:
-        run(cmd_gzip, text=True, check=True, capture_output=True)
-    except CalledProcessError as e:
-        print(e.stderr)
+    # todo: try, except
+    run(cmd_gzip, text=True, capture_output=True)
 
-    # rename all files to casava format
-    for filename in os.listdir(output_dir):
-        acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-        new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+    # rename all files to casava format & save single and paired
+    # file names to list
+    ls_single, ls_paired = [], []
 
-        os.rename(os.path.join(output_dir, filename),
-                  os.path.join(output_dir, new_name))
-
-
-def _process_double_sequences(output_dir):
-    """
-    Helper function that removes all single-read sequences,
-    gzips and renames remaining sequences
-    according to casava file format.
-    """
-    # remove single sequence reads in output_dir
-    ls_pot_single1 = glob.glob(os.path.join(
-        output_dir, '!*_1.fastq'), recursive=True)
-    ls_pot_single2 = glob.glob(os.path.join(
-        output_dir, '!*_2.fastq'), recursive=True)
-    ls_single = list(set(ls_pot_single1).intersection(ls_pot_single2))
-
-    for seq_file in ls_single:
-        print('Single reads should be processed with another action '
-              '"get_single_sequences" so {} will not be processed '
-              'any further.'
-              .format(seq_file))
-        os.remove(seq_file)
-
-    # gzip all remaining files in folder
-    cmd_gzip = ["gzip",
-                "-r", output_dir]
-    try:
-        run(cmd_gzip, text=True, check=True, capture_output=True)
-    except CalledProcessError as e:
-        print(e.stderr)
-
-    # rename all files to casava format
     for filename in os.listdir(output_dir):
         if filename.endswith('_1.fastq.gz'):
-            # forward read _1
-            # todo check that fasterq-dump _1 is actual forward
+            # double read _1
             acc = re.search(r'(.*)_1\.fastq\.gz$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+            ls_paired.append(new_name)
         elif filename.endswith('_2.fastq.gz'):
-            # reverse read _2
-            # todo check that fasterq-dump _1 is actual reverse
+            # double read _2
             acc = re.search(r'(.*)_2\.fastq\.gz$', filename).group(1)
             new_name = '%s_00_L001_R2_001.fastq.gz' % (acc)
+            ls_paired.append(new_name)
+        else:
+            # single reads
+            acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
+            new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+            ls_single.append(new_name)
 
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
+
+    return ls_single, ls_paired
 
 
 def _read_fastq_seqs(filepath):
@@ -162,7 +121,8 @@ def _read_fastq_seqs(filepath):
                qual.strip())
 
 
-def _write2casava_dir_single(tmpdirname, casava_result_path):
+def _write2casava_dir_single(tmpdirname, casava_result_path,
+                             ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
     from tmpdirname to casava_result_path following single
@@ -170,15 +130,17 @@ def _write2casava_dir_single(tmpdirname, casava_result_path):
     """
     # Edited from original in: q2_demux._subsample.subsample_single
     for filename in os.listdir(tmpdirname):
-        fwd_path_in = os.path.join(tmpdirname, filename)
-        fwd_path_out = str(casava_result_path.path / filename)
+        if filename in ls_files_2_consider:
+            fwd_path_in = os.path.join(tmpdirname, filename)
+            fwd_path_out = str(casava_result_path.path / filename)
 
-        with gzip.open(str(fwd_path_out), mode='w') as fwd:
-            for fwd_rec in _read_fastq_seqs(fwd_path_in):
-                fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
+            with gzip.open(str(fwd_path_out), mode='w') as fwd:
+                for fwd_rec in _read_fastq_seqs(fwd_path_in):
+                    fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
 
-def _write2casava_dir_double(tmpdirname, casava_result_path):
+def _write2casava_dir_double(tmpdirname, casava_result_path,
+                             ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
     from tmpdirname to casava_result_path following double
@@ -186,7 +148,6 @@ def _write2casava_dir_double(tmpdirname, casava_result_path):
     """
     # Edited from original in: q2_demux._subsample.subsample_paired
     # ensure correct order of file names:
-    ls_files_2_consider = os.listdir(tmpdirname)
     ls_files_sorted = sorted(ls_files_2_consider)
 
     # iterate and save
@@ -208,17 +169,19 @@ def _write2casava_dir_double(tmpdirname, casava_result_path):
                     rev.write(('\n'.join(rev_rec) + '\n').encode('utf-8'))
 
 
-def get_single_read_sequences(
+def get_sequences(
         sample_ids: list,
         general_retries: int = 2,
         threads:
-        int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt):
+        int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt,
+                     CasavaOneEightSingleLanePerSampleDirFmt):
     """
-    Fetches single-read sequences based on provided accession IDs.
+    Fetches single-read and paired-end sequences based on provided
+    accession IDs.
 
-    Function uses SRA-toolkit fasterq-dump to get single-read sequences
-    of accessions ID. It supports mulitple tries (`general_retries`) and
-    can use multiple `threads`.
+    Function uses SRA-toolkit fasterq-dump to get single-read and paired-end
+    sequences of accession IDs. It supports multiple tries (`general_retries`)
+    and can use multiple `threads`.
 
     Args:
         sample_ids (List[str]): List of all sample IDs to be fetched.
@@ -226,11 +189,13 @@ def get_single_read_sequences(
         threads (int, default=6): Number of threads to be used in parallel.
 
     Returns:
-        Directory with fetched single-read sequences for provided
-        accession IDs.
-
+        Two directories with fetched single-read and paired-end sequences
+        respectively for provided accession IDs. If the provided accession IDs
+        only contain one type of sequences (single-read or paired-end) the
+        other directory is empty (with artificial ID starting with xxx_)
     """
-    casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
+    casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
+    casava_out_double = CasavaOneEightSingleLanePerSampleDirFmt()
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
@@ -238,48 +203,38 @@ def get_single_read_sequences(
                                   general_retries)
 
         # processing downloaded files
-        _process_single_sequences(tmpdirname)
+        ls_single_files, ls_paired_files = _process_downloaded_sequences(
+            tmpdirname)
 
-        # write downloaded seqs from tmp to casava dir
-        _write2casava_dir_single(tmpdirname, casava_out)
+        # write downloaded single-read seqs from tmp to casava dir
+        if len(ls_single_files) == 0:
+            print('No single-read sequences available for these StudyIDs')
+            # create empty CasavaDirFmt due to Q2 not supporting optional
+            # output types
+            new_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
+            path_out = str(casava_out_single.path / new_empty_name)
+            with gzip.open(str(path_out), mode='w'):
+                pass
+        else:
+            _write2casava_dir_single(tmpdirname, casava_out_single,
+                                     ls_single_files)
 
-    return casava_out
+        # write downloaded paired-end seqs from tmp to casava dir
+        if len(ls_paired_files) == 0:
+            print('No paired-end sequences available for these StudyIDs')
+            # create empty CasavaDirFmt due to Q2 not supporting optional
+            # output types
+            fwd_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
+            rev_empty_name = 'xxx_00_L001_R2_001.fastq.gz'
 
+            fwd_path_out = str(casava_out_double.path / fwd_empty_name)
+            rev_path_out = str(casava_out_double.path / rev_empty_name)
+            with gzip.open(str(fwd_path_out), mode='w'):
+                pass
+            with gzip.open(str(rev_path_out), mode='w'):
+                pass
+        else:
+            _write2casava_dir_double(tmpdirname, casava_out_double,
+                                     ls_paired_files)
 
-def get_double_read_sequences(
-        sample_ids: list,
-        general_retries: int = 2,
-        threads:
-        int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt):
-    """
-    Fetches double-read sequences based on provided accession IDs.
-
-    Function uses SRA-toolkit fasterq-dump to get double-read sequences
-    of accessions ID. It supports mulitple tries (`general_retries`) and
-    can use multiple `threads`.
-
-    Args:
-        sample_ids (List[str]): List of all sample IDs to be fetched.
-        general_retries (int, default=2): Number of retries to fetch sequences.
-        threads (int, default=6): Number of threads to be used in parallel.
-
-    Returns:
-        Directory with fetched double-read sequences for provided
-        accession IDs.
-
-    """
-    casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
-
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
-                                  general_retries)
-
-        # processing downloaded files
-        _process_double_sequences(tmpdirname)
-
-        # write downloaded seqs from tmp to casava dir
-        _write2casava_dir_double(
-            tmpdirname, casava_out)
-
-    return casava_out
+    return casava_out_single, casava_out_double
