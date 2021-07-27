@@ -50,12 +50,12 @@ To get single-read and paired-end sequences associated with a number of runs, ex
 qiime fondue get-sequences \
               --p-sample-ids <id1> <id2> <id3> ... \
               --o-single-reads output_dir_single \
-              --o-double-ends output_dir_double
+              --o-paired-ends output_dir_paired
 ```
 
 where:
 - `--p-sample-ids` is a list of accession numbers for all of the runs
 - `--o-single-reads` is the output artifact containing single-read sequences
-- `--o-double-ends` is the output artifact containing double-end sequences
+- `--o-paired-ends` is the output artifact containing paired-end sequences
 
 The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If the provided accession numbers only contain sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
