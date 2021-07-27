@@ -10,8 +10,7 @@ import gzip
 import itertools
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import FastqGzFormat
-from q2_fondue.sequences import (
-    get_single_read_sequences, get_double_read_sequences)
+from q2_fondue.sequences import get_sequences
 
 
 class SequenceTests(TestPluginBase):
@@ -37,37 +36,52 @@ class SequenceTests(TestPluginBase):
 
         return nb_obs_samples, ls_seq_length
 
+    def _validate_counts(self, single_output, paired_output,
+                         ls_exp_lengths_single, ls_exp_lengths_paired):
+        nb_samples_single, ls_seq_length_single = \
+            self._validate_sequences_in_samples(
+                single_output)
+        print(ls_seq_length_single)
+        self.assertTrue(nb_samples_single == 1)
+        self.assertTrue(ls_seq_length_single == ls_exp_lengths_single)
+
+        # test paired sequences
+        nb_samples_paired, ls_seq_length_paired = \
+            self._validate_sequences_in_samples(
+                paired_output)
+        print(ls_seq_length_paired)
+        self.assertTrue(nb_samples_paired == 2)
+        self.assertTrue(ls_seq_length_paired == ls_exp_lengths_paired)
+
 
 class TestSequenceFetching(SequenceTests):
-    def test_method_get_single_sequences(self):
+
+    def test_method_single_only(self):
         # test currently dependent on this one accession id: ERR3978173
         # ! other less ID dependent ideas are welcome
         sample_ids = ['ERR3978173']
-        single_read_output = get_single_read_sequences(sample_ids)
+        single_read_output, paired_end_output = get_sequences(sample_ids)
+        self._validate_counts(single_read_output, paired_end_output,
+                              [39323], [0, 0])
 
-        nb_obs_samples, ls_seq_length = self._validate_sequences_in_samples(
-            single_read_output)
-        self.assertTrue(nb_obs_samples == 1)
-        self.assertTrue(ls_seq_length == [39323])
+    def test_method_paired_only(self):
+        # test currently dependent on this one accession id: SRR15233931
+        # ! other less ID dependent ideas are welcome
+        sample_ids = ['SRR15233931']
+        single_read_output, paired_end_output = get_sequences(sample_ids)
+        self._validate_counts(single_read_output, paired_end_output,
+                              [0], [270510, 270510])
 
-    def test_method_get_paired_sequences(self):
+    def test_method_single_n_paired(self):
         # test currently dependent on this one accession id: SRR000001
         # ! other less ID dependent ideas are welcome
         sample_ids = ['SRR000001']
-        double_read_output = get_double_read_sequences(sample_ids)
-        nb_obs_samples, ls_seq_length = self._validate_sequences_in_samples(
-            double_read_output)
-        self.assertTrue(nb_obs_samples == 2)
-        self.assertTrue(ls_seq_length == [234944, 234944])
+        single_read_output, paired_end_output = get_sequences(sample_ids)
+        self._validate_counts(single_read_output, paired_end_output,
+                              [236041], [236041, 236041])
 
-    def test_method_invalid_accession_id_single(self):
+    def test_method_invalid_accession_id(self):
         sample_ids = ['ERR39781ab']
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
-            get_single_read_sequences(sample_ids)
-
-    def test_method_invalid_accession_id_double(self):
-        sample_ids = ['ERR39781ab']
-        with self.assertRaisesRegex(
-                ValueError, 'could not be downloaded with'):
-            get_double_read_sequences(sample_ids)
+            get_sequences(sample_ids)

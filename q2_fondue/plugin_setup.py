@@ -17,8 +17,7 @@ from q2_fondue.types._type import SRAMetadata
 from q2_types.sample_data import SampleData
 from q2_types.per_sample_sequences import (
     SequencesWithQuality, PairedEndSequencesWithQuality)
-from q2_fondue.sequences import (
-    get_single_read_sequences, get_double_read_sequences)
+from q2_fondue.sequences import get_sequences
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -68,55 +67,33 @@ plugin.methods.register_function(
 importlib.import_module('q2_fondue.types._transformer')
 
 plugin.methods.register_function(
-    function=get_single_read_sequences,
+    function=get_sequences,
     inputs={},
     parameters={
         'sample_ids': List[Str],
         'general_retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
-    outputs=[('sequences', SampleData[SequencesWithQuality])],
+    outputs=[('single_reads', SampleData[SequencesWithQuality]),
+             ('paired_ends', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
         'sample_ids': 'A list of study IDs for which the sequences should '
         'be fetched.',
-        'general_retries': 'Number of retries to fetch sequences (default:2).',
-        'threads': 'Number of threads to be used in parallel (default:6).'
+        'general_retries': 'Number of retries to fetch sequences '
+        '(default:2).',
+        'threads': 'Number of threads to be used in parallel '
+        '(default:6).'
     },
     output_descriptions={
-        'sequences': 'Artifact containing single-read fastq.gz files '
+        'single_reads': 'Artifact containing single-read fastq.gz files '
+        'for all the requested studies.',
+        'paired_ends': 'Artifact containing paired-end fastq.gz files '
         'for all the requested studies.'
     },
-    name='Fetch single-read sequences based on study ID.',
+    name='Fetch sequences based on study ID.',
     description=(
-        'Fetch single-read sequence data of all study IDs.'
-    ),
-    citations=[]
-)
-
-plugin.methods.register_function(
-    function=get_double_read_sequences,
-    inputs={},
-    parameters={
-        'sample_ids': List[Str],
-        'general_retries': Int % Range(1, None),
-        'threads': Int % Range(1, None)
-    },
-    outputs=[('sequences', SampleData[PairedEndSequencesWithQuality])],
-    input_descriptions={},
-    parameter_descriptions={
-        'sample_ids': 'A list of study IDs for which the sequences should '
-        'be fetched.',
-        'general_retries': 'Number of retries to fetch sequences (default:2).',
-        'threads': 'Number of threads to be used in parallel (default:6).'
-    },
-    output_descriptions={
-        'sequences': 'Artifact containing double-read fastq.gz files '
-        'for all the requested studies.'
-    },
-    name='Fetch double-read sequences based on study ID.',
-    description=(
-        'Fetch double-read sequence data of all study IDs.'
+        'Fetch sequence data of all study IDs.'
     ),
     citations=[]
 )

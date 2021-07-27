@@ -45,20 +45,17 @@ The resulting artifact will contain a TSV file containing all the available meta
 for all of the requested runs.
 
 ### Fetching sequences
-To get single-read sequences associated with a number of runs, execute this command:
+To get single-read and paired-end sequences associated with a number of runs, execute this command:
 ```shell
-qiime fondue get-single-read-sequences \
+qiime fondue get-sequences \
               --p-sample-ids <id1> <id2> <id3> ... \
-              --o-sequences output_dir 
+              --o-single-reads output_dir_single \
+              --o-double-ends output_dir_double
 ```
-To get double-read sequences associated with a number of runs, execute this command:
-```shell
-qiime fondue get-double-read-sequences \
-              --p-sample-ids <id1> <id2> <id3> ... \
-              --o-sequences output_dir 
-```
+
 where:
 - `--p-sample-ids` is a list of accession numbers for all of the runs
-- `--o-sequences` is a list of accession numbers for all of the runs
+- `--o-single-reads` is the output artifact containing single-read sequences
+- `--o-double-ends` is the output artifact containing double-end sequences
 
-The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
+The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If the provided accession numbers only contain sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
