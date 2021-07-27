@@ -49,6 +49,7 @@ class SequenceTests(TestPluginBase):
             self._validate_sequences_in_samples(
                 paired_output)
         self.assertTrue(nb_samples_paired == 2)
+        print(ls_seq_length_paired)
         self.assertTrue(ls_seq_length_paired == ls_exp_lengths_paired)
 
 
@@ -76,7 +77,7 @@ class TestSequenceFetching(SequenceTests):
         sample_ids = ['SRR000001']
         single_read_output, paired_end_output = get_sequences(sample_ids)
         self._validate_counts(single_read_output, paired_end_output,
-                              [236041], [236041, 236041])
+                              [234944], [234944, 234944])
 
     def test_method_invalid_accession_id(self):
         sample_ids = ['ERR39781ab']
