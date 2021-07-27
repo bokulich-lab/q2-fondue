@@ -41,7 +41,6 @@ class SequenceTests(TestPluginBase):
         nb_samples_single, ls_seq_length_single = \
             self._validate_sequences_in_samples(
                 single_output)
-        print(ls_seq_length_single)
         self.assertTrue(nb_samples_single == 1)
         self.assertTrue(ls_seq_length_single == ls_exp_lengths_single)
 
@@ -49,7 +48,6 @@ class SequenceTests(TestPluginBase):
         nb_samples_paired, ls_seq_length_paired = \
             self._validate_sequences_in_samples(
                 paired_output)
-        print(ls_seq_length_paired)
         self.assertTrue(nb_samples_paired == 2)
         self.assertTrue(ls_seq_length_paired == ls_exp_lengths_paired)
 
