@@ -75,33 +75,25 @@ def _process_downloaded_sequences(output_dir):
     and outputs list of single-read and paired-end sequence
     filenames.
     """
-
-    # gzip all remaining files in folder
-    # todo: verify if gzip can be left out
-    cmd_gzip = ["gzip",
-                "-r", output_dir]
-    # todo: try, except
-    run(cmd_gzip, text=True, capture_output=True)
-
     # rename all files to casava format & save single and paired
     # file names to list
     ls_single, ls_paired = [], []
 
     for filename in os.listdir(output_dir):
-        if filename.endswith('_1.fastq.gz'):
+        if filename.endswith('_1.fastq'):
             # double read _1
-            acc = re.search(r'(.*)_1\.fastq\.gz$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+            acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
+            new_name = '%s_00_L001_R1_001.fastq' % (acc)
             ls_paired.append(new_name)
-        elif filename.endswith('_2.fastq.gz'):
+        elif filename.endswith('_2.fastq'):
             # double read _2
-            acc = re.search(r'(.*)_2\.fastq\.gz$', filename).group(1)
-            new_name = '%s_00_L001_R2_001.fastq.gz' % (acc)
+            acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
+            new_name = '%s_00_L001_R2_001.fastq' % (acc)
             ls_paired.append(new_name)
         else:
             # single reads
-            acc = re.search(r'(.*)\.fastq\.gz$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq.gz' % (acc)
+            acc = re.search(r'(.*)\.fastq$', filename).group(1)
+            new_name = '%s_00_L001_R1_001.fastq' % (acc)
             ls_single.append(new_name)
 
         os.rename(os.path.join(output_dir, filename),
@@ -115,7 +107,7 @@ def _read_fastq_seqs(filepath):
 
     # Originally func is adapted from @jairideout's SO post:
     # http://stackoverflow.com/a/39302117/3424666
-    fh = gzip.open(filepath, 'rt')
+    fh = open(filepath, 'rt')
     for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
         yield (seq_header.strip(), seq.strip(), qual_header.strip(),
                qual.strip())
@@ -132,7 +124,8 @@ def _write2casava_dir_single(tmpdirname, casava_result_path,
     for filename in os.listdir(tmpdirname):
         if filename in ls_files_2_consider:
             fwd_path_in = os.path.join(tmpdirname, filename)
-            fwd_path_out = str(casava_result_path.path / filename)
+            filename_out = filename + '.gz'
+            fwd_path_out = str(casava_result_path.path / filename_out)
 
             with gzip.open(str(fwd_path_out), mode='w') as fwd:
                 for fwd_rec in _read_fastq_seqs(fwd_path_in):
@@ -156,9 +149,11 @@ def _write2casava_dir_double(tmpdirname, casava_result_path,
         filename_2 = ls_files_sorted[i+1]
 
         fwd_path_in = os.path.join(tmpdirname, filename_1)
-        fwd_path_out = str(casava_result_path.path / filename_1)
+        filename_1_out = filename_1 + '.gz'
+        fwd_path_out = str(casava_result_path.path / filename_1_out)
         rev_path_in = os.path.join(tmpdirname, filename_2)
-        rev_path_out = str(casava_result_path.path / filename_2)
+        filename_2_out = filename_2 + '.gz'
+        rev_path_out = str(casava_result_path.path / filename_2_out)
 
         with gzip.open(str(fwd_path_out), mode='w') as fwd:
             with gzip.open(str(rev_path_out), mode='w') as rev:
