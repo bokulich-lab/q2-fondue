@@ -81,17 +81,17 @@ def _process_downloaded_sequences(output_dir):
 
     for filename in os.listdir(output_dir):
         if filename.endswith('_1.fastq'):
-            # double read _1
+            # paired-end _1
             acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq' % (acc)
             ls_paired.append(new_name)
         elif filename.endswith('_2.fastq'):
-            # double read _2
+            # paired-end _2
             acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R2_001.fastq' % (acc)
             ls_paired.append(new_name)
         else:
-            # single reads
+            # single-reads
             acc = re.search(r'(.*)\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq' % (acc)
             ls_single.append(new_name)
@@ -103,7 +103,7 @@ def _process_downloaded_sequences(output_dir):
 
 
 def _read_fastq_seqs(filepath):
-    # function copied from q2_demux._demux import _read_fastq_seqs
+    # function adapted from q2_demux._demux import _read_fastq_seqs
 
     # Originally func is adapted from @jairideout's SO post:
     # http://stackoverflow.com/a/39302117/3424666
@@ -132,12 +132,12 @@ def _write2casava_dir_single(tmpdirname, casava_result_path,
                     fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
 
-def _write2casava_dir_double(tmpdirname, casava_result_path,
+def _write2casava_dir_paired(tmpdirname, casava_result_path,
                              ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
-    from tmpdirname to casava_result_path following double
-    read sequence rules
+    from tmpdirname to casava_result_path following paired-end
+    sequence rules
     """
     # Edited from original in: q2_demux._subsample.subsample_paired
     # ensure correct order of file names:
@@ -190,7 +190,7 @@ def get_sequences(
         other directory is empty (with artificial ID starting with xxx_)
     """
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
-    casava_out_double = CasavaOneEightSingleLanePerSampleDirFmt()
+    casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
@@ -222,14 +222,14 @@ def get_sequences(
             fwd_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
             rev_empty_name = 'xxx_00_L001_R2_001.fastq.gz'
 
-            fwd_path_out = str(casava_out_double.path / fwd_empty_name)
-            rev_path_out = str(casava_out_double.path / rev_empty_name)
+            fwd_path_out = str(casava_out_paired.path / fwd_empty_name)
+            rev_path_out = str(casava_out_paired.path / rev_empty_name)
             with gzip.open(str(fwd_path_out), mode='w'):
                 pass
             with gzip.open(str(rev_path_out), mode='w'):
                 pass
         else:
-            _write2casava_dir_double(tmpdirname, casava_out_double,
+            _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
 
-    return casava_out_single, casava_out_double
+    return casava_out_single, casava_out_paired
