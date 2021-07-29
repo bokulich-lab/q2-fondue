@@ -1,0 +1,12 @@
+@test_acc_single.1 test_1_seq length=59
+TTGGGGGGCACCATCTAATCAGCTGCCAGTGCTGCCAGAACATAAAGCAGGCAGAAATT
++test_acc_single.1 test_1_seq length=59
+?60-*'$"<=D===;8C=<<<<<==C<=<<==<=C=:<C<=<=FB2=<=C;<==HC9/%
+@test_acc_single.4 test_2_seq length=7
+ACTAATA
++test_acc_single.4 test_2_seq length=7
+<<A9<=<
+@test_acc_single.5 test_3_seq length=9
+TAAACAGGT
++test_acc_single.5 test_3_seq length=9
+<FB2<;B;<

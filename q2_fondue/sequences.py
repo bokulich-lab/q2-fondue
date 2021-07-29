@@ -9,9 +9,10 @@
 import os
 import re
 import gzip
+import warnings
 import itertools
 import tempfile
-from subprocess import run
+import subprocess
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 
@@ -37,7 +38,7 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
 
     # try "retries" times to get sequence data
     while retries >= 0:
-        result = run(cmd_fasterq, text=True, capture_output=True)
+        result = subprocess.run(cmd_fasterq, text=True, capture_output=True)
 
         if not (os.path.isfile(acc_fastq_single) |
                 os.path.isfile(acc_fastq_paired)):
@@ -203,7 +204,8 @@ def get_sequences(
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(ls_single_files) == 0:
-            print('No single-read sequences available for these StudyIDs')
+            warnings.warn(
+                'No single-read sequences available for these StudyIDs')
             # create empty CasavaDirFmt due to Q2 not supporting optional
             # output types
             new_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
@@ -216,7 +218,8 @@ def get_sequences(
 
         # write downloaded paired-end seqs from tmp to casava dir
         if len(ls_paired_files) == 0:
-            print('No paired-end sequences available for these StudyIDs')
+            warnings.warn(
+                'No paired-end sequences available for these StudyIDs')
             # create empty CasavaDirFmt due to Q2 not supporting optional
             # output types
             fwd_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
