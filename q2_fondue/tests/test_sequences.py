@@ -165,8 +165,6 @@ class TestSequenceFetching(SequenceTests):
         with self.assertWarnsRegex(Warning, "No paired-end sequences"):
             casava_single, casava_paired = get_sequences(
                 [accID], general_retries=0)
-            mock_subprocess.assert_called_once()
-
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -186,8 +184,6 @@ class TestSequenceFetching(SequenceTests):
         with self.assertWarnsRegex(Warning, "No single-read sequences"):
             casava_single, casava_paired = get_sequences(
                 [accID], general_retries=0)
-            mock_subprocess.assert_called_once()
-
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -209,8 +205,6 @@ class TestSequenceFetching(SequenceTests):
 
         casava_single, casava_paired = get_sequences(
             [accID_single, accID_paired], general_retries=0)
-        mock_subprocess.assert_called()
-
         self.assertIsInstance(casava_single,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
