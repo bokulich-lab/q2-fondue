@@ -106,7 +106,6 @@ class TestUtils4SequenceFetching(SequenceTests):
             _run_fasterq_dump_for_all(
                 ls_accIDs, test_temp_dir.name, threads=6, general_retries=0)
 
-    # # test _process_downloaded_sequences
     def test_process_downloaded_sequences(self):
         ls_fastq_files = ['testaccA.fastq',
                           'testacc_1.fastq', 'testacc_2.fastq']
@@ -122,7 +121,6 @@ class TestUtils4SequenceFetching(SequenceTests):
         self.assertEqual(ls_act_single, ls_exp_single)
         self.assertEqual(ls_act_paired, ls_exp_paired)
 
-    # test write2casava_dir_single
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_single = ['testaccA_00_L001_R1_001.fastq']
@@ -134,7 +132,6 @@ class TestUtils4SequenceFetching(SequenceTests):
                                         ls_file_single[0]+'.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath))
 
-    # test write2casava_dir_paired
     def test_write2casava_dir_paired(self):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_paired = ['testacc_00_L001_R1_001.fastq',
