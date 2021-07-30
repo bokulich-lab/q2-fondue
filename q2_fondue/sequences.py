@@ -121,7 +121,7 @@ def _write_empty_casava(read_type, casava_out_path):
     """
 
     warnings.warn('No {}-read sequences '
-                  'available for these StudyIDs'.format(read_type))
+                  'available for these sample IDs'.format(read_type))
 
     if read_type == 'single':
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
