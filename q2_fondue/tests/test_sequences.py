@@ -105,7 +105,9 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
-                ls_accIDs, test_temp_dir.name, threads=6, general_retries=0)
+                ls_accIDs, test_temp_dir.name, threads=6, general_retries=1)
+            # check retry procedure:
+            self.assertEqual(mock_subprocess.call_count, 2)
 
     def test_process_downloaded_sequences(self):
         ls_fastq_files = ['testaccA.fastq',
