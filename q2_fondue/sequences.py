@@ -25,29 +25,29 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
 
     print("Downloading sequences of sample: {}...".format(acc))
 
+    acc_fastq_single = os.path.join(output_dir,
+                                    acc + '.fastq')
+    acc_fastq_paired = os.path.join(output_dir,
+                                    acc + '_1.fastq')
+
     cmd_fasterq = ["fasterq-dump",
                    "-O", output_dir,
                    "-t", output_dir,
                    "-e", str(threads),
                    acc]
 
-    # try "retries" times to get sequence data, if invalid accession provided
-    # raise error immediately
+    # try "retries" times to get sequence data
     while retries >= 0:
-        try:
-            result = subprocess.run(
-                cmd_fasterq, check=True, capture_output=True)
+        result = subprocess.run(cmd_fasterq, text=True, capture_output=True)
+
+        if not (os.path.isfile(acc_fastq_single) |
+                os.path.isfile(acc_fastq_paired)):
+            retries -= 1
+            print('retrying {} times'.format(retries+1))
+        else:
             retries = -1
-            # fasterq-dump with invalid accession does not raise
-            # CalledProcessError - hence capturing explicitly
-            if 'invalid accession' in result.stderr:
-                raise ValueError('Accession ID {} is invalid and could not be'
-                                 'downladed.'.format(acc))
-        except subprocess.CalledProcessError as e:
-            raise ValueError('Accession ID {} could not be downloaded, '
-                             'raising the following fasterq-dump '
-                             'error: {}'.format(acc, e.stderr))
-        retries -= 1
+
+    return result
 
 
 def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
@@ -56,11 +56,17 @@ def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
     Helper function that runs fasterq-dump for all ids in study-ids
     """
     for acc in sample_ids:
-        # already verifies that all acc IDs are being downloaded
-        _run_cmd_fasterq(acc, tmpdirname, threads,
-                         general_retries)
-    # todo add raising error if some files are not present
-    # todo: add test that captures this
+        result = _run_cmd_fasterq(acc, tmpdirname, threads,
+                                  general_retries)
+
+        if len(os.listdir(tmpdirname)) == 0:
+            # raise error if all general_retries attempts failed
+            raise ValueError('{} could not be downloaded with the '
+                             'following fasterq-dump error '
+                             'returned: {}'
+                             .format(acc, result.stderr))
+        else:
+            continue
 
 
 def _process_downloaded_sequences(output_dir):
