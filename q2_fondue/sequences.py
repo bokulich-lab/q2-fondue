@@ -20,7 +20,7 @@ from q2_types.per_sample_sequences import \
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
                      retries: int):
     """
-    Helper function running fasterq-dump `general_retries` times
+    Helper function running fasterq-dump `retries` times
     """
 
     print("Downloading sequences of sample: {}...".format(acc))
@@ -114,6 +114,28 @@ def _read_fastq_seqs(filepath):
                qual.strip())
 
 
+def _write_empty_casava(read_type, casava_out_path):
+    """
+    Helper function that warns about `read_type` sequences
+    that are not available and saves empty casava file
+    """
+
+    warnings.warn('No {}-read sequences '
+                  'available for these StudyIDs'.format(read_type))
+
+    if read_type == 'single':
+        ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
+    else:
+        ls_file_names = ['xxx_00_L001_R1_001.fastq.gz',
+                         'xxx_00_L001_R2_001.fastq.gz']
+    # create empty CasavaDirFmt due to Q2 not supporting optional
+    # output types
+    for new_empty_name in ls_file_names:
+        path_out = str(casava_out_path.path / new_empty_name)
+        with gzip.open(str(path_out), mode='w'):
+            pass
+
+
 def _write2casava_dir_single(tmpdirname, casava_result_path,
                              ls_files_2_consider):
     """
@@ -167,7 +189,7 @@ def _write2casava_dir_paired(tmpdirname, casava_result_path,
 
 def get_sequences(
         sample_ids: list,
-        general_retries: int = 2,
+        retries: int = 2,
         threads:
         int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt,
                      CasavaOneEightSingleLanePerSampleDirFmt):
@@ -176,12 +198,12 @@ def get_sequences(
     accession IDs.
 
     Function uses SRA-toolkit fasterq-dump to get single-read and paired-end
-    sequences of accession IDs. It supports multiple tries (`general_retries`)
+    sequences of accession IDs. It supports multiple tries (`retries`)
     and can use multiple `threads`.
 
     Args:
         sample_ids (List[str]): List of all sample IDs to be fetched.
-        general_retries (int, default=2): Number of retries to fetch sequences.
+        retries (int, default=2): Number of retries to fetch sequences.
         threads (int, default=6): Number of threads to be used in parallel.
 
     Returns:
@@ -196,7 +218,7 @@ def get_sequences(
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
         _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
-                                  general_retries)
+                                  retries)
 
         # processing downloaded files
         ls_single_files, ls_paired_files = _process_downloaded_sequences(
@@ -204,33 +226,14 @@ def get_sequences(
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(ls_single_files) == 0:
-            warnings.warn(
-                'No single-read sequences available for these StudyIDs')
-            # create empty CasavaDirFmt due to Q2 not supporting optional
-            # output types
-            new_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
-            path_out = str(casava_out_single.path / new_empty_name)
-            with gzip.open(str(path_out), mode='w'):
-                pass
+            _write_empty_casava('single', casava_out_single)
         else:
             _write2casava_dir_single(tmpdirname, casava_out_single,
                                      ls_single_files)
 
         # write downloaded paired-end seqs from tmp to casava dir
         if len(ls_paired_files) == 0:
-            warnings.warn(
-                'No paired-end sequences available for these StudyIDs')
-            # create empty CasavaDirFmt due to Q2 not supporting optional
-            # output types
-            fwd_empty_name = 'xxx_00_L001_R1_001.fastq.gz'
-            rev_empty_name = 'xxx_00_L001_R2_001.fastq.gz'
-
-            fwd_path_out = str(casava_out_paired.path / fwd_empty_name)
-            rev_path_out = str(casava_out_paired.path / rev_empty_name)
-            with gzip.open(str(fwd_path_out), mode='w'):
-                pass
-            with gzip.open(str(rev_path_out), mode='w'):
-                pass
+            _write_empty_casava('paired', casava_out_paired)
         else:
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
