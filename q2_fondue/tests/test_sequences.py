@@ -124,7 +124,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             _run_cmd_fasterq(
                 accID, test_temp_dir.name, threads=6, retries=0)
 
-    # todo: add test for retry procedure
+    # # todo: add test for retry procedure
+    # @patch('subprocess.run')
+    # def test_run_cmd_fasterq_ThreeTimes(self, mock_subprocess):
+    #     mock_subprocess.return_value.returncode = 1
     # todo: add test_run_fasterq_dump_for_all
 
     def test_process_downloaded_sequences(self):
