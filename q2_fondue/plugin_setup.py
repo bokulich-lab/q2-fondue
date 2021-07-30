@@ -75,7 +75,7 @@ plugin.methods.register_function(
         'threads': Int % Range(1, None)
     },
     outputs=[('single_reads', SampleData[SequencesWithQuality]),
-             ('paired_ends', SampleData[PairedEndSequencesWithQuality])],
+             ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
         'sample_ids': 'A list of sample IDs for which the sequences should '
@@ -88,7 +88,7 @@ plugin.methods.register_function(
     output_descriptions={
         'single_reads': 'Artifact containing single-read fastq.gz files '
         'for all the requested studies.',
-        'paired_ends': 'Artifact containing paired-end fastq.gz files '
+        'paired_reads': 'Artifact containing paired-end fastq.gz files '
         'for all the requested studies.'
     },
     name='Fetch sequences based on sample ID.',
