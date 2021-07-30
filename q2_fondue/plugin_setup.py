@@ -71,7 +71,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'sample_ids': List[Str],
-        'general_retries': Int % Range(1, None),
+        'retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
     outputs=[('single_reads', SampleData[SequencesWithQuality]),
@@ -80,7 +80,7 @@ plugin.methods.register_function(
     parameter_descriptions={
         'sample_ids': 'A list of study IDs for which the sequences should '
         'be fetched.',
-        'general_retries': 'Number of retries to fetch sequences '
+        'retries': 'Number of retries to fetch sequences '
         '(default:2).',
         'threads': 'Number of threads to be used in parallel '
         '(default:6).'

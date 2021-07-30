@@ -18,6 +18,7 @@ from q2_types.per_sample_sequences import (
 from q2_fondue.sequences import (get_sequences,
                                  _run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
+                                 _write_empty_casava,
                                  _write2casava_dir_single,
                                  _write2casava_dir_paired)
 
@@ -121,6 +122,32 @@ class TestUtils4SequenceFetching(SequenceTests):
         self.assertEqual(ls_act_single, ls_exp_single)
         self.assertEqual(ls_act_paired, ls_exp_paired)
 
+    def test_write_empty_casava_single(self):
+        casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
+        empty_seq_type = 'single'
+        with self.assertWarnsRegex(Warning,
+                                   "No {}-read sequences".format(
+                                       empty_seq_type)):
+            _write_empty_casava(empty_seq_type, casava_out_single)
+            exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
+            exp_casava_fpath = os.path.join(str(casava_out_single),
+                                            exp_filename)
+            self.assertTrue(os.path.isfile(exp_casava_fpath))
+
+    def test_write_empty_casava_paired(self):
+        casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
+        empty_seq_type = 'paired'
+        with self.assertWarnsRegex(Warning,
+                                   "No {}-read sequences".format(
+                                       empty_seq_type)):
+            _write_empty_casava(empty_seq_type, casava_out_paired)
+
+            for exp_filename in ['xxx_00_L001_R1_001.fastq.gz',
+                                 'xxx_00_L001_R2_001.fastq.gz']:
+                exp_casava_fpath = os.path.join(str(casava_out_paired),
+                                                exp_filename)
+                self.assertTrue(os.path.isfile(exp_casava_fpath))
+
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_single = ['testaccA_00_L001_R1_001.fastq']
@@ -159,9 +186,9 @@ class TestSequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir([accID + '.fastq'])
         mock_tmpdir.return_value = test_temp_dir
 
-        with self.assertWarnsRegex(Warning, "No paired-end sequences"):
+        with self.assertWarnsRegex(Warning, "No paired-read sequences"):
             casava_single, casava_paired = get_sequences(
-                [accID], general_retries=0)
+                [accID], retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -180,7 +207,7 @@ class TestSequenceFetching(SequenceTests):
 
         with self.assertWarnsRegex(Warning, "No single-read sequences"):
             casava_single, casava_paired = get_sequences(
-                [accID], general_retries=0)
+                [accID], retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -201,7 +228,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = test_temp_dir
 
         casava_single, casava_paired = get_sequences(
-            [accID_single, accID_paired], general_retries=0)
+            [accID_single, accID_paired], retries=0)
         self.assertIsInstance(casava_single,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
