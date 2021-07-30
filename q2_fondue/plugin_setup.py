@@ -91,9 +91,9 @@ plugin.methods.register_function(
         'paired_ends': 'Artifact containing paired-end fastq.gz files '
         'for all the requested studies.'
     },
-    name='Fetch sequences based on study ID.',
+    name='Fetch sequences based on sample ID.',
     description=(
-        'Fetch sequence data of all study IDs.'
+        'Fetch sequence data of all sample IDs.'
     ),
     citations=[]
 )
