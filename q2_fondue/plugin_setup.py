@@ -78,7 +78,7 @@ plugin.methods.register_function(
              ('paired_ends', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'A list of study IDs for which the sequences should '
+        'sample_ids': 'A list of sample IDs for which the sequences should '
         'be fetched.',
         'retries': 'Number of retries to fetch sequences '
         '(default:2).',
