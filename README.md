@@ -44,8 +44,18 @@ where:
 The resulting artifact will contain a TSV file containing all the available metadata fields
 for all of the requested runs.
 
-## Useful resources:
-* List of all available NCBI databases: 
-  - https://www.ncbi.nlm.nih.gov/search/
-  - table1 in https://academic.oup.com/nar/article/45/D1/D12/2605705
-* EntrezPy: https://entrezpy.readthedocs.io/en/master/
+### Fetching sequences
+To get single-read and paired-end sequences associated with a number of runs, execute this command:
+```shell
+qiime fondue get-sequences \
+              --p-sample-ids <id1> <id2> <id3> ... \
+              --o-single-reads output_dir_single \
+              --o-paired-reads output_dir_paired
+```
+
+where:
+- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--o-single-reads` is the output artifact containing single-read sequences
+- `--o-paired-reads` is the output artifact containing paired-end sequences
+
+The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If the provided accession numbers only contain sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
