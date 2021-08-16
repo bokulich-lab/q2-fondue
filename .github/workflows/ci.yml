@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main
+      - fix_ci
 
 jobs:
   lint:
@@ -42,10 +43,10 @@ jobs:
         fetch-depth: 0
 
     # TODO: update this to @v1 when it lands
-    - uses: qiime2/action-library-packaging@alpha1
+    - uses: qiime2/action-library-packaging@alpha2
       with:
         package-name: q2-fondue
         additional-tests: pytest --pyargs q2_fondue
         # TODO: update this to `release` when tagging release
-        build-target: staged
+        build-target: dev
         library-token: ${{ secrets.LIBRARY_TOKEN }}
