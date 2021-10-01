@@ -6,7 +6,7 @@
 Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine:
 
 ```shell
-conda create -y -n fondue \
+conda create -y -n fondue-new \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
   qiime2 q2cli q2-types "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
 conda activate fondue
@@ -59,3 +59,17 @@ where:
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 
 The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If the provided accession numbers only contain sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
+
+### Fetching metadata and sequences
+To fetch both sequence-associated metadata and sequences associated with the accession numbers, execute this command:
+
+```shell
+qiime fondue get-all \
+              --p-sample-ids <id1> <id2> <id3> ... \ 
+              --p-email your_email@somewhere.com \
+              --output-dir output-dir-name
+```
+where:
+- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--p-email` is your email address (required by NCBI)
+- `--output-dir` directory where the downloaded metadata and sequences are stored as Q2 artifacts
