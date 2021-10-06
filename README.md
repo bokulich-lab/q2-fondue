@@ -6,7 +6,7 @@
 Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine:
 
 ```shell
-conda create -y -n fondue-new \
+conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
   qiime2 q2cli q2-types "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict "tzlocal==2.1"
 conda activate fondue
