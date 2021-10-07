@@ -110,7 +110,6 @@ class EFetchResult(EutilsResult):
                         processed_meta[attr['TAG']] = attr.get('VALUE')
                 except Exception as e:
                     if not isinstance(e, DuplicateKeyError):
-                        # TODO: convert this to a proper logger
                         print(f'Exception has occurred when processing {k1} '
                               f'attributes: "{e}". Contents of the metadata '
                               f'was: {attributes_dict}.')
@@ -167,7 +166,7 @@ class EFetchResult(EutilsResult):
             'Sample Name': pool_meta.get('@sample_name'),
             'Sample Accession': pool_meta.get('@accession'),
             'Sample Title': pool_meta.get('@sample_title'),
-            'BioSample': external_id.get('#text')
+            'BioSample ID': external_id.get('#text')
         }
         return pool_meta_proc
 
@@ -203,11 +202,11 @@ class EFetchResult(EutilsResult):
         instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
 
         exp_meta_proc = {
-            'BioProject': bioproject_id,
-            'Experiment': exp_meta['IDENTIFIERS'].get('PRIMARY_ID'),
+            'BioProject ID': bioproject_id,
+            'Experiment ID': exp_meta['IDENTIFIERS'].get('PRIMARY_ID'),
             'Instrument': instrument,
             'Platform': platform,
-            'SRA Study': exp_meta['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
+            'Study ID': exp_meta['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
         }
         return exp_meta_proc
 
