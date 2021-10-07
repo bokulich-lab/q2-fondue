@@ -61,7 +61,7 @@ class TestGetAll(SequenceTests):
         # function call assertions for get_sequences within
         mock_subprocess.assert_called_once_with(['fasterq-dump',
                                                  '-O', ANY,
-                                                '-t', ANY,
+                                                 '-t', ANY,
                                                  '-e', '6',
                                                  ls_accIDs[0]],
                                                 text=True,
