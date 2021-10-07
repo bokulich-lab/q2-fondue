@@ -17,13 +17,13 @@ class SRAMetadataFormat(model.TextFileFormat):
         'ID', 'BioSample ID', 'BioProject ID', 'Experiment ID', 'Study ID'
     ]
     REQUIRED_HEADER_FIELDS = [
-        'Organism', 'Tax ID', 'Instrument', 'Platform', 'Bases', 'Bytes',
-        'Consent', 'Center Name'
+        'Organism', 'Instrument', 'Platform', 'Bases', 'Bytes', 'Consent',
+        'Library Selection', 'Library Source', 'Library Layout'
     ]
     REQUIRED_HEADER_FIELDS.extend(REQUIRED_IDS)
 
     def _validate(self):
-        df = pd.read_csv(str(self), '\t')
+        df = pd.read_csv(str(self), sep='\t')
 
         missing_cols = [
             x for x in self.REQUIRED_HEADER_FIELDS if x not in df.columns]
