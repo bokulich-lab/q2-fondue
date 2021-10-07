@@ -11,9 +11,7 @@ import unittest
 
 import pandas as pd
 
-from q2_fondue.entrezpy_clients._efetch import (DuplicateKeyError,
-                                                EFetchResult,
-                                                InvalidIDs)
+from q2_fondue.entrezpy_clients._efetch import EFetchResult, InvalidIDs
 from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
@@ -32,19 +30,6 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
             "sample storage temperature": "-80"
         }
         self.assertDictEqual(exp, obs)
-
-    def test_efresult_extract_custom_attributes_duplicated_attribute(self):
-        self.metadata_dict['STUDY']['STUDY_ATTRIBUTES'][
-            'STUDY_ATTRIBUTE'].append({
-                "TAG": "environment (biome)",
-                "VALUE": "berry plant"
-            })
-
-        with self.assertRaisesRegexp(
-                DuplicateKeyError,
-                r'.*keys \(environment \(biome\)\).*duplicated\.'):
-            self.efetch_result_single._extract_custom_attributes(
-                self.metadata_dict)
 
     def test_efresult_process_single_run(self):
         obs = self.efetch_result_single._process_single_run(self.metadata_dict)
