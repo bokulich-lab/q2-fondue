@@ -8,7 +8,7 @@
 
 import unittest
 import pandas as pd
-from unittest.mock import patch
+from unittest.mock import (patch, ANY)
 from q2_fondue.tests.test_sequences import SequenceTests
 from qiime2.plugins import fondue
 
@@ -30,6 +30,7 @@ class TestGetAll(SequenceTests):
         individual actions are tested in details in respective test classes
         """
         ls_accIDs = ['testaccB']
+        str_mocked_email = 'fake@email.com'
 
         # define mocked return values for get_metadata mocks
         mock_validation.return_value = True
@@ -43,16 +44,28 @@ class TestGetAll(SequenceTests):
 
         # run pipeline
         fondue.actions.get_all(
-            ls_accIDs, 'fake@email.com', retries=1)
+            ls_accIDs, str_mocked_email, retries=1)
 
         # function call assertions for get_metadata within
-        mock_esearcher.assert_called_once()
-        mock_validation.assert_called_once()
-        mock_efetcher.assert_called_once()
-        mock_inquire.assert_called_once()
+        mock_esearcher.assert_called_once_with('esearcher',
+                                               str_mocked_email,
+                                               apikey=None, apikey_var=None,
+                                               threads=1, qid=None)
+        mock_validation.assert_called_once_with(ANY, ls_accIDs)
+        mock_efetcher.assert_called_once_with('efetcher',
+                                              str_mocked_email,
+                                              apikey=None, apikey_var=None,
+                                              threads=1, qid=None)
+        mock_inquire.assert_called_once_with(ANY, ls_accIDs)
 
         # function call assertions for get_sequences within
-        mock_subprocess.assert_called_once()
+        mock_subprocess.assert_called_once_with(['fasterq-dump',
+                                                 '-O', ANY,
+                                                '-t', ANY,
+                                                 '-e', '6',
+                                                 ls_accIDs[0]],
+                                                text=True,
+                                                capture_output=True)
 
 
 if __name__ == "__main__":
