@@ -17,7 +17,7 @@ from xmltodict import parse as parsexml
 
 from q2_fondue.entrezpy_clients._utils import (SRAStudy, SRASample,
                                                SRAExperiment, LibraryMetadata,
-                                               SRARun)
+                                               SRARun, rename_columns)
 
 
 class InvalidIDs(Exception):
@@ -58,22 +58,21 @@ class EFetchResult(EutilsResult):
             pd.DataFrame: Metadata in a form of a DataFrame with an index
                 corresponding to the original accession IDs.
         """
-        # TODO: adjust this
-        for k in self.studies.keys():
-            m = self.studies[k].generate_meta()
-            print(m)
-
-        df = pd.DataFrame.from_dict(self.metadata, orient='index')
+        # TODO: adjust this (dependent on id_type?)
+        df = pd.concat([v.generate_meta() for v in self.studies.values()])
         df.index.name = 'ID'
+
+        # clean up column names
+        df = rename_columns(df)
 
         # remove empty columns, if any
         df.dropna(axis=1, inplace=True, how='all')
 
         # reorder columns in a more sensible fashion
-        cols = ['Experiment ID', 'BioSample ID', 'BioProject ID', 'Study ID',
-                'Sample Accession', 'Organism', 'Library Source',
-                'Library Selection', 'Library Layout', 'Instrument',
-                'Platform', 'Bases', 'Spots', 'AvgSpotLen', 'Bytes', 'Consent']
+        cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
+                'Sample ID', 'Organism', 'Library Source', 'Library Selection',
+                'Library Layout', 'Instrument', 'Platform', 'Bases', 'Spots',
+                'Avg Spot Len', 'Bytes', 'Consent']
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
