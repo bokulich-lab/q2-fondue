@@ -8,15 +8,12 @@
 
 import json
 from typing import List
+from warnings import warn
 
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
 from xmltodict import parse as parsexml
-
-
-class DuplicateKeyError(Exception):
-    pass
 
 
 class InvalidIDs(Exception):
@@ -54,7 +51,18 @@ class EFetchResult(EutilsResult):
         """
         df = pd.DataFrame.from_dict(self.metadata, orient='index')
         df.index.name = 'ID'
-        return df
+
+        # remove empty columns, if any
+        df.dropna(axis=1, inplace=True, how='all')
+
+        # reorder columns in a more sensible fashion
+        cols = ['Experiment ID', 'BioSample ID', 'BioProject ID', 'Study ID',
+                'Sample Accession', 'Organism', 'Library Source',
+                'Library Selection', 'Library Layout', 'Instrument',
+                'Platform', 'Bases', 'Spots', 'AvgSpotLen', 'Bytes', 'Consent']
+        cols.extend([c for c in df.columns if c not in cols])
+
+        return df[cols]
 
     def _process_single_run(
             self, attributes_dict: dict, extract_id: str = None):
@@ -97,22 +105,25 @@ class EFetchResult(EutilsResult):
         """
         processed_meta = {}
         keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
-        allowed_duplicates = {'ENA-FIRST-PUBLIC', 'ENA-LAST-UPDATE'}
         for k1, v1 in attributes_dict.items():
             if k1 in keys_to_keep and f'{k1}_ATTRIBUTES' in v1.keys():
                 try:
+                    dupl = 0
                     for attr in v1[f'{k1}_ATTRIBUTES'][f'{k1}_ATTRIBUTE']:
-                        if attr['TAG'] in processed_meta.keys() and \
-                                attr['TAG'] not in allowed_duplicates:
-                            raise DuplicateKeyError(
-                                f'One of the metadata keys ({attr["TAG"]}) '
-                                f'is duplicated.')
-                        processed_meta[attr['TAG']] = attr.get('VALUE')
+                        current_attr = attr['TAG']
+                        if current_attr in processed_meta.keys():
+                            warn(
+                                f'One of the metadata keys ({current_attr}) '
+                                f'is duplicated. It will be retained with '
+                                f'a "_{dupl+1}" suffix.'
+                            )
+                            dupl += 1
+                            current_attr = f'{current_attr}_{dupl}'
+                        processed_meta[current_attr] = attr.get('VALUE')
                 except Exception as e:
-                    if not isinstance(e, DuplicateKeyError):
-                        print(f'Exception has occurred when processing {k1} '
-                              f'attributes: "{e}". Contents of the metadata '
-                              f'was: {attributes_dict}.')
+                    print(f'Exception has occurred when processing {k1} '
+                          f'attributes: "{e}". Contents of the metadata '
+                          f'was: {attributes_dict}.')
                     raise
         return processed_meta
 
