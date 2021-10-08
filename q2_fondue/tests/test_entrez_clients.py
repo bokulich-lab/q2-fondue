@@ -31,6 +31,19 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         }
         self.assertDictEqual(exp, obs)
 
+    def test_efresult_extract_custom_attributes_duplicated_attribute(self):
+        self.metadata_dict['STUDY']['STUDY_ATTRIBUTES'][
+            'STUDY_ATTRIBUTE'].append({
+                "TAG": "environment (biome)",
+                "VALUE": "berry plant"
+            })
+
+        with self.assertWarnsRegex(
+                Warning, r'.*keys \(environment \(biome\)\).*duplicated\. '
+                         'It will be retained with a "_1" suffix.'):
+            self.efetch_result_single._extract_custom_attributes(
+                self.metadata_dict)
+
     def test_efresult_process_single_run(self):
         obs = self.efetch_result_single._process_single_run(self.metadata_dict)
         exp = {
