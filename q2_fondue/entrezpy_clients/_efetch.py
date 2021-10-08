@@ -58,6 +58,11 @@ class EFetchResult(EutilsResult):
             pd.DataFrame: Metadata in a form of a DataFrame with an index
                 corresponding to the original accession IDs.
         """
+        # TODO: adjust this
+        for k in self.studies.keys():
+            m = self.studies[k].generate_meta()
+            print(m)
+
         df = pd.DataFrame.from_dict(self.metadata, orient='index')
         df.index.name = 'ID'
 
@@ -103,10 +108,14 @@ class EFetchResult(EutilsResult):
             else:
                 bioproject_id = None
 
+            org = attributes['Organization'].get('Name')
+            if isinstance(org, dict):
+                org = org.get('#text')
+
             self.studies[study_id] = SRAStudy(
                 id=study_id,
                 bioproject_id=bioproject_id,
-                center_name=attributes['STUDY'].get('@center_name')
+                center_name=org
             )
         return study_id
 
