@@ -41,92 +41,86 @@ class LibraryMetadata:
 
 
 @dataclass
-class SRARun:
+class SRABaseMeta:
     id: str
-    public: bool  # should this be here?
-    size: int
-    bases: int
-    spots: int
+    child: str
+
+    def get_base_metadata(self, excluded):
+        index = get_attrs(self, excluded=('child',) + excluded)
+        base_meta = pd.DataFrame(
+            data=[getattr(self, k) for k in index], index=index).T
+        base_meta.index = [self.id]
+        return base_meta
+
+    def get_child_metadata(self):
+        child_meta = pd.concat(
+            [x.generate_meta() for x in
+             self.__getattribute__(f'{self.child}s')]
+        )
+        child_meta.index.name = f'{self.child}_id'
+        return child_meta
+
+
+@dataclass
+class SRARun(SRABaseMeta):
+    public: bool = True
+    size: int = None
+    bases: int = None
+    spots: int = None
     avg_spot_len: int = None
     experiment_id: str = None
+    child: str = None
 
     def __post_init__(self):
         self.avg_spot_len = int(int(self.bases)/int(self.spots))
 
     def generate_meta(self):
-        index = get_attrs(self, excluded=('id',))
-        run_meta = pd.DataFrame(
-            data=[getattr(self, k) for k in index],
-            index=index).T
-        run_meta.index = [self.id]
-
-        return run_meta
+        return self.get_base_metadata(excluded=('id',))
 
 
 @dataclass
-class SRAExperiment:
-    id: str
-    instrument: str
-    platform: str
+class SRAExperiment(SRABaseMeta):
+    instrument: str = None
+    platform: str = None
     library: LibraryMetadata = None
     runs: List[SRARun] = field(default_factory=list)
     sample_id: str = None
+    child: str = 'run'
 
     def generate_meta(self):
-        index = get_attrs(self, excluded=('id', 'runs', 'library'))
-        exp_meta = pd.DataFrame(
-            data=[getattr(self, k) for k in index],
-            index=index).T
-        exp_meta.index = [self.id]
-
-        runs_meta = pd.concat([r.generate_meta() for r in self.runs])
-        runs_meta.index.name = 'run_id'
-
+        exp_meta = self.get_base_metadata(excluded=('id', 'runs', 'library'))
+        runs_meta = self.get_child_metadata()
         return runs_meta.merge(
             exp_meta, left_on='experiment_id', right_index=True)
 
 
 @dataclass
-class SRASample:
-    id: str
-    name: str
-    title: str
-    biosample_id: str
-    organism: str
-    tax_id: str
+class SRASample(SRABaseMeta):
+    name: str = None
+    title: str = None
+    biosample_id: str = None
+    organism: str = None
+    tax_id: str = None
     study_id: str = None
     experiments: List[SRAExperiment] = field(default_factory=list)
+    child: str = 'experiment'
 
     def generate_meta(self):
-        index = get_attrs(self, excluded=('id', 'experiments',))
-        sample_meta = pd.DataFrame(
-            data=[getattr(self, k) for k in index],
-            index=index).T
-        sample_meta.index = [self.id]
-
-        exps_meta = pd.concat([e.generate_meta() for e in self.experiments])
-        exps_meta.index.name = 'experiment_id'
-
+        sample_meta = self.get_base_metadata(excluded=('id', 'experiments'))
+        exps_meta = self.get_child_metadata()
         return exps_meta.merge(
             sample_meta, left_on='sample_id', right_index=True)
 
 
 @dataclass
-class SRAStudy:
-    id: str
-    bioproject_id: str
-    center_name: str
+class SRAStudy(SRABaseMeta):
+    bioproject_id: str = None
+    center_name: str = None
     samples: List[SRASample] = field(default_factory=list)
+    child: str = 'sample'
 
     def generate_meta(self):
-        index = get_attrs(self, excluded=('id', 'samples',))
-        study_meta = pd.DataFrame(
-            data=[getattr(self, k) for k in index],
-            index=index).T
-        study_meta.index = [self.id]
-
-        samples_meta = pd.concat([s.generate_meta() for s in self.samples])
-        samples_meta.index.name = 'sample_id'
-
+        study_meta = self.get_base_metadata(excluded=('id', 'samples'))
+        samples_meta = self.get_child_metadata()
         return samples_meta.merge(
             study_meta, left_on='study_id', right_index=True)
