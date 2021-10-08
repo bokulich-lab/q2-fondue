@@ -64,7 +64,7 @@ class EFetchResult(EutilsResult):
 
         return df[cols]
 
-    def _process_single_run(
+    def _process_single_id(
             self, attributes_dict: dict, extract_id: str = None):
         """Processes metadata obtained for a single accession ID.
 
@@ -273,10 +273,10 @@ class EFetchResult(EutilsResult):
         #  from the same experiment
         if isinstance(parsed_results, list):
             for i, uid in enumerate(uids):
-                self.metadata[uid] = self._process_single_run(
+                self.metadata[uid] = self._process_single_id(
                     parsed_results[i], extract_id=uid)
         else:
-            self.metadata[uids[0]] = self._process_single_run(
+            self.metadata[uids[0]] = self._process_single_id(
                 parsed_results, extract_id=uids[0])
 
 

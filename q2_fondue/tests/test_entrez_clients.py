@@ -45,7 +45,7 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
                 self.metadata_dict)
 
     def test_efresult_process_single_run(self):
-        obs = self.efetch_result_single._process_single_run(self.metadata_dict)
+        obs = self.efetch_result_single._process_single_id(self.metadata_dict)
         exp = {
             "ENA-FIRST-PUBLIC": "2020-05-31",
             "ENA-LAST-UPDATE": "2020-03-04",
