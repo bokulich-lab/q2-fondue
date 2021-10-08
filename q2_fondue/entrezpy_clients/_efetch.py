@@ -72,7 +72,7 @@ class EFetchResult(EutilsResult):
         cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
                 'Sample ID', 'Organism', 'Library Source', 'Library Selection',
                 'Library Layout', 'Instrument', 'Platform', 'Bases', 'Spots',
-                'Avg Spot Len', 'Bytes', 'Consent']
+                'Avg Spot Len', 'Bytes', 'Public']
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
@@ -197,7 +197,7 @@ class EFetchResult(EutilsResult):
                 self.runs[run_id] = SRARun(
                     id=run_id,
                     public=is_public,
-                    size=runset.get('@size'),
+                    bytes=runset.get('@size'),
                     bases=pool_meta.get('@bases'),
                     spots=pool_meta.get('@spots'),
                     experiment_id=exp_id

@@ -59,8 +59,9 @@ class LibraryMetadata:
 
     def generate_meta(self):
         index = get_attrs(self)
-        return pd.Series(data=[getattr(self, k) for k in index],
-                         index=[str(x) for x in index])
+        return pd.DataFrame(
+            data=[getattr(self, k) for k in index],
+            index=[f"library_{x}" for x in index]).T
 
 
 @dataclass
@@ -87,7 +88,7 @@ class SRABaseMeta:
 @dataclass
 class SRARun(SRABaseMeta):
     public: bool = True
-    size: int = None
+    bytes: int = None
     bases: int = None
     spots: int = None
     avg_spot_len: int = None
@@ -112,6 +113,10 @@ class SRAExperiment(SRABaseMeta):
 
     def generate_meta(self):
         exp_meta = self.get_base_metadata(excluded=('id', 'runs', 'library'))
+        lib_meta = self.library.generate_meta()
+        lib_meta.index = exp_meta.index
+
+        exp_meta = pd.concat([exp_meta, lib_meta], axis=1)
         runs_meta = self.get_child_metadata()
         return runs_meta.merge(
             exp_meta, left_on='experiment_id', right_index=True)
