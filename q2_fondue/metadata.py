@@ -13,15 +13,22 @@ import entrezpy.esearch.esearcher as es
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
+from q2_fondue.entrezpy_clients._utils import PREFIX
+
+
+class InvalidIDs(Exception):
+    pass
 
 
 def _efetcher_inquire(
-        efetcher: ef.Efetcher, sample_ids: List[str]) -> pd.DataFrame:
+        efetcher: ef.Efetcher, sample_ids: List[str], id_type: str
+) -> pd.DataFrame:
     """Makes an EFetch request using the provided IDs.
 
     Args:
         efetcher (ef.Efetcher): A valid instance of an Entrezpy Efetcher.
         sample_ids (List[str]): List of all the sample IDs to be fetched.
+        id_type (str): Type of provided IDs (e.g.: sample or run)
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
@@ -33,7 +40,7 @@ def _efetcher_inquire(
             'id': sample_ids,  # this has to be a list
             'rettype': 'xml',
             'retmode': 'text'
-        }, analyzer=EFetchAnalyzer()
+        }, analyzer=EFetchAnalyzer(id_type)
     )
     return metadata_response.result.to_df()
 
@@ -61,6 +68,17 @@ def _validate_esearch_result(
     return esearch_response.result.validate_result()
 
 
+def _determine_id_type(ids: list):
+    ids = [x[:3] for x in ids]
+    for kind in ('run', 'sample'):
+        if all([x in PREFIX[kind] for x in ids]):
+            return kind
+    raise InvalidIDs('The type of provided IDs is either not supported or '
+                     'IDs of mixed types were provided. Please provide IDs '
+                     'corresponding to either SRA runs (#SRR) or SRA '
+                     'samples (#SRS).')
+
+
 def get_metadata(
         sample_ids: list, email: str, n_jobs: int = 1) -> pd.DataFrame:
     """Fetches metadata using the provided sample/run accession IDs.
@@ -78,6 +96,9 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
+    # figure out if we're dealing with sample or run ids
+    id_type = _determine_id_type(sample_ids)
+
     # validate the ids
     esearcher = es.Esearcher(
         'esearcher', email, apikey=None,
@@ -89,4 +110,4 @@ def get_metadata(
         'efetcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
-    return _efetcher_inquire(efetcher, sample_ids)
+    return _efetcher_inquire(efetcher, sample_ids, id_type)
