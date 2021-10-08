@@ -11,9 +11,7 @@ import unittest
 
 import pandas as pd
 
-from q2_fondue.entrezpy_clients._efetch import (DuplicateKeyError,
-                                                EFetchResult,
-                                                InvalidIDs)
+from q2_fondue.entrezpy_clients._efetch import EFetchResult, InvalidIDs
 from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
@@ -40,9 +38,9 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
                 "VALUE": "berry plant"
             })
 
-        with self.assertRaisesRegexp(
-                DuplicateKeyError,
-                r'.*keys \(environment \(biome\)\).*duplicated\.'):
+        with self.assertWarnsRegex(
+                Warning, r'.*keys \(environment \(biome\)\).*duplicated\. '
+                         'It will be retained with a "_1" suffix.'):
             self.efetch_result_single._extract_custom_attributes(
                 self.metadata_dict)
 
