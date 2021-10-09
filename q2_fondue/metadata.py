@@ -6,6 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import logging
+import sys
 from typing import List
 import pandas as pd
 import entrezpy.efetch.efetcher as ef
@@ -34,6 +36,13 @@ def _efetcher_inquire(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
+    # TODO: this is just temporary - for debugging purposes;
+    #  we should really make Entrez logging configurable
+    efetcher.logger.addHandler(logging.StreamHandler(sys.stdout))
+    efetcher.logger.setLevel('DEBUG')
+    efetcher.request_pool.logger.addHandler(logging.StreamHandler(sys.stdout))
+    efetcher.request_pool.logger.setLevel('DEBUG')
+
     metadata_response = efetcher.inquire(
         {
             'db': 'sra',

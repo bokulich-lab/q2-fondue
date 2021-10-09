@@ -15,9 +15,10 @@ from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
 from xmltodict import parse as parsexml
 
-from q2_fondue.entrezpy_clients._utils import (SRAStudy, SRASample,
-                                               SRAExperiment, LibraryMetadata,
-                                               SRARun, rename_columns)
+from q2_fondue.entrezpy_clients._utils import (rename_columns)
+from q2_fondue.entrezpy_clients._sra_meta import (LibraryMetadata, SRARun,
+                                                  SRAExperiment, SRASample,
+                                                  SRAStudy)
 
 
 class InvalidIDs(Exception):
@@ -58,7 +59,7 @@ class EFetchResult(EutilsResult):
             pd.DataFrame: Metadata in a form of a DataFrame with an index
                 corresponding to the original accession IDs.
         """
-        # TODO: adjust this (dependent on id_type?)
+        # TODO: adjust this (dependent on id_type? - probably not, but check)
         df = pd.concat([v.generate_meta() for v in self.studies.values()])
         df.index.name = 'ID'
 
@@ -183,7 +184,33 @@ class EFetchResult(EutilsResult):
         self.samples[sample_id].experiments.append(self.experiments[exp_id])
         return exp_id
 
-    def _create_run(
+    def _create_single_run(self, attributes: dict, run: dict, exp_id: str):
+        run_id = run.get('@accession')
+
+        if run.get('@is_public') == 'true':
+            is_public = True
+        else:
+            is_public = False
+
+        custom_meta = self._extract_custom_attributes(
+            run, 'run')
+
+        pool_meta = attributes['Pool'].get('Member')
+        if run_id not in self.runs.keys():
+            self.runs[run_id] = SRARun(
+                id=run_id,
+                public=is_public,
+                bytes=run.get('@size'),
+                bases=pool_meta.get('@bases'),
+                spots=pool_meta.get('@spots'),
+                experiment_id=exp_id,
+                custom_meta=custom_meta
+            )
+        # append run to experiment
+        self.experiments[exp_id].runs.append(self.runs[run_id])
+        return run_id
+
+    def _create_runs(
             self, attributes: dict, exp_id: str, desired_id: str = None
     ):
         runset = attributes['RUN_SET']['RUN']
@@ -192,37 +219,17 @@ class EFetchResult(EutilsResult):
 
         # find the desired run
         if desired_id:
-            runset = next(
+            run = next(
                 (x for x in runset if x['@accession'] == desired_id)
             )
-            run_id = runset.get('@accession')
-
-            if runset.get('@is_public') == 'true':
-                is_public = True
-            else:
-                is_public = False
-
-            custom_meta = self._extract_custom_attributes(
-                runset, 'run')
-
-            pool_meta = attributes['Pool'].get('Member')
-            if run_id not in self.runs.keys():
-                self.runs[run_id] = SRARun(
-                    id=run_id,
-                    public=is_public,
-                    bytes=runset.get('@size'),
-                    bases=pool_meta.get('@bases'),
-                    spots=pool_meta.get('@spots'),
-                    experiment_id=exp_id,
-                    custom_meta=custom_meta
-                )
-            # append run to experiment
-            self.experiments[exp_id].runs.append(self.runs[run_id])
-            return [run_id]
+            run_ids = [self._create_single_run(attributes, run, exp_id)]
         # get all available runs
         else:
-            raise NotImplementedError('Extracting all runs from the run'
-                                      ' set is currently not supported')
+            run_ids = []
+            for run in runset:
+                run_id = self._create_single_run(attributes, run, exp_id)
+                run_ids.append(run_id)
+        return run_ids
 
     def _process_single_id(
             self, attributes_dict: dict, desired_id: str = None):
@@ -247,8 +254,8 @@ class EFetchResult(EutilsResult):
         exp_id = self._create_experiment(attributes_dict, sample_id)
 
         # TODO: what happens here when we asked for samples?
-        # create run
-        run_ids = self._create_run(attributes_dict, exp_id, desired_id)
+        # create runs
+        run_ids = self._create_runs(attributes_dict, exp_id, desired_id)
 
         return run_ids
 
@@ -332,13 +339,28 @@ class EFetchResult(EutilsResult):
 
         # TODO: we should also handle extracting multiple runs
         #  from the same experiment
-        if isinstance(parsed_results, list):
-            for i, uid in enumerate(uids):
-                self.metadata[uid] = self._process_single_id(
-                    parsed_results[i], desired_id=uid)
+        if self.id_type == 'run':
+            if isinstance(parsed_results, list):
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results[i], desired_id=uid)
+            else:
+                self.metadata[0] = self._process_single_id(
+                    parsed_results, desired_id=uids[0])
+        # TODO: not sure whether this actually works: the API hangs and we
+        #  never get a response when submitting sample ids...
+        elif self.id_type == 'sample':
+            if isinstance(parsed_results, list):
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results[i])
+            else:
+                self.metadata[0] = self._process_single_id(
+                    parsed_results)
         else:
-            self.metadata[uids[0]] = self._process_single_id(
-                parsed_results, desired_id=uids[0])
+            raise NotImplementedError('Extracting metadata based on IDs '
+                                      'different than "sample" and "run" '
+                                      'is currently not supported.')
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
