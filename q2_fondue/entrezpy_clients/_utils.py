@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 
@@ -67,13 +67,29 @@ class LibraryMetadata:
 @dataclass
 class SRABaseMeta:
     id: str
-    child: str
+    custom_meta: Union[dict, None]
+    child: str = None
+
+    def __post_init__(self):
+        if self.custom_meta:
+            self.custom_meta_df = pd.DataFrame(
+                self.custom_meta, index=[self.id])
+        else:
+            self.custom_meta_df = None
 
     def get_base_metadata(self, excluded):
-        index = get_attrs(self, excluded=('child',) + excluded)
+        index = get_attrs(
+            self,
+            excluded=('child', 'custom_meta', 'custom_meta_df') + excluded)
         base_meta = pd.DataFrame(
             data=[getattr(self, k) for k in index], index=index).T
         base_meta.index = [self.id]
+
+        if self.custom_meta:
+            base_meta = pd.concat(
+                [base_meta, self.custom_meta_df], axis=1,
+            )
+
         return base_meta
 
     def get_child_metadata(self):
@@ -96,6 +112,7 @@ class SRARun(SRABaseMeta):
     child: str = None
 
     def __post_init__(self):
+        super().__post_init__()
         self.avg_spot_len = int(int(self.bases)/int(self.spots))
 
     def generate_meta(self):

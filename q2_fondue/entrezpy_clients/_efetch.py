@@ -62,11 +62,11 @@ class EFetchResult(EutilsResult):
         df = pd.concat([v.generate_meta() for v in self.studies.values()])
         df.index.name = 'ID'
 
-        # clean up column names
-        df = rename_columns(df)
-
         # remove empty columns, if any
         df.dropna(axis=1, inplace=True, how='all')
+
+        # clean up column names
+        df = rename_columns(df)
 
         # reorder columns in a more sensible fashion
         cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
@@ -111,10 +111,14 @@ class EFetchResult(EutilsResult):
             if isinstance(org, dict):
                 org = org.get('#text')
 
+            custom_meta = self._extract_custom_attributes(
+                attributes['STUDY'], 'study')
+
             self.studies[study_id] = SRAStudy(
                 id=study_id,
                 bioproject_id=bioproject_id,
-                center_name=org
+                center_name=org,
+                custom_meta=custom_meta
             )
         return study_id
 
@@ -127,6 +131,10 @@ class EFetchResult(EutilsResult):
                 biosample_id = next(
                     (x for x in biosample_id if x['@namespace'] == 'BioSample')
                 )
+
+            custom_meta = self._extract_custom_attributes(
+                attributes['SAMPLE'], 'sample')
+
             self.samples[sample_id] = SRASample(
                 id=sample_id,
                 name=pool_meta.get('@sample_name'),
@@ -134,7 +142,8 @@ class EFetchResult(EutilsResult):
                 biosample_id=biosample_id.get('#text'),
                 organism=pool_meta.get('@organism'),
                 tax_id=pool_meta.get('@tax_id'),
-                study_id=study_id
+                study_id=study_id,
+                custom_meta=custom_meta
             )
         # append sample to study
         self.studies[study_id].samples.append(self.samples[sample_id])
@@ -167,7 +176,8 @@ class EFetchResult(EutilsResult):
                 instrument=instrument,
                 platform=platform,
                 sample_id=sample_id,
-                library=self._extract_library_info(attributes)
+                library=self._extract_library_info(attributes),
+                custom_meta=None
             )
         # append experiment to sample
         self.samples[sample_id].experiments.append(self.experiments[exp_id])
@@ -192,6 +202,9 @@ class EFetchResult(EutilsResult):
             else:
                 is_public = False
 
+            custom_meta = self._extract_custom_attributes(
+                runset, 'run')
+
             pool_meta = attributes['Pool'].get('Member')
             if run_id not in self.runs.keys():
                 self.runs[run_id] = SRARun(
@@ -200,7 +213,8 @@ class EFetchResult(EutilsResult):
                     bytes=runset.get('@size'),
                     bases=pool_meta.get('@bases'),
                     spots=pool_meta.get('@spots'),
-                    experiment_id=exp_id
+                    experiment_id=exp_id,
+                    custom_meta=custom_meta
                 )
             # append run to experiment
             self.experiments[exp_id].runs.append(self.runs[run_id])
@@ -239,36 +253,64 @@ class EFetchResult(EutilsResult):
         return run_ids
 
     @staticmethod
-    def _extract_custom_attributes(attributes_dict: dict):
+    def _custom_attributes_to_dict(attributes: List[dict], level: str):
+        """Converts attributes list into a dictionary
+
+        Args:
+            attributes (List[dict]): List of attribute dictionaries, e.g.:
+                [{'TAG': 'tag1', 'VALUE': 'value1'},
+                 {'TAG': 'tag2', 'VALUE': 'value2'},
+                 {'TAG': 'tag1', 'VALUE': 'value2'}]
+
+        Returns:
+            attr_dict (dict): De-duplicated dictionary of attributes, e.g:
+                {'tag1_1': 'value1', 'tag1_2': 'value2', 'tag2': 'value2'}
+        """
+        if isinstance(attributes, dict):
+            attributes = [attributes]
+        attributes = [attr for attr in attributes if "VALUE" in attr.keys()]
+        attrs_sorted = sorted(attributes, key=lambda x: (x['TAG'], x['VALUE']))
+        tags = [x['TAG'] for x in attrs_sorted]
+        values = [x['VALUE'] for x in attrs_sorted]
+
+        # de-duplicate tags
+        tags_dedupl = []
+        for i, tag in enumerate(tags):
+            total, count = tags.count(tag), tags[:i].count(tag)
+            if total > 1:
+                warn(
+                    f'One of the metadata keys ({tag}) is duplicated. '
+                    f'It will be retained with a numeric suffix.'
+                ) if count == 0 else False
+                tags_dedupl.append(f'{tag}_{count + 1} [{level}]')
+            else:
+                tags_dedupl.append(f'{tag} [{level}]')
+
+        return {t: v for t, v in zip(tags_dedupl, values)}
+
+    def _extract_custom_attributes(self, attributes: dict, level: str):
         """Extracts custom attributes from the metadata dictionary.
 
         Args:
-            attributes_dict (dict): Dictionary with all the metadata
+            attributes (dict): Dictionary with all the metadata
                 from the XML response.
+            level (str):
 
         """
         processed_meta = {}
-        keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
-        for k1, v1 in attributes_dict.items():
-            if k1 in keys_to_keep and f'{k1}_ATTRIBUTES' in v1.keys():
-                try:
-                    dupl = 0
-                    for attr in v1[f'{k1}_ATTRIBUTES'][f'{k1}_ATTRIBUTE']:
-                        current_attr = attr['TAG']
-                        if current_attr in processed_meta.keys():
-                            warn(
-                                f'One of the metadata keys ({current_attr}) '
-                                f'is duplicated. It will be retained with '
-                                f'a "_{dupl+1}" suffix.'
-                            )
-                            dupl += 1
-                            current_attr = f'{current_attr}_{dupl}'
-                        processed_meta[current_attr] = attr.get('VALUE')
-                except Exception as e:
-                    print(f'Exception has occurred when processing {k1} '
-                          f'attributes: "{e}". Contents of the metadata '
-                          f'was: {attributes_dict}.')
-                    raise
+        level = level.upper()
+        level_items = attributes.get(f'{level}_ATTRIBUTES')
+        if level_items:
+            level_attributes = level_items.get(f'{level}_ATTRIBUTE')
+            try:
+                attr_dedupl = self._custom_attributes_to_dict(
+                    level_attributes, level)
+                processed_meta.update(attr_dedupl)
+            except Exception as e:
+                print(f'Exception has occurred when processing {level} '
+                      f'attributes: "{e}". Contents of the metadata '
+                      f'was: {attributes}.')
+                raise
         return processed_meta
 
     def add_metadata(self, response, uids: List[str]):
