@@ -18,6 +18,22 @@ from q2_types.sample_data import SampleData
 from q2_types.per_sample_sequences import (
     SequencesWithQuality, PairedEndSequencesWithQuality)
 from q2_fondue.sequences import get_sequences
+from q2_fondue.get_all import get_all
+
+dict_parameter_descriptions = {
+    'email': 'Your e-mail address (required by NCBI for metadata fetching).',
+    'n_jobs': 'Number of concurrent metadata download jobs (default: 1).',
+    'retries': 'Number of retries to fetch sequences (default: 2).',
+    'threads': 'Number of threads to be used in parallel to fetch '
+    'sequences (default: 6).'
+}
+dict_output_descriptions = {
+    'metadata': 'Table containing metadata for all the requested studies.',
+    'single_reads': 'Artifact containing single-read fastq.gz files '
+    'for all the requested studies.',
+    'paired_reads': 'Artifact containing paired-end fastq.gz files '
+    'for all the requested studies.'
+}
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -49,12 +65,12 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'sample_ids': 'Path to file containing sample IDs for which the sequences should '
-                          'be fetched. Should conform to QIIME Metadata format.',
-        'email': 'Your e-mail address (required by NCBI).',
-        'n_jobs': 'Number of concurrent download jobs. Defaults to 1.'
+                      'be fetched. Should conform to QIIME Metadata format.',
+        'email': dict_parameter_descriptions['email'],
+        'n_jobs': dict_parameter_descriptions['n_jobs']
     },
     output_descriptions={
-        'metadata': 'Table containing metadata for all the requested studies.'
+        'metadata': dict_output_descriptions['metadata']
     },
     name='Fetch sequence-related metadata based on study ID.',
     description=(
@@ -79,17 +95,14 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'sample_ids': 'Path to file containing sample IDs for which the sequences should '
-                          'be fetched. Should conform to QIIME Metadata format.',
-        'retries': 'Number of retries to fetch sequences '
-        '(default:2).',
-        'threads': 'Number of threads to be used in parallel '
-        '(default:6).'
+                      'be fetched. Should conform to QIIME Metadata format.',
+
+        'retries': dict_parameter_descriptions['retries'],
+        'threads': dict_parameter_descriptions['threads']
     },
     output_descriptions={
-        'single_reads': 'Artifact containing single-read fastq.gz files '
-        'for all the requested studies.',
-        'paired_reads': 'Artifact containing paired-end fastq.gz files '
-        'for all the requested studies.'
+        'single_reads': dict_output_descriptions['single_reads'],
+        'paired_reads': dict_output_descriptions['paired_reads']
     },
     name='Fetch sequences based on sample ID.',
     description=(
@@ -97,3 +110,27 @@ plugin.methods.register_function(
     ),
     citations=[]
 )
+
+plugin.pipelines.register_function(
+    function=get_all,
+    inputs={},
+    parameters={
+        'sample_ids': List[Str],
+        'email': Str,
+        'n_jobs': Int % Range(1, None),
+        'retries': Int % Range(1, None),
+        'threads': Int % Range(1, None)
+    },
+    outputs=[('metadata', SRAMetadata),
+             ('single_reads', SampleData[SequencesWithQuality]),
+             ('paired_reads', SampleData[PairedEndSequencesWithQuality])
+             ],
+    input_descriptions={},
+    parameter_descriptions={
+        'sample_ids': 'A list of sample IDs for which the metadata and '
+        'the sequences should be fetched.',
+        **dict_parameter_descriptions},
+    output_descriptions=dict_output_descriptions,
+    name='Fetch sequence-related metadata and sequences of all sample IDs.',
+    description='Pipeline fetching all sequence-related metadata and raw '
+    'sequences of provided sample IDs.')
