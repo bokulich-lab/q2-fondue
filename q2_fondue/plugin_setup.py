@@ -41,14 +41,14 @@ plugin.methods.register_function(
     function=get_metadata,
     inputs={},
     parameters={
-        'sample_ids': Metadata,
+        'sample_id_file': Metadata,
         'email': Str,
         'n_jobs': Int % Range(1, None)
     },
     outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'Path to file containing sample IDs for which the sequences should '
+        'sample_id_file': 'Path to file containing sample IDs for which the sequences should '
                       'be fetched. Should conform to QIIME Metadata format.',
         'email': 'Your e-mail address (required by NCBI).',
         'n_jobs': 'Number of concurrent download jobs. Defaults to 1.'
@@ -70,7 +70,7 @@ plugin.methods.register_function(
     function=get_sequences,
     inputs={},
     parameters={
-        'sample_ids': Metadata,
+        'sample_id_file': Metadata,
         'retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
@@ -78,8 +78,8 @@ plugin.methods.register_function(
              ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'Path to file containing sample IDs for which the sequences should '
-                      'be fetched. Should conform to QIIME Metadata format.',
+        'sample_id_file': 'Path to file containing sample IDs for which the sequences should '
+                          'be fetched. Should conform to QIIME Metadata format.',
         'retries': 'Number of retries to fetch sequences '
         '(default:2).',
         'threads': 'Number of threads to be used in parallel '

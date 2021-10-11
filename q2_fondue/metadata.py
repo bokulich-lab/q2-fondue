@@ -63,7 +63,7 @@ def _validate_esearch_result(
 
 
 def get_metadata(
-        sample_ids: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
+        sample_id_file: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
     """Fetches metadata using the provided sample/run accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
@@ -71,7 +71,7 @@ def get_metadata(
     will be informed on which IDs require checking.
 
     Args:
-        sample_ids (Metadata): List of all the sample IDs to be fetched.
+        sample_id_file (Metadata): List of all the sample IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
 
@@ -79,15 +79,18 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
+    # Retrieve input IDs
+    sample_id_set = sample_id_file.get_ids()
+
     # validate the ids
     esearcher = es.Esearcher(
         'esearcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
-    _validate_esearch_result(esearcher, sample_ids)
+    _validate_esearch_result(esearcher, sample_id_set)
 
     efetcher = ef.Efetcher(
         'efetcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
-    return _efetcher_inquire(efetcher, sample_ids)
+    return _efetcher_inquire(efetcher, sample_id_set)
