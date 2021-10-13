@@ -12,6 +12,8 @@ import gzip
 import shutil
 import itertools
 import tempfile
+
+from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
@@ -185,12 +187,15 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
         accID = 'testaccB'
+        test_temp_tsv = self.move_files_2_tmp_dir([accID + '_md.tsv'])
+        test_temp_md = Metadata.load(test_temp_tsv)
+
         test_temp_dir = self.move_files_2_tmp_dir([accID + '.fastq'])
         mock_tmpdir.return_value = test_temp_dir
 
         with self.assertWarnsRegex(Warning, "No paired-read sequences"):
             casava_single, casava_paired = get_sequences(
-                [accID], retries=0)
+                test_temp_md, retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
