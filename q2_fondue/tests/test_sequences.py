@@ -187,11 +187,12 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
         accID = 'testaccB'
-        test_temp_tsv = self.move_files_2_tmp_dir([accID + '_md.tsv'])
-        test_temp_md = Metadata.load(test_temp_tsv)
-
         test_temp_dir = self.move_files_2_tmp_dir([accID + '.fastq'])
         mock_tmpdir.return_value = test_temp_dir
+
+        accID_tsv = accID + '_md.tsv'
+        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
 
         with self.assertWarnsRegex(Warning, "No paired-read sequences"):
             casava_single, casava_paired = get_sequences(
@@ -212,9 +213,13 @@ class TestSequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
         mock_tmpdir.return_value = test_temp_dir
 
+        accID_tsv = accID + '_md.tsv'
+        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+
         with self.assertWarnsRegex(Warning, "No single-read sequences"):
             casava_single, casava_paired = get_sequences(
-                [accID], retries=0)
+                test_temp_md, retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -234,8 +239,12 @@ class TestSequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
         mock_tmpdir.return_value = test_temp_dir
 
+        accID_tsv = 'testaccBC_md.tsv'
+        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+
         casava_single, casava_paired = get_sequences(
-            [accID_single, accID_paired], retries=0)
+            test_temp_md, retries=0)
         self.assertIsInstance(casava_single,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
