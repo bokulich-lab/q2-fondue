@@ -64,8 +64,9 @@ plugin.methods.register_function(
     outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'Path to file containing sample IDs for which the sequences should '
-                      'be fetched. Should conform to QIIME Metadata format.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         'email': dict_parameter_descriptions['email'],
         'n_jobs': dict_parameter_descriptions['n_jobs']
     },
@@ -94,8 +95,9 @@ plugin.methods.register_function(
              ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'Path to file containing sample IDs for which the sequences should '
-                      'be fetched. Should conform to QIIME Metadata format.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         'retries': dict_parameter_descriptions['retries'],
         'threads': dict_parameter_descriptions['threads']
     },
