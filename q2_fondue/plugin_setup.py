@@ -116,7 +116,7 @@ plugin.pipelines.register_function(
     function=get_all,
     inputs={},
     parameters={
-        'sample_ids': List[Str],
+        'sample_ids': Metadata,
         'email': Str,
         'n_jobs': Int % Range(1, None),
         'retries': Int % Range(1, None),
@@ -128,8 +128,9 @@ plugin.pipelines.register_function(
              ],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'A list of sample IDs for which the metadata and '
-        'the sequences should be fetched.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         **dict_parameter_descriptions},
     output_descriptions=dict_output_descriptions,
     name='Fetch sequence-related metadata and sequences of all sample IDs.',
