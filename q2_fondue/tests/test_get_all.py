@@ -10,6 +10,7 @@ import unittest
 import pandas as pd
 from unittest.mock import (patch, ANY)
 from q2_fondue.tests.test_sequences import SequenceTests
+from qiime2.metadata import Metadata
 from qiime2.plugins import fondue
 
 
@@ -31,6 +32,8 @@ class TestGetAll(SequenceTests):
         """
         ls_accIDs = ['testaccB']
         str_mocked_email = 'fake@email.com'
+        accID_tsv = 'testaccB_md.tsv'
+        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
 
         # define mocked return values for get_metadata mocks
         mock_validation.return_value = True
@@ -44,7 +47,7 @@ class TestGetAll(SequenceTests):
 
         # run pipeline
         fondue.actions.get_all(
-            ls_accIDs, str_mocked_email, retries=1)
+            test_temp_md, str_mocked_email, retries=1)
 
         # function call assertions for get_metadata within
         mock_esearcher.assert_called_once_with('esearcher',
