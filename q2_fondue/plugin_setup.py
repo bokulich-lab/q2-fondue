@@ -8,7 +8,7 @@
 
 import importlib
 
-from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range)
+from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range, Metadata)
 
 from q2_fondue import __version__
 from q2_fondue.metadata import get_metadata
@@ -57,15 +57,16 @@ plugin.methods.register_function(
     function=get_metadata,
     inputs={},
     parameters={
-        'sample_ids': List[Str],
+        'sample_ids': Metadata,
         'email': Str,
         'n_jobs': Int % Range(1, None)
     },
     outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'A list of sample IDs for which the metadata should '
-                      'be fetched.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         'email': dict_parameter_descriptions['email'],
         'n_jobs': dict_parameter_descriptions['n_jobs']
     },
@@ -86,7 +87,7 @@ plugin.methods.register_function(
     function=get_sequences,
     inputs={},
     parameters={
-        'sample_ids': List[Str],
+        'sample_ids': Metadata,
         'retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
@@ -94,8 +95,9 @@ plugin.methods.register_function(
              ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'A list of sample IDs for which the sequences should '
-        'be fetched.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         'retries': dict_parameter_descriptions['retries'],
         'threads': dict_parameter_descriptions['threads']
     },
@@ -114,7 +116,7 @@ plugin.pipelines.register_function(
     function=get_all,
     inputs={},
     parameters={
-        'sample_ids': List[Str],
+        'sample_ids': Metadata,
         'email': Str,
         'n_jobs': Int % Range(1, None),
         'retries': Int % Range(1, None),
@@ -126,8 +128,9 @@ plugin.pipelines.register_function(
              ],
     input_descriptions={},
     parameter_descriptions={
-        'sample_ids': 'A list of sample IDs for which the metadata and '
-        'the sequences should be fetched.',
+        'sample_ids': 'Path to file containing sample IDs for which the '
+                      'sequences should be fetched. Should conform to QIIME '
+                      'Metadata format.',
         **dict_parameter_descriptions},
     output_descriptions=dict_output_descriptions,
     name='Fetch sequence-related metadata and sequences of all sample IDs.',
