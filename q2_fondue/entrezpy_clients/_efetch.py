@@ -57,9 +57,8 @@ class EFetchResult(EutilsResult):
 
         Returns:
             pd.DataFrame: Metadata in a form of a DataFrame with an index
-                corresponding to the original accession IDs.
+                corresponding to the run IDs.
         """
-        # TODO: adjust this (dependent on id_type? - probably not, but check)
         df = pd.concat([v.generate_meta() for v in self.studies.values()])
         df.index.name = 'ID'
 
@@ -78,16 +77,17 @@ class EFetchResult(EutilsResult):
 
         return df[cols]
 
-    def _create_study(self, attributes: dict):
-        """Extracts experiment-specific data from the metadata dictionary.
+    def _create_study(self, attributes: dict) -> str:
+        """Creates an SRAStudy object.
 
-        Information like BioProject ID as well as instrument and platform
-        details are extracted here.
+        Information like BioProject ID as well as center name and custom
+        metadata are added here.
 
         Args:
             attributes (dict): Dictionary with all the metadata from
                 the XML response.
-
+        Returns:
+            study_id (str): ID of the processed study.
         """
         exp = attributes['EXPERIMENT']
         study_id = exp['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
@@ -123,7 +123,19 @@ class EFetchResult(EutilsResult):
             )
         return study_id
 
-    def _create_sample(self, attributes: dict, study_id: str):
+    def _create_sample(self, attributes: dict, study_id: str) -> str:
+        """Creates an SRASample object.
+
+        Information like BioSample ID, organism, name as well as custom
+        metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            study_id (str): ID of the study which the sample belongs to.
+        Returns:
+            sample_id (str): ID of the processed sample.
+        """
         pool_meta = attributes['Pool'].get('Member')
         sample_id = pool_meta.get('@accession')
         if sample_id not in self.samples.keys():
@@ -151,12 +163,14 @@ class EFetchResult(EutilsResult):
         return sample_id
 
     @staticmethod
-    def _extract_library_info(attributes: dict):
-        """Extracts library-specific information from the metadata dictionary.
+    def _extract_library_info(attributes: dict) -> LibraryMetadata:
+        """Extracts library-specific information.
 
         Args:
             attributes (dict): Dictionary with all the metadata
                 from the XML response.
+        Returns:
+            library_meta (LibraryMetadata): Library metadata object.
         """
         lib_meta = attributes['EXPERIMENT']['DESIGN'].get('LIBRARY_DESCRIPTOR')
 
@@ -166,7 +180,19 @@ class EFetchResult(EutilsResult):
 
         return LibraryMetadata(**lib)
 
-    def _create_experiment(self, attributes: dict, sample_id: str):
+    def _create_experiment(self, attributes: dict, sample_id: str) -> str:
+        """Creates an SRAExperiment object.
+
+        Information like Experiment ID, platform, instrument and library
+        metadata as well as other custom metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            sample_id (str): ID of the sample which the experiment belongs to.
+        Returns:
+            exp_id (str): ID of the processed study.
+        """
         exp_meta = attributes['EXPERIMENT']
         exp_id = exp_meta['IDENTIFIERS'].get('PRIMARY_ID')
         if exp_id not in self.experiments.keys():
@@ -184,7 +210,21 @@ class EFetchResult(EutilsResult):
         self.samples[sample_id].experiments.append(self.experiments[exp_id])
         return exp_id
 
-    def _create_single_run(self, attributes: dict, run: dict, exp_id: str):
+    def _create_single_run(
+            self, attributes: dict, run: dict, exp_id: str) -> str:
+        """Creates a single SRARun object.
+
+        Information like Run ID, count of bases as well as other custom
+        metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            run (dict): Dictionary with run metadata.
+            exp_id (str): ID of the experiment which the run belongs to.
+        Returns:
+            run_id (str): ID of the processed study.
+        """
         run_id = run.get('@accession')
 
         if run.get('@is_public') == 'true':
@@ -212,7 +252,22 @@ class EFetchResult(EutilsResult):
 
     def _create_runs(
             self, attributes: dict, exp_id: str, desired_id: str = None
-    ):
+    ) -> List[str]:
+        """Creates all the required runs.
+
+        Depending on whether a specific run should be extracted from the run
+        set (defined by desired_id), either just one run will be created or
+        one run object per run in the entire run set.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            exp_id (str): ID of the experiment which the run belongs to.
+            desired_id (str): ID of the run to be extracted. If None, all runs
+                will be added.
+        Returns:
+            run_ids (List[str]): List of all processed run IDs.
+        """
         runset = attributes['RUN_SET']['RUN']
         if not isinstance(runset, list):
             runset = [runset]
@@ -232,30 +287,31 @@ class EFetchResult(EutilsResult):
         return run_ids
 
     def _process_single_id(
-            self, attributes_dict: dict, desired_id: str = None):
+            self, attributes: dict, desired_id: str = None) -> List[str]:
         """Processes metadata obtained for a single accession ID.
 
         Args:
-            attributes_dict (dict): Dictionary with all the metadata
+            attributes (dict): Dictionary with all the metadata
                 from the XML response.
             desired_id (str): ID of the run/sample for which metadata
                 should be extracted. If None, all the runs from any given
                 run set will be extracted (not implemented).
-
+        Returns:
+            run_ids (List[str]): List of all processed run IDs.
         """
         # create study, if required
-        study_id = self._create_study(attributes_dict)
+        study_id = self._create_study(attributes)
 
         # create sample, if required
-        sample_id = self._create_sample(attributes_dict, study_id)
+        sample_id = self._create_sample(attributes, study_id)
 
         # TODO: what happens here when we asked for samples?
         # create experiment, if required
-        exp_id = self._create_experiment(attributes_dict, sample_id)
+        exp_id = self._create_experiment(attributes, sample_id)
 
         # TODO: what happens here when we asked for samples?
         # create runs
-        run_ids = self._create_runs(attributes_dict, exp_id, desired_id)
+        run_ids = self._create_runs(attributes, exp_id, desired_id)
 
         return run_ids
 
@@ -295,14 +351,16 @@ class EFetchResult(EutilsResult):
 
         return {t: v for t, v in zip(tags_dedupl, values)}
 
-    def _extract_custom_attributes(self, attributes: dict, level: str):
+    def _extract_custom_attributes(self, attributes: dict, level: str) -> dict:
         """Extracts custom attributes from the metadata dictionary.
 
         Args:
             attributes (dict): Dictionary with all the metadata
                 from the XML response.
-            level (str):
-
+            level (str): SRA hierarchy level at which metadata should be
+                extracted (study, sample, run).
+        Returns:
+            processed_meta (dict): All metadata extracted for the given level.
         """
         processed_meta = {}
         level = level.upper()
@@ -327,7 +385,7 @@ class EFetchResult(EutilsResult):
         correspond to corresponding metadata extracted from the XML response.
 
         Args:
-            response (): Response received from Efetch.
+            response (io.StringIO): Response received from Efetch.
             uids (List[str]): List of accession IDs for which
                 the data was fetched.
 

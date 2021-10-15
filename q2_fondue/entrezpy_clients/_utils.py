@@ -19,7 +19,6 @@ PREFIX = {
 
 
 def get_attrs(obj, excluded=()):
-    print([k for k, v in vars(obj).items()])
     return [k for k, v in vars(obj).items()
             if k not in excluded and not k.startswith('__')]
 
