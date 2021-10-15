@@ -13,8 +13,10 @@ import warnings
 import itertools
 import tempfile
 import subprocess
+
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
+from qiime2 import Metadata
 
 
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
@@ -188,7 +190,7 @@ def _write2casava_dir_paired(tmpdirname, casava_result_path,
 
 
 def get_sequences(
-        sample_ids: list,
+        sample_ids: Metadata,
         retries: int = 2,
         threads:
         int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt,
@@ -202,7 +204,7 @@ def get_sequences(
     and can use multiple `threads`.
 
     Args:
-        sample_ids (List[str]): List of all sample IDs to be fetched.
+        sample_ids (Metadata): List of all sample IDs to be fetched.
         retries (int, default=2): Number of retries to fetch sequences.
         threads (int, default=6): Number of threads to be used in parallel.
 
@@ -215,9 +217,11 @@ def get_sequences(
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
+    sample_id_set = list(sample_ids.get_ids())
+
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
+        _run_fasterq_dump_for_all(sample_id_set, tmpdirname, threads,
                                   retries)
 
         # processing downloaded files

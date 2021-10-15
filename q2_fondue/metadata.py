@@ -9,9 +9,11 @@
 import logging
 import sys
 from typing import List
-import pandas as pd
+
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
+import pandas as pd
+from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
@@ -89,7 +91,7 @@ def _determine_id_type(ids: list):
 
 
 def get_metadata(
-        sample_ids: list, email: str, n_jobs: int = 1) -> pd.DataFrame:
+        sample_ids: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
     """Fetches metadata using the provided sample/run accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
@@ -97,7 +99,7 @@ def get_metadata(
     will be informed on which IDs require checking.
 
     Args:
-        sample_ids (List[str]): List of all the sample IDs to be fetched.
+        sample_ids (Metadata): List of all the sample IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
 
@@ -105,6 +107,9 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
+    # Retrieve input IDs
+    sample_ids = list(sample_ids.get_ids())
+
     # figure out if we're dealing with sample or run ids
     id_type = _determine_id_type(sample_ids)
 

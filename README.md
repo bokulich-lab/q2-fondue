@@ -29,14 +29,14 @@ To fetch metadata associated with a number of runs, execute the following comman
 
 ```shell
 qiime fondue get-metadata \
-              --p-sample-ids <id1> <id2> <id3> ... \
+              --m-sample-ids-file metadata_file.tsv \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
 
 where:
-- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
@@ -48,13 +48,13 @@ for all of the requested runs.
 To get single-read and paired-end sequences associated with a number of runs, execute this command:
 ```shell
 qiime fondue get-sequences \
-              --p-sample-ids <id1> <id2> <id3> ... \
+              --m-sample-ids-file metadata_file.tsv \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired
 ```
 
 where:
-- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 
@@ -65,11 +65,11 @@ To fetch both sequence-associated metadata and sequences associated with the acc
 
 ```shell
 qiime fondue get-all \
-              --p-sample-ids <id1> <id2> <id3> ... \ 
+              --m-sample-ids-file metadata_file.tsv \ 
               --p-email your_email@somewhere.com \
               --output-dir output-dir-name
 ```
 where:
-- `--p-sample-ids` is a list of accession numbers for all of the runs
+- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata and sequences are stored as Q2 artifacts
