@@ -190,7 +190,8 @@ class TestSraMetadata(TestPluginBase):
         self.assertFrameEqual(exp_df, obs_df)
 
     def test_sra_study_with_smps(self):
-        smps = self._generate_smps(['smp123', 'smp234'], 'std123', exp_count=2)
+        sample_ids = ['smp123', 'smp234']
+        smps = self._generate_smps(sample_ids, 'std123', exp_count=2)
         std = SRAStudy(
             id='std123', custom_meta=self._generate_custom_meta('std'),
             samples=smps, **self.study_meta
@@ -201,9 +202,9 @@ class TestSraMetadata(TestPluginBase):
         exp_exp_smp_ids = list(
             zip(np.repeat([f'exp{i}' for i in range(1, 5)], 2),
                 np.repeat([_id for _id, _ in self._generate_sample_meta(
-                    ['smp123', 'smp234'])], 4),
+                    sample_ids)], 4),
                 np.repeat([smeta for _, smeta in self._generate_sample_meta(
-                    ['smp123', 'smp234'])], 4)
+                    sample_ids)], 4)
                 )
         )
         exp_df = pd.DataFrame(
