@@ -69,8 +69,7 @@ class SRABaseMeta(metaclass=ABCMeta):
             self,
             excluded=('child', 'custom_meta', 'custom_meta_df') + excluded)
         base_meta = pd.DataFrame(
-            data=[getattr(self, k) for k in index], index=index).T
-        base_meta.index = [self.id]
+            data={k: getattr(self, k) for k in index}, index=[self.id])
 
         if self.custom_meta:
             base_meta = pd.concat(
@@ -86,10 +85,12 @@ class SRABaseMeta(metaclass=ABCMeta):
         Returns:
              child_meta (pd.DataFrame): Requested children objects' metadata.
         """
-        child_meta = pd.concat(
-            [x.generate_meta() for x in
-             self.__getattribute__(f'{self.child}s')]
-        )
+        child_meta_dfs = [x.generate_meta() for x in
+                          self.__getattribute__(f'{self.child}s')]
+        if child_meta_dfs:
+            child_meta = pd.concat(child_meta_dfs)
+        else:
+            child_meta = pd.DataFrame()
         child_meta.index.name = f'{self.child}_id'
         return child_meta
 
@@ -174,8 +175,13 @@ class SRAExperiment(SRABaseMeta):
 
         exp_meta = pd.concat([exp_meta, lib_meta], axis=1)
         runs_meta = self.get_child_metadata()
-        return runs_meta.merge(
-            exp_meta, left_on='experiment_id', right_index=True)
+        if len(runs_meta) > 0:
+            runs_merged = runs_meta.merge(
+                exp_meta, left_on='experiment_id', right_index=True)
+            runs_merged.index.name = 'run_id'
+            return runs_merged
+        else:
+            return exp_meta
 
 
 @dataclass
@@ -212,8 +218,13 @@ class SRASample(SRABaseMeta):
         """
         sample_meta = self.get_base_metadata(excluded=('id', 'experiments'))
         exps_meta = self.get_child_metadata()
-        return exps_meta.merge(
-            sample_meta, left_on='sample_id', right_index=True)
+        if len(exps_meta) > 0:
+            exps_merged = exps_meta.merge(
+                sample_meta, left_on='sample_id', right_index=True)
+            exps_merged.index.name = 'run_id'
+            return exps_merged
+        else:
+            return sample_meta
 
 
 @dataclass
@@ -243,5 +254,10 @@ class SRAStudy(SRABaseMeta):
         """
         study_meta = self.get_base_metadata(excluded=('id', 'samples'))
         samples_meta = self.get_child_metadata()
-        return samples_meta.merge(
-            study_meta, left_on='study_id', right_index=True)
+        if len(samples_meta) > 0:
+            samples_merged = samples_meta.merge(
+                study_meta, left_on='study_id', right_index=True)
+            samples_merged.index.name = 'run_id'
+            return samples_merged
+        else:
+            return study_meta
