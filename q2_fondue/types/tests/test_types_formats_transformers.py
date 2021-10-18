@@ -30,7 +30,7 @@ class TestFormats(TestPluginBase):
         with self.assertRaisesRegexp(
                 ValidationError,
                 'Some required columns are missing from the metadata file: '
-                'Organism, Instrument, Platform, Bases, Bytes, Consent, '
+                'Organism, Instrument, Platform, Bases, Bytes, Public, '
                 'Library Selection, Library Source, Library Layout, Study ID.'
         ):
             format.validate()
@@ -41,7 +41,7 @@ class TestFormats(TestPluginBase):
         with self.assertRaisesRegexp(
                 ValidationError,
                 'Some samples are missing IDs in the following fields: '
-                'BioSample ID, Study ID'
+                'Biosample ID, Study ID'
         ):
             format.validate()
 
