@@ -38,7 +38,9 @@ jobs:
         activate-environment: fondue-test-env
         environment-file: temp-env.yml
         channels: conda-forge,bioconda,qiime2,defaults
-    - run: |
+        auto-activate-base: false
+    - name: run tests
+      run: |
         make dev
         qiime dev refresh-cache
         make test-cov
