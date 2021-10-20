@@ -44,8 +44,7 @@ class TestGetAll(SequenceTests):
             [f'{acc_id}.fastq'])
 
         # run pipeline
-        fondue.actions.get_all(
-            test_md, 'fake@email.com', retries=1)
+        fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
 
         # function call assertions for get_metadata within
         mock_esearcher.assert_called_once_with(
