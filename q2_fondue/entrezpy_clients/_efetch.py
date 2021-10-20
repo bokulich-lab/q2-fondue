@@ -240,9 +240,9 @@ class EFetchResult(EutilsResult):
             self.runs[run_id] = SRARun(
                 id=run_id,
                 public=is_public,
-                bytes=run.get('@size'),
-                bases=pool_meta.get('@bases'),
-                spots=pool_meta.get('@spots'),
+                bytes=int(run.get('@size')),
+                bases=int(pool_meta.get('@bases')),
+                spots=int(pool_meta.get('@spots')),
                 experiment_id=exp_id,
                 custom_meta=custom_meta
             )
@@ -403,8 +403,9 @@ class EFetchResult(EutilsResult):
                     self.metadata[i] = self._process_single_id(
                         parsed_results[i], desired_id=uid)
             else:
-                self.metadata[0] = self._process_single_id(
-                    parsed_results, desired_id=uids[0])
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results, desired_id=uid)
         # TODO: not sure whether this actually works: the API hangs and we
         #  never get a response when submitting sample ids...
         elif self.id_type == 'sample':

@@ -53,6 +53,18 @@ class SRABaseMeta(metaclass=ABCMeta):
         else:
             self.custom_meta_df = None
 
+    def __eq__(self, other):
+        """Compares all attributes. To be used on subclasses that contain
+            DataFrames as attributes."""
+        same = {}
+        for k, v in vars(self).items():
+            if isinstance(v, pd.DataFrame):
+                same[k] = self.__getattribute__(k).equals(
+                    other.__getattribute__(k))
+            else:
+                same[k] = self.__getattribute__(k) == other.__getattribute__(k)
+        return all(same.values())
+
     def get_base_metadata(self, excluded: tuple) -> pd.DataFrame:
         """Generates a DataFrame containing basic metadata of the SRA object.
 
@@ -107,7 +119,7 @@ class SRABaseMeta(metaclass=ABCMeta):
         pass
 
 
-@dataclass
+@dataclass(eq=False)
 class SRARun(SRABaseMeta):
     """A class containing all the SRA run metadata.
 
@@ -131,7 +143,7 @@ class SRARun(SRABaseMeta):
     def __post_init__(self):
         """Calculates an average spot length."""
         super().__post_init__()
-        self.avg_spot_len = int(int(self.bases)/int(self.spots))
+        self.avg_spot_len = int(self.bases/self.spots)
 
     def generate_meta(self) -> pd.DataFrame:
         """Generates run's metadata.
@@ -184,7 +196,7 @@ class SRAExperiment(SRABaseMeta):
             return exp_meta
 
 
-@dataclass
+@dataclass(eq=False)
 class SRASample(SRABaseMeta):
     """A class containing all the SRA sample metadata.
 

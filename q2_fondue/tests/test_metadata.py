@@ -65,9 +65,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('single')
             obs_df = _efetcher_inquire(
-                self.fake_efetcher, ['FAKEID1'])
+                self.fake_efetcher, ['FAKEID1'], id_type='run')
         obs_request, = mock_request.call_args.args
-        exp_request = self.generate_efetch_request(['FAKEID1'])
+        exp_request = self.generate_ef_request(['FAKEID1'])
         exp_df = self.generate_expected_df().iloc[[0]]
 
         for arg in self.efetch_request_properties:
@@ -81,9 +81,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')
             obs_df = _efetcher_inquire(
-                self.fake_efetcher, ['FAKEID1', 'FAKEID2'])
+                self.fake_efetcher, ['FAKEID1', 'FAKEID2'], id_type='run')
         obs_request, = mock_request.call_args.args
-        exp_request = self.generate_efetch_request(
+        exp_request = self.generate_ef_request(
             ['FAKEID1', 'FAKEID2'], size=2)
         exp_df = self.generate_expected_df()
 
@@ -101,7 +101,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             obs_result = _validate_esearch_result(
                 self.fake_esearcher, ['SRR000001'])
         obs_request, = mock_request.call_args.args
-        exp_request = self.generate_esearch_request('SRR000001')
+        exp_request = self.generate_es_request('SRR000001')
 
         for arg in self.esearch_request_properties:
             self.assertEqual(
@@ -116,7 +116,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             obs_result = _validate_esearch_result(
                 self.fake_esearcher, ['SRR000001', 'SRR000013', 'ERR3978173'])
         obs_request, = mock_request.call_args.args
-        exp_request = self.generate_esearch_request(
+        exp_request = self.generate_es_request(
             'SRR000001 OR SRR000013 OR ERR3978173')
 
         for arg in self.esearch_request_properties:
