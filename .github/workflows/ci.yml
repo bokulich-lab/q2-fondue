@@ -37,6 +37,7 @@ jobs:
       with:
         activate-environment: q2-test-env
         environment-file: temp-env.yml
+        channels: conda-forge,bioconda,qiime2,defaults
     - run: |
         make dev
         qiime dev refresh-cache
