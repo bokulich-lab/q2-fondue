@@ -139,7 +139,7 @@ def _get_project_meta(email, n_jobs, project_ids):
 
 
 def get_metadata(
-        sample_ids: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
+        accession_ids: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
     """Fetches metadata using the provided sample/run accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
@@ -147,7 +147,7 @@ def get_metadata(
     will be informed on which IDs require checking.
 
     Args:
-        sample_ids (Metadata): List of all the sample IDs to be fetched.
+        accession_ids (Metadata): List of all the sample IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
 
@@ -156,13 +156,13 @@ def get_metadata(
 
     """
     # Retrieve input IDs
-    sample_ids = sorted(list(sample_ids.get_ids()))
+    accession_ids = sorted(list(accession_ids.get_ids()))
 
     # figure out if we're dealing with sample or run ids
-    id_type = _determine_id_type(sample_ids)
+    id_type = _determine_id_type(accession_ids)
 
     if id_type in ['sample', 'run']:
-        return _get_sample_or_run_meta(email, n_jobs, sample_ids, id_type)
+        return _get_sample_or_run_meta(email, n_jobs, accession_ids, id_type)
 
     elif id_type == 'bioproject':
-        return _get_project_meta(email, n_jobs, sample_ids)
+        return _get_project_meta(email, n_jobs, accession_ids)

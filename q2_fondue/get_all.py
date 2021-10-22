@@ -6,8 +6,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+from qiime2 import Metadata
+
+
 def get_all(ctx,
-            sample_ids,
+            accession_ids,
             email,
             n_jobs=1,
             retries=2,
@@ -18,9 +21,11 @@ def get_all(ctx,
     get_sequences = ctx.get_action('fondue', 'get_sequences')
 
     # fetch metadata
-    df_metadata, = get_metadata(sample_ids, email, n_jobs)
+    df_metadata, = get_metadata(accession_ids, email, n_jobs)
 
-    # fetch sequences
-    seq_single, seq_paired, = get_sequences(sample_ids, retries, threads)
+    # fetch sequences - use metadata df to get run ids, regardless if
+    # runs or projects were requested
+    run_ids = df_metadata.view(Metadata)
+    seq_single, seq_paired, = get_sequences(run_ids, retries, threads)
 
-    return (df_metadata, seq_single, seq_paired)
+    return df_metadata, seq_single, seq_paired
