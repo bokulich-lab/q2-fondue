@@ -8,8 +8,8 @@
 
 import unittest
 
-
-from pandas._testing import assert_frame_equal
+import pandas as pd
+from pandas._testing import assert_frame_equal, assert_series_equal
 
 from q2_fondue.entrezpy_clients._efetch import EFetchResult
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
@@ -213,6 +213,29 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         obs = self.efetch_result_single.metadata_to_df().sort_index(axis=1)
         exp = self.generate_expected_df().sort_index(axis=1)
         assert_frame_equal(exp, obs)
+
+    def test_efetch_extract_run_ids(self):
+        self.efetch_result_single.extract_run_ids(
+            self.xml_to_response('runs', prefix='efetch'))
+        exp_ids = {
+            0: ['SRR13961771'],
+            1: ['SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+                'SRR000057', 'SRR000058'],
+            2: ['SRR13961759']
+        }
+        self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
+
+    def test_efetch_metadata_to_series(self):
+        self.efetch_result_single.extract_run_ids(
+            self.xml_to_response('runs', prefix='efetch'))
+
+        obs_ids = self.efetch_result_single.metadata_to_series()
+        exp_ids = pd.Series([
+            'SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
+            'SRR000038', 'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+            'SRR000057', 'SRR000058', 'SRR13961759'], index=range(12))
+        assert_series_equal(exp_ids, obs_ids)
 
     def test_efanalyzer_analyze_result(self):
         self.efetch_analyzer.analyze_result(

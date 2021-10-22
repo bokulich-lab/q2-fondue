@@ -111,6 +111,8 @@ class EFetchResult(EutilsResult):
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
                             self.metadata[i] = [x.get('@acc') for x in runs]
+        # TODO: this needs an else-statement with a proper message
+        #  when we have logging enabled
 
     @staticmethod
     def _find_bioproject_id(bioproject: Union[list, dict]) -> str:
@@ -513,7 +515,7 @@ class EFetchAnalyzer(EutilsAnalyzer):
     def analyze_result(self, response, request):
         self.init_result(response, request)
         if self.response_type == 'docsum':
-            # we asked for IDS
+            # we asked for IDs
             self.result.extract_run_ids(response)
         else:
             # we asked for metadata

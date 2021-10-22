@@ -110,9 +110,9 @@ def _get_project_meta(email, n_jobs, project_ids):
     econduit = ec.Conduit(email=email, threads=n_jobs)
 
     # TODO: create a separate function to set this all up everywhere
-    handler = logging.StreamHandler(sys.stdout)
-    econduit.logger.setLevel("DEBUG")
-    econduit.logger.addHandler(handler)
+    # handler = logging.StreamHandler(sys.stdout)
+    # econduit.logger.setLevel("DEBUG")
+    # econduit.logger.addHandler(handler)
 
     samp_ids_pipeline = econduit.new_pipeline()
 
@@ -156,7 +156,7 @@ def get_metadata(
 
     """
     # Retrieve input IDs
-    sample_ids = list(sample_ids.get_ids())
+    sample_ids = sorted(list(sample_ids.get_ids()))
 
     # figure out if we're dealing with sample or run ids
     id_type = _determine_id_type(sample_ids)

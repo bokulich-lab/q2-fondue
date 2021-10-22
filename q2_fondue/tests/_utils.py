@@ -79,8 +79,8 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             self.metadata_dict = json.load(ff)
         self.maxDiff = None
 
-    def xml_to_response(self, kind, suffix=''):
-        path = self.get_data_path(f'metadata_response_{kind}{suffix}.xml')
+    def xml_to_response(self, kind, suffix='', prefix='metadata'):
+        path = self.get_data_path(f'{prefix}_response_{kind}{suffix}.xml')
         response = io.open(path, "rb", buffering=0)
         return response
 
@@ -100,9 +100,10 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             start=start,
             size=size)
 
-    def generate_ef_result(self, kind, id_type):
+    def generate_ef_result(self, kind, id_type, prefix='metadata'):
         return EFetchResult(
-            response=self.xml_to_response(kind), id_type=id_type,
+            response=self.xml_to_response(kind, prefix=prefix),
+            id_type=id_type,
             request=self.generate_ef_request(['FAKEID1', 'FAKEID2'])
         )
 
