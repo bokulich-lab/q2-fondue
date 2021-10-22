@@ -217,11 +217,11 @@ def get_sequences(
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
-    sample_id_set = list(sample_ids.get_ids())
+    sample_ids = list(sample_ids.get_ids())
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(sample_id_set, tmpdirname, threads,
+        _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
                                   retries)
 
         # processing downloaded files

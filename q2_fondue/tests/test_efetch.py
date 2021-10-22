@@ -29,15 +29,15 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         exp_study, _, _, _ = self.generate_sra_metadata()
         self.assertEqual(exp_study, obs_study)
 
-    def test_efetch_create_sample(self):
+    def test_efetch_create_samples(self):
         study_id = 'ERP120343'
         exp_std, exp_samp, _, _ = self.generate_sra_metadata()
         self.efetch_result_single.studies[study_id] = exp_std
 
-        obs_id = self.efetch_result_single._create_sample(
+        obs_ids = self.efetch_result_single._create_samples(
             self.metadata_dict, study_id=study_id)
 
-        self.assertEqual('ERS4372624', obs_id)
+        self.assertEqual(['ERS4372624'], obs_ids)
         self.assertEqual(1, len(self.efetch_result_single.samples))
 
         obs_sample = self.efetch_result_single.samples['ERS4372624']
@@ -72,7 +72,8 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.experiments[experiment_id] = exp_exp
 
         obs_id = self.efetch_result_single._create_single_run(
-            self.metadata_dict, run=self.metadata_dict['RUN_SET']['RUN'],
+            self.metadata_dict['Pool']['Member'],
+            run=self.metadata_dict['RUN_SET']['RUN'],
             exp_id=experiment_id
         )
 
@@ -91,7 +92,8 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.experiments[experiment_id] = exp_exp
 
         obs_ids = self.efetch_result_single._create_runs(
-            self.metadata_dict, exp_id=experiment_id, desired_id=run_id)
+            self.metadata_dict, exp_id=experiment_id,
+            sample_id=sample_id, desired_id=run_id)
 
         self.assertListEqual(['FAKEID1'], obs_ids)
         self.assertEqual(1, len(self.efetch_result_single.runs))
@@ -108,7 +110,8 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.experiments[experiment_id] = exp_exp
 
         obs_ids = self.efetch_result_single._create_runs(
-            self.metadata_dict, exp_id=experiment_id, desired_id=None)
+            self.metadata_dict, exp_id=experiment_id,
+            sample_id=sample_id, desired_id=None)
 
         self.assertListEqual(['FAKEID1'], obs_ids)
         self.assertEqual(1, len(self.efetch_result_single.runs))
@@ -207,7 +210,7 @@ class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('multi'), ['FAKEID1', 'FAKEID2'])
 
-        obs = self.efetch_result_single.to_df().sort_index(axis=1)
+        obs = self.efetch_result_single.metadata_to_df().sort_index(axis=1)
         exp = self.generate_expected_df().sort_index(axis=1)
         assert_frame_equal(exp, obs)
 

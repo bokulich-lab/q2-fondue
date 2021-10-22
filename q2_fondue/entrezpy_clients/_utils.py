@@ -14,7 +14,7 @@ PREFIX = {
     'experiment': ('SRX', 'ERX', 'DRX'),
     'sample': ('SRS', 'ERS', 'DRS'),
     'study': ('SRP', 'ERP', 'DRP'),
-    'bioproject': ('PRJN', 'PRJE', 'PRJD')
+    'bioproject': ('PRJ', )
 }
 
 
