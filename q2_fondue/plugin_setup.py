@@ -25,14 +25,14 @@ dict_parameter_descriptions = {
     'n_jobs': 'Number of concurrent metadata download jobs (default: 1).',
     'retries': 'Number of retries to fetch sequences (default: 2).',
     'threads': 'Number of threads to be used in parallel to fetch '
-    'sequences (default: 6).'
+               'sequences (default: 6).'
 }
 dict_output_descriptions = {
-    'metadata': 'Table containing metadata for all the requested studies.',
+    'metadata': 'Table containing metadata for all the requested IDs.',
     'single_reads': 'Artifact containing single-read fastq.gz files '
-    'for all the requested studies.',
+                    'for all the requested IDs.',
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
-    'for all the requested studies.'
+                    'for all the requested IDs.'
 }
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -64,19 +64,19 @@ plugin.methods.register_function(
     outputs=[('metadata', SRAMetadata)],
     input_descriptions={},
     parameter_descriptions={
-        'accession_ids': 'Path to file containing sample IDs for which the '
-                         'sequences should be fetched. Should conform to '
-                         'QIIME Metadata format.',
+        'accession_ids': 'Path to file containing run or BioProject IDs for '
+                         'which the metadata should be fetched. Should '
+                         'conform to QIIME Metadata format.',
         'email': dict_parameter_descriptions['email'],
         'n_jobs': dict_parameter_descriptions['n_jobs']
     },
     output_descriptions={
         'metadata': dict_output_descriptions['metadata']
     },
-    name='Fetch sequence-related metadata based on study ID.',
+    name='Fetch sequence-related metadata based on run or BioProject ID.',
     description=(
-        'Fetch sequence-related metadata based on study ID using Entrez. '
-        'Metadata from all the studies will be collapsed into one table.'
+        'Fetch sequence-related metadata based on run or BioProject ID '
+        'using Entrez. All metadata will be collapsed into one table.'
     ),
     citations=[]
 )
@@ -95,9 +95,9 @@ plugin.methods.register_function(
              ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
     input_descriptions={},
     parameter_descriptions={
-        'accession_ids': 'Path to file containing sample IDs for which the '
-                         'sequences should be fetched. Should conform to QIIME'
-                         ' Metadata format.',
+        'accession_ids': 'Path to file containing run IDs for '
+                         'which the sequences should be fetched. Should '
+                         'conform to QIIME Metadata format.',
         'retries': dict_parameter_descriptions['retries'],
         'threads': dict_parameter_descriptions['threads']
     },
@@ -105,10 +105,8 @@ plugin.methods.register_function(
         'single_reads': dict_output_descriptions['single_reads'],
         'paired_reads': dict_output_descriptions['paired_reads']
     },
-    name='Fetch sequences based on sample ID.',
-    description=(
-        'Fetch sequence data of all sample IDs.'
-    ),
+    name='Fetch sequences based on run ID.',
+    description='Fetch sequence data of all run IDs.',
     citations=[]
 )
 
@@ -128,11 +126,12 @@ plugin.pipelines.register_function(
              ],
     input_descriptions={},
     parameter_descriptions={
-        'accession_ids': 'Path to file containing sample IDs for which the '
-                         'sequences should be fetched. Should conform to '
-                         'QIIME Metadata format.',
+        'accession_ids': 'Path to file containing run or BioProject IDs '
+                         'for which the sequences should be fetched. '
+                         'Should conform to QIIME Metadata format.',
         **dict_parameter_descriptions},
     output_descriptions=dict_output_descriptions,
-    name='Fetch sequence-related metadata and sequences of all sample IDs.',
+    name='Fetch sequence-related metadata and sequences of all run or '
+         'BioProject IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
-    'sequences of provided sample IDs.')
+                'sequences of provided run or BioProject IDs.')
