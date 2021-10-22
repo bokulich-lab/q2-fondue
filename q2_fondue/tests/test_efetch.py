@@ -15,7 +15,7 @@ from q2_fondue.entrezpy_clients._efetch import EFetchResult
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
-class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
+class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
     package = 'q2_fondue.tests'
 
     def test_efetch_create_study(self):

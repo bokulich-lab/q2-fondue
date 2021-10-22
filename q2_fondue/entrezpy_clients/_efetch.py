@@ -334,7 +334,7 @@ class EFetchResult(EutilsResult):
         # TODO: make sure that this is correct
         pool_meta = attributes['Pool'].get('Member')
 
-        # find the desired run
+        # find the desired run (project and run case)
         if desired_id:
             run = next(
                 (x for x in runset if x['@accession'] == desired_id)
@@ -344,7 +344,7 @@ class EFetchResult(EutilsResult):
                     (x for x in pool_meta if x['@accession'] == sample_id)
                 )
             run_ids = [self._create_single_run(pool_meta, run, exp_id)]
-        # get all available runs
+        # get all available runs (that should happen when we ask for samples)
         else:
             run_ids = []
             for run in runset:

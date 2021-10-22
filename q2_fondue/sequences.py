@@ -19,8 +19,7 @@ from q2_types.per_sample_sequences import \
 from qiime2 import Metadata
 
 
-def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
-                     retries: int):
+def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
     """
     Helper function running fasterq-dump `retries` times
     """
@@ -52,17 +51,15 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
     return result
 
 
-def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
-                              general_retries):
+def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads, retries):
     """
     Helper function that runs fasterq-dump for all ids in study-ids
     """
     for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads,
-                                  general_retries)
+        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries)
 
         if len(os.listdir(tmpdirname)) == 0:
-            # raise error if all general_retries attempts failed
+            # raise error if all retries attempts failed
             raise ValueError('{} could not be downloaded with the '
                              'following fasterq-dump error '
                              'returned: {}'

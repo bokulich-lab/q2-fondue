@@ -40,7 +40,7 @@ class ELinkResult(EutilsResult):
     def get_link_parameter(self, reqnum=0):
         """Generates params required for an ELink query"""
         return {
-            'db': self.db, 'queryid': self.query_id, 'WebEnv': self.webenv,
+            'db': self.db, 'WebEnv': self.webenv,
             'query_key': self.query_key, 'cmd': 'neighbor_history',
             # TODO: that's cheating due to a bug in the EFetchParameter init:
             'retmax': 10000
