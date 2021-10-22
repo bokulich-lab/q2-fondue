@@ -81,9 +81,9 @@ class EFetchResult(EutilsResult):
 
         # reorder columns in a more sensible fashion
         cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
-                'Sample ID', 'Organism', 'Library Source', 'Library Selection',
-                'Library Layout', 'Instrument', 'Platform', 'Bases', 'Spots',
-                'Avg Spot Len', 'Bytes', 'Public']
+                'Sample Accession', 'Organism', 'Library Source',
+                'Library Selection', 'Instrument', 'Platform', 'Bases',
+                'Spots', 'Avg Spot Len', 'Bytes', 'Public']
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]

@@ -24,7 +24,7 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
     Helper function running fasterq-dump `retries` times
     """
 
-    print("Downloading sequences of sample: {}...".format(acc))
+    print("Downloading sequences for run: {}...".format(acc))
 
     acc_fastq_single = os.path.join(output_dir,
                                     acc + '.fastq')
