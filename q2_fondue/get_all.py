@@ -9,12 +9,7 @@
 from qiime2 import Metadata
 
 
-def get_all(ctx,
-            accession_ids,
-            email,
-            n_jobs=1,
-            retries=2,
-            threads=6):
+def get_all(ctx, accession_ids, email, n_jobs=1, retries=2, threads=6):
 
     # get required methods
     get_metadata = ctx.get_action('fondue', 'get_metadata')

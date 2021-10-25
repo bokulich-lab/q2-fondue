@@ -29,9 +29,8 @@ class InvalidIDs(Exception):
 class EFetchResult(EutilsResult):
     """Entrezpy client for EFetch utility used to fetch SRA metadata."""
 
-    def __init__(self, response, request, id_type):
+    def __init__(self, response, request):
         super().__init__(request.eutil, request.query_id, request.db)
-        self.id_type = id_type
         self.metadata_raw = None
         self.metadata = {}
         self.studies = {}
@@ -469,41 +468,25 @@ class EFetchResult(EutilsResult):
 
         # TODO: we should also handle extracting multiple runs
         #  from the same experiment
-        if self.id_type == 'run':
-            if isinstance(parsed_results, list):
-                for i, uid in enumerate(uids):
-                    self.metadata[i] = self._process_single_id(
-                        parsed_results[i], desired_id=uid)
-            else:
-                for i, uid in enumerate(uids):
-                    self.metadata[i] = self._process_single_id(
-                        parsed_results, desired_id=uid)
-        # TODO: not sure whether this actually works: the API hangs and we
-        #  never get a response when submitting sample ids...
-        elif self.id_type == 'sample':
-            if isinstance(parsed_results, list):
-                for i, uid in enumerate(uids):
-                    self.metadata[i] = self._process_single_id(
-                        parsed_results[i])
-            else:
-                self.metadata[0] = self._process_single_id(
-                    parsed_results)
+        if isinstance(parsed_results, list):
+            for i, uid in enumerate(uids):
+                self.metadata[i] = self._process_single_id(
+                    parsed_results[i], desired_id=uid)
         else:
-            raise NotImplementedError('Extracting metadata based on IDs '
-                                      'different than "sample" and "run" '
-                                      'is currently not supported.')
+            for i, uid in enumerate(uids):
+                self.metadata[i] = self._process_single_id(
+                    parsed_results, desired_id=uid)
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
-    def __init__(self, id_type):
+    def __init__(self):
         super().__init__()
-        self.id_type = id_type
         self.response_type = None
 
     def init_result(self, response, request):
         self.response_type = request.rettype
         if not self.result:
-            self.result = EFetchResult(response, request, self.id_type)
+            self.result = EFetchResult(response, request)
 
     def analyze_error(self, response, request):
         print(json.dumps({

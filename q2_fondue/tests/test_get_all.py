@@ -54,7 +54,7 @@ class TestGetAll(SequenceTests):
         mock_efetcher.assert_called_once_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, [acc_id], 'run')
+        mock_inquire.assert_called_once_with(ANY, [acc_id])
 
         # function call assertions for get_sequences within
         mock_subprocess.assert_called_once_with(

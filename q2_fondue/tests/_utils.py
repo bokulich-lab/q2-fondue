@@ -60,9 +60,9 @@ class FakeParams:
 class _TestPluginWithEntrezFakeComponents(TestPluginBase):
     def setUp(self):
         super().setUp()
-        self.efetch_result_single = self.generate_ef_result('single', 'run')
-        self.efetch_result_multi = self.generate_ef_result('multi', 'run')
-        self.efetch_analyzer = EFetchAnalyzer('run')
+        self.efetch_result_single = self.generate_ef_result('single')
+        self.efetch_result_multi = self.generate_ef_result('multi')
+        self.efetch_analyzer = EFetchAnalyzer()
         self.efetch_request_properties = {
             'db', 'eutil', 'uids', 'webenv', 'querykey', 'rettype', 'retmode',
             'strand', 'seqstart', 'seqstop', 'complexity'
@@ -100,10 +100,9 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             start=start,
             size=size)
 
-    def generate_ef_result(self, kind, id_type, prefix='metadata'):
+    def generate_ef_result(self, kind, prefix='metadata'):
         return EFetchResult(
             response=self.xml_to_response(kind, prefix=prefix),
-            id_type=id_type,
             request=self.generate_ef_request(['FAKEID1', 'FAKEID2'])
         )
 

@@ -37,7 +37,7 @@ class FakeConduit:
         return self.pipeline
 
     def run(self, pipeline):
-        analyzer = EFetchAnalyzer(id_type='bioproject')
+        analyzer = EFetchAnalyzer()
         analyzer.result = self.fake_efetch_result
         analyzer.result.extract_run_ids(self.fake_efetch_response)
         return analyzer
@@ -57,15 +57,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             apikey_var=None, threads=1, qid=None
         )
         self.fake_econduit = FakeConduit(
-            self.generate_ef_result(
-                kind='runs', id_type='bioproject', prefix='efetch'
-            ), self.xml_to_response('runs', prefix='efetch'))
+            self.generate_ef_result(kind='runs', prefix='efetch'),
+            self.xml_to_response('runs', prefix='efetch'))
 
-    def test_determine_id_type_sample(self):
-        ids = ['SRS123', 'ERS123']
+    def test_determine_id_type_project(self):
+        ids = ['PRJNA123', 'PRJNA123']
 
         obs = _determine_id_type(ids)
-        exp = 'sample'
+        exp = 'bioproject'
         self.assertEqual(exp, obs)
 
     def test_determine_id_type_run(self):
@@ -92,8 +91,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_single(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('single')
-            obs_df = _efetcher_inquire(
-                self.fake_efetcher, ['FAKEID1'], id_type='run')
+            obs_df = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(['FAKEID1'])
         exp_df = self.generate_expected_df().iloc[[0]]
@@ -109,7 +107,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')
             obs_df = _efetcher_inquire(
-                self.fake_efetcher, ['FAKEID1', 'FAKEID2'], id_type='run')
+                self.fake_efetcher, ['FAKEID1', 'FAKEID2'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(
             ['FAKEID1', 'FAKEID2'], size=2)
@@ -153,7 +151,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_request.assert_called_once()
         self.assertTrue(obs_result)
 
-    @patch('q2_fondue.metadata._get_sample_or_run_meta')
+    @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:
             mock_conduit.return_value = self.fake_econduit
@@ -167,21 +165,21 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
             )
             patched_get.assert_called_once_with(
-                'someone@somewhere.com', 1, exp_ids, 'run'
+                'someone@somewhere.com', 1, exp_ids
             )
 
-    @patch('q2_fondue.metadata._get_sample_or_run_meta')
+    @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_project_meta')
     def test_get_metadata_run(self, patched_get_project, patched_get_run):
         ids_meta = Metadata.load(self.get_data_path('run_ids.tsv'))
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
         patched_get_run.assert_called_once_with(
-            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345'], 'run'
+            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345']
         )
         patched_get_project.assert_not_called()
 
-    @patch('q2_fondue.metadata._get_sample_or_run_meta')
+    @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_project_meta')
     def test_get_metadata_project(self, patched_get_project, patched_get_run):
         ids_meta = Metadata.load(self.get_data_path('project_ids.tsv'))
