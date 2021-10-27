@@ -8,7 +8,7 @@
 
 import importlib
 
-from qiime2.plugin import (Plugin, Citations, List, Str, Int, Range, Metadata)
+from qiime2.plugin import (Plugin, Citations, Str, Int, Range, Metadata)
 
 from q2_fondue import __version__
 from q2_fondue.metadata import get_metadata
