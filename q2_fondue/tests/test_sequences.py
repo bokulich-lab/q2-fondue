@@ -191,7 +191,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = test_temp_dir
 
         accID_tsv = accID + '_md.tsv'
-        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        _ = self.move_files_2_tmp_dir([accID_tsv])
         test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
 
         with self.assertWarnsRegex(Warning, "No paired-read sequences"):
@@ -214,7 +214,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = test_temp_dir
 
         accID_tsv = accID + '_md.tsv'
-        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        _ = self.move_files_2_tmp_dir([accID_tsv])
         test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
 
         with self.assertWarnsRegex(Warning, "No single-read sequences"):
@@ -240,7 +240,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = test_temp_dir
 
         accID_tsv = 'testaccBC_md.tsv'
-        test_temp_tsv = self.move_files_2_tmp_dir([accID_tsv])
+        _ = self.move_files_2_tmp_dir([accID_tsv])
         test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
 
         casava_single, casava_paired = get_sequences(
