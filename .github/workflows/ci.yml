@@ -5,6 +5,8 @@ on:
     branches:
       - main
   push:
+    branches:
+      - main
 
 jobs:
   lint:
@@ -27,32 +29,23 @@ jobs:
         pip install -q flake8
         flake8
 
-  # this is temporary to run the tests
-  test:
+  build-and-test:
     needs: lint
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
-    - uses: conda-incubator/setup-miniconda@v2
       with:
-        activate-environment: fondue-test-env
-        environment-file: temp-env.yml
-        channels: conda-forge,bioconda,qiime2,defaults
-        auto-activate-base: false
-    - name: run tests
-      run: |
-        conda install -c conda-forge -c bioconda -c defaults -y "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
-        make dev
-        qiime dev refresh-cache
-        make test
+        # necessary for versioneer
+        fetch-depth: 0
 
-#    - uses: qiime2/action-library-packaging@alpha1
-#      with:
-#        package-name: q2-fondue
-#        additional-tests: pytest --pyargs q2_fondue
-#        # TODO: update this to `release` when tagging release
-#        build-target: staged
-#        library-token: ${{ secrets.LIBRARY_TOKEN }}
+    # TODO: update this to @v1 when it lands
+    - uses: qiime2/action-library-packaging@alpha1
+      with:
+        package-name: q2-fondue
+        additional-tests: pytest --pyargs q2_fondue
+        # TODO: update this to `release` when tagging release
+        build-target: staged
+        library-token: ${{ secrets.LIBRARY_TOKEN }}
