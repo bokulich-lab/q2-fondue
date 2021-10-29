@@ -14,10 +14,10 @@ from qiime2.plugin import model
 class SRAMetadataFormat(model.TextFileFormat):
 
     REQUIRED_IDS = [
-        'ID', 'BioSample ID', 'BioProject ID', 'Experiment ID', 'Study ID'
+        'ID', 'Biosample ID', 'Bioproject ID', 'Experiment ID', 'Study ID'
     ]
     REQUIRED_HEADER_FIELDS = [
-        'Organism', 'Instrument', 'Platform', 'Bases', 'Bytes', 'Consent',
+        'Organism', 'Instrument', 'Platform', 'Bases', 'Bytes', 'Public',
         'Library Selection', 'Library Source', 'Library Layout'
     ]
     REQUIRED_HEADER_FIELDS.extend(REQUIRED_IDS)

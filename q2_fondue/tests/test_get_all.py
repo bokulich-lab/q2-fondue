@@ -30,10 +30,8 @@ class TestGetAll(SequenceTests):
         Test verifying that pipeline get_all calls all expected actions,
         individual actions are tested in details in respective test classes
         """
-        ls_accIDs = ['testaccB']
-        str_mocked_email = 'fake@email.com'
-        accID_tsv = 'testaccB_md.tsv'
-        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+        acc_id = 'SRR123456'
+        test_md = Metadata.load(self.get_data_path(f'{acc_id}_md.tsv'))
 
         # define mocked return values for get_metadata mocks
         mock_validation.return_value = True
@@ -43,32 +41,26 @@ class TestGetAll(SequenceTests):
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
-            [ls_accIDs[0] + '.fastq'])
+            [f'{acc_id}.fastq'])
 
         # run pipeline
-        fondue.actions.get_all(
-            test_temp_md, str_mocked_email, retries=1)
+        fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
 
         # function call assertions for get_metadata within
-        mock_esearcher.assert_called_once_with('esearcher',
-                                               str_mocked_email,
-                                               apikey=None, apikey_var=None,
-                                               threads=1, qid=None)
-        mock_validation.assert_called_once_with(ANY, ls_accIDs)
-        mock_efetcher.assert_called_once_with('efetcher',
-                                              str_mocked_email,
-                                              apikey=None, apikey_var=None,
-                                              threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, ls_accIDs)
+        mock_esearcher.assert_called_once_with(
+            'esearcher', 'fake@email.com', apikey=None, apikey_var=None,
+            threads=1, qid=None)
+        mock_validation.assert_called_once_with(ANY, [acc_id])
+        mock_efetcher.assert_called_once_with(
+            'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
+            threads=1, qid=None)
+        mock_inquire.assert_called_once_with(ANY, [acc_id], 'run')
 
         # function call assertions for get_sequences within
-        mock_subprocess.assert_called_once_with(['fasterq-dump',
-                                                 '-O', ANY,
-                                                 '-t', ANY,
-                                                 '-e', '6',
-                                                 ls_accIDs[0]],
-                                                text=True,
-                                                capture_output=True)
+        mock_subprocess.assert_called_once_with(
+            ['fasterq-dump', '-O', ANY, '-t', ANY, '-e', '6', acc_id],
+            text=True, capture_output=True
+        )
 
 
 if __name__ == "__main__":

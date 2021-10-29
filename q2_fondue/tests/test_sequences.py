@@ -186,7 +186,7 @@ class TestSequenceFetching(SequenceTests):
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
-        accID = 'testaccB'
+        accID = 'SRR123456'
         test_temp_dir = self.move_files_2_tmp_dir([accID + '.fastq'])
         mock_tmpdir.return_value = test_temp_dir
 
@@ -201,14 +201,12 @@ class TestSequenceFetching(SequenceTests):
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
-
-            self.validate_counts(casava_single, casava_paired,
-                                 [3], [0, 0])
+            self.validate_counts(casava_single, casava_paired, [3], [0, 0])
 
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
-        accID = 'testaccC'
+        accID = 'SRR123457'
         ls_file_names = [accID + '_1.fastq', accID + '_2.fastq']
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
         mock_tmpdir.return_value = test_temp_dir
@@ -224,24 +222,18 @@ class TestSequenceFetching(SequenceTests):
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
-
-            self.validate_counts(casava_single, casava_paired,
-                                 [0], [3, 3])
+            self.validate_counts(casava_single, casava_paired, [0], [3, 3])
 
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_n_paired(self, mock_tmpdir, mock_subprocess):
-        accID_single = 'testaccB'
-        ls_file_names = [accID_single + '.fastq']
-        accID_paired = 'testaccC'
-        ls_file_names += [accID_paired + '_1.fastq',
-                          accID_paired + '_2.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
-        mock_tmpdir.return_value = test_temp_dir
+        ls_file_names = [
+            'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
-        accID_tsv = 'testaccBC_md.tsv'
-        _ = self.move_files_2_tmp_dir([accID_tsv])
-        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+        acc_id_tsv = 'testaccBC_md.tsv'
+        _ = self.move_files_2_tmp_dir([acc_id_tsv])
+        test_temp_md = Metadata.load(self.get_data_path(acc_id_tsv))
 
         casava_single, casava_paired = get_sequences(
             test_temp_md, retries=0)
@@ -249,6 +241,4 @@ class TestSequenceFetching(SequenceTests):
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
-
-        self.validate_counts(casava_single, casava_paired,
-                             [3], [3, 3])
+        self.validate_counts(casava_single, casava_paired, [3], [3, 3])
