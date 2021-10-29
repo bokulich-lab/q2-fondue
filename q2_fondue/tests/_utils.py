@@ -16,6 +16,9 @@ from qiime2.plugin.testing import TestPluginBase
 
 from q2_fondue.entrezpy_clients._efetch import (EFetchAnalyzer, EFetchResult)
 from q2_fondue.entrezpy_clients._esearch import ESearchResult
+from q2_fondue.entrezpy_clients._sra_meta import (SRAStudy, SRASample,
+                                                  SRAExperiment,
+                                                  LibraryMetadata, SRARun)
 
 
 class FakeParams:
@@ -50,9 +53,9 @@ class FakeParams:
 class _TestPluginWithEntrezFakeComponents(TestPluginBase):
     def setUp(self):
         super().setUp()
-        self.efetch_result_single = self.generate_efetch_result('single')
-        self.efetch_result_multi = self.generate_efetch_result('multi')
-        self.efetch_analyzer = EFetchAnalyzer()
+        self.efetch_result_single = self.generate_ef_result('single', 'run')
+        self.efetch_result_multi = self.generate_ef_result('multi', 'run')
+        self.efetch_analyzer = EFetchAnalyzer('run')
         self.efetch_request_properties = {
             'db', 'eutil', 'uids', 'webenv', 'querykey', 'rettype', 'retmode',
             'strand', 'seqstart', 'seqstop', 'complexity'
@@ -60,6 +63,10 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         self.esearch_request_properties = {
             'db', 'eutil', 'webenv', 'retmode', 'term'
         }
+        self.library_meta = LibraryMetadata(
+            name='unspecified', layout='SINGLE',
+            selection='PCR', source='METAGENOMIC'
+        )
         with open(self.get_data_path('metadata_response_small.json'),
                   'r') as ff:
             self.metadata_dict = json.load(ff)
@@ -78,7 +85,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         else:
             return json.loads(io.open(path, "rb", buffering=0).read())
 
-    def generate_efetch_request(self, uids, start=0, size=1):
+    def generate_ef_request(self, uids, start=0, size=1):
         request_params = FakeParams(self.temp_dir.name, uids=uids)
         return EfetchRequest(
             eutil='efetch.fcgi',
@@ -86,11 +93,42 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             start=start,
             size=size)
 
-    def generate_efetch_result(self, kind):
+    def generate_ef_result(self, kind, id_type):
         return EFetchResult(
-            response=self.xml_to_response(kind),
-            request=self.generate_efetch_request(['FAKEID1', 'FAKEID2'])
+            response=self.xml_to_response(kind), id_type=id_type,
+            request=self.generate_ef_request(['FAKEID1', 'FAKEID2'])
         )
+
+    def generate_sra_metadata(self):
+        study_id, sample_id = 'ERP120343', 'ERS4372624'
+        experiment_id, run_ids = 'ERX3980916', ['FAKEID1', 'FAKEID2']
+        study = SRAStudy(
+            id=study_id, bioproject_id='PRJEB37054',
+            center_name='University of Hohenheim',
+            custom_meta={
+                'ENA-FIRST-PUBLIC [STUDY]': '2020-05-31',
+                'ENA-LAST-UPDATE [STUDY]': '2020-03-04'
+            }
+        )
+        sample = SRASample(
+            id=sample_id, biosample_id='SAMEA6608408', name='BAC1.D1.0.32A',
+            title='Vitis vinifera', organism='Vitis vinifera', tax_id='29760',
+            study_id=study_id, custom_meta={
+                'environment (biome) [SAMPLE]': 'berry plant',
+                'geographic location (country and/or sea) [SAMPLE]': 'Germany',
+                'sample storage temperature [SAMPLE]': '-80'}
+        )
+        experiment = SRAExperiment(
+            id=experiment_id, instrument='Illumina MiSeq', platform='ILLUMINA',
+            library=self.library_meta, sample_id=sample_id, custom_meta=None
+        )
+        runs = [SRARun(
+            id=_id, bases=11552099, spots=39323, public=True, bytes=3914295,
+            experiment_id=experiment_id, custom_meta={
+                'ENA-FIRST-PUBLIC [RUN]': '2020-05-31',
+                'ENA-LAST-UPDATE [RUN]': '2020-03-06'}
+        ) for _id in run_ids]
+        return study, sample, experiment, runs
 
     def generate_expected_df(self):
         exp_df = pd.read_json(
@@ -99,16 +137,17 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         )
         exp_df.index.name = 'ID'
         numeric_cols = {
-            'amount or size of sample collected', 'collection day',
-            'collection hours', 'sample storage temperature',
-            'sample volume or weight for DNA extraction', 'AvgSpotLen',
-            'Bases', 'Bytes', 'Spots', 'Tax ID'
+            'Amount or size of sample collected [sample]',
+            'Collection day [sample]', 'Collection hours [sample]',
+            'Sample storage temperature [sample]', 'Tax ID',
+            'Sample volume or weight for dna extraction [sample]',
         }
+        exp_df['Public'] = exp_df['Public'].astype(bool)
         for col in numeric_cols:
             exp_df[col] = exp_df[col].astype(str)
         return exp_df
 
-    def generate_esearch_request(self, term, start=0, size=1):
+    def generate_es_request(self, term, start=0, size=1):
         request_params = FakeParams(self.temp_dir.name, retmode='json',
                                     term=term, eutil='esearch.fcgi')
         return EsearchRequest(
@@ -117,7 +156,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             start=start,
             size=size)
 
-    def generate_esearch_result(self, kind, suffix):
+    def generate_es_result(self, kind, suffix):
         return ESearchResult(
             response=self.json_to_response(kind, suffix),
-            request=self.generate_esearch_request(term="abc OR 123"))
+            request=self.generate_es_request(term="abc OR 123"))

@@ -15,6 +15,11 @@ from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
 from xmltodict import parse as parsexml
 
+from q2_fondue.entrezpy_clients._utils import (rename_columns)
+from q2_fondue.entrezpy_clients._sra_meta import (LibraryMetadata, SRARun,
+                                                  SRAExperiment, SRASample,
+                                                  SRAStudy)
+
 
 class InvalidIDs(Exception):
     pass
@@ -22,10 +27,15 @@ class InvalidIDs(Exception):
 
 class EFetchResult(EutilsResult):
     """Entrezpy client for EFetch utility used to fetch SRA metadata."""
-    def __init__(self, response, request):
+    def __init__(self, response, request, id_type):
         super().__init__(request.eutil, request.query_id, request.db)
+        self.id_type = id_type
         self.metadata_raw = None
         self.metadata = {}
+        self.studies = {}
+        self.samples = {}
+        self.experiments = {}
+        self.runs = {}
 
     def size(self):
         return len(self.metadata)
@@ -47,210 +57,326 @@ class EFetchResult(EutilsResult):
 
         Returns:
             pd.DataFrame: Metadata in a form of a DataFrame with an index
-                corresponding to the original accession IDs.
+                corresponding to the run IDs.
         """
-        df = pd.DataFrame.from_dict(self.metadata, orient='index')
+        df = pd.concat([v.generate_meta() for v in self.studies.values()])
         df.index.name = 'ID'
 
         # remove empty columns, if any
         df.dropna(axis=1, inplace=True, how='all')
 
+        # clean up column names
+        df = rename_columns(df)
+
         # reorder columns in a more sensible fashion
-        cols = ['Experiment ID', 'BioSample ID', 'BioProject ID', 'Study ID',
-                'Sample Accession', 'Organism', 'Library Source',
-                'Library Selection', 'Library Layout', 'Instrument',
-                'Platform', 'Bases', 'Spots', 'AvgSpotLen', 'Bytes', 'Consent']
+        cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
+                'Sample ID', 'Organism', 'Library Source', 'Library Selection',
+                'Library Layout', 'Instrument', 'Platform', 'Bases', 'Spots',
+                'Avg Spot Len', 'Bytes', 'Public']
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
 
-    def _process_single_run(
-            self, attributes_dict: dict, extract_id: str = None):
+    def _create_study(self, attributes: dict) -> str:
+        """Creates an SRAStudy object.
+
+        Information like BioProject ID as well as center name and custom
+        metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+        Returns:
+            study_id (str): ID of the processed study.
+        """
+        exp = attributes['EXPERIMENT']
+        study_id = exp['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
+        if study_id not in self.studies.keys():
+            bioproject = exp['STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
+            if bioproject and bioproject['@namespace'] == 'BioProject':
+                bioproject_id = bioproject['#text']
+            elif not bioproject:  # if not found, try elsewhere:
+                study_ids = attributes[
+                    'STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
+                if isinstance(study_ids, list):
+                    bioproject_id = next(
+                        (x for x in study_ids
+                         if x['@namespace'] == 'BioProject')
+                    ).get('#text')
+                else:
+                    bioproject_id = study_ids.get('#text')
+            else:
+                bioproject_id = None
+
+            org = attributes['Organization'].get('Name')
+            if isinstance(org, dict):
+                org = org.get('#text')
+
+            custom_meta = self._extract_custom_attributes(
+                attributes['STUDY'], 'study')
+
+            self.studies[study_id] = SRAStudy(
+                id=study_id,
+                bioproject_id=bioproject_id,
+                center_name=org,
+                custom_meta=custom_meta
+            )
+        return study_id
+
+    def _create_sample(self, attributes: dict, study_id: str) -> str:
+        """Creates an SRASample object.
+
+        Information like BioSample ID, organism, name as well as custom
+        metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            study_id (str): ID of the study which the sample belongs to.
+        Returns:
+            sample_id (str): ID of the processed sample.
+        """
+        pool_meta = attributes['Pool'].get('Member')
+        sample_id = pool_meta.get('@accession')
+        if sample_id not in self.samples.keys():
+            biosample_id = pool_meta['IDENTIFIERS'].get('EXTERNAL_ID')
+            if isinstance(biosample_id, list):
+                biosample_id = next(
+                    (x for x in biosample_id if x['@namespace'] == 'BioSample')
+                )
+
+            custom_meta = self._extract_custom_attributes(
+                attributes['SAMPLE'], 'sample')
+
+            self.samples[sample_id] = SRASample(
+                id=sample_id,
+                name=pool_meta.get('@sample_name'),
+                title=pool_meta.get('@sample_title'),
+                biosample_id=biosample_id.get('#text'),
+                organism=pool_meta.get('@organism'),
+                tax_id=pool_meta.get('@tax_id'),
+                study_id=study_id,
+                custom_meta=custom_meta
+            )
+        # append sample to study
+        self.studies[study_id].samples.append(self.samples[sample_id])
+        return sample_id
+
+    @staticmethod
+    def _extract_library_info(attributes: dict) -> LibraryMetadata:
+        """Extracts library-specific information.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata
+                from the XML response.
+        Returns:
+            library_meta (LibraryMetadata): Library metadata object.
+        """
+        lib_meta = attributes['EXPERIMENT']['DESIGN'].get('LIBRARY_DESCRIPTOR')
+
+        keys = ['name', 'selection', 'source']
+        lib = {k: lib_meta.get(f'LIBRARY_{k.upper()}') for k in keys}
+        lib['layout'] = list(lib_meta.get('LIBRARY_LAYOUT').keys())[0]
+
+        return LibraryMetadata(**lib)
+
+    def _create_experiment(self, attributes: dict, sample_id: str) -> str:
+        """Creates an SRAExperiment object.
+
+        Information like Experiment ID, platform, instrument and library
+        metadata as well as other custom metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            sample_id (str): ID of the sample which the experiment belongs to.
+        Returns:
+            exp_id (str): ID of the processed study.
+        """
+        exp_meta = attributes['EXPERIMENT']
+        exp_id = exp_meta['IDENTIFIERS'].get('PRIMARY_ID')
+        if exp_id not in self.experiments.keys():
+            platform = list(exp_meta['PLATFORM'].keys())[0]
+            instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
+            self.experiments[exp_id] = SRAExperiment(
+                id=exp_id,
+                instrument=instrument,
+                platform=platform,
+                sample_id=sample_id,
+                library=self._extract_library_info(attributes),
+                custom_meta=None
+            )
+        # append experiment to sample
+        self.samples[sample_id].experiments.append(self.experiments[exp_id])
+        return exp_id
+
+    def _create_single_run(
+            self, attributes: dict, run: dict, exp_id: str) -> str:
+        """Creates a single SRARun object.
+
+        Information like Run ID, count of bases as well as other custom
+        metadata are added here.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            run (dict): Dictionary with run metadata.
+            exp_id (str): ID of the experiment which the run belongs to.
+        Returns:
+            run_id (str): ID of the processed study.
+        """
+        run_id = run.get('@accession')
+
+        if run.get('@is_public') == 'true':
+            is_public = True
+        else:
+            is_public = False
+
+        custom_meta = self._extract_custom_attributes(
+            run, 'run')
+
+        pool_meta = attributes['Pool'].get('Member')
+        if run_id not in self.runs.keys():
+            self.runs[run_id] = SRARun(
+                id=run_id,
+                public=is_public,
+                bytes=int(run.get('@size')),
+                bases=int(pool_meta.get('@bases')),
+                spots=int(pool_meta.get('@spots')),
+                experiment_id=exp_id,
+                custom_meta=custom_meta
+            )
+        # append run to experiment
+        self.experiments[exp_id].runs.append(self.runs[run_id])
+        return run_id
+
+    def _create_runs(
+            self, attributes: dict, exp_id: str, desired_id: str = None
+    ) -> List[str]:
+        """Creates all the required runs.
+
+        Depending on whether a specific run should be extracted from the run
+        set (defined by desired_id), either just one run will be created or
+        one run object per run in the entire run set.
+
+        Args:
+            attributes (dict): Dictionary with all the metadata from
+                the XML response.
+            exp_id (str): ID of the experiment which the run belongs to.
+            desired_id (str): ID of the run to be extracted. If None, all runs
+                will be added.
+        Returns:
+            run_ids (List[str]): List of all processed run IDs.
+        """
+        runset = attributes['RUN_SET']['RUN']
+        if not isinstance(runset, list):
+            runset = [runset]
+
+        # find the desired run
+        if desired_id:
+            run = next(
+                (x for x in runset if x['@accession'] == desired_id)
+            )
+            run_ids = [self._create_single_run(attributes, run, exp_id)]
+        # get all available runs
+        else:
+            run_ids = []
+            for run in runset:
+                run_id = self._create_single_run(attributes, run, exp_id)
+                run_ids.append(run_id)
+        return run_ids
+
+    def _process_single_id(
+            self, attributes: dict, desired_id: str = None) -> List[str]:
         """Processes metadata obtained for a single accession ID.
 
         Args:
-            attributes_dict (dict): Dictionary with all the metadata
+            attributes (dict): Dictionary with all the metadata
                 from the XML response.
-            extract_id (str): ID of the run/sample for which metadata
+            desired_id (str): ID of the run/sample for which metadata
                 should be extracted. If None, all the runs from any given
                 run set will be extracted (not implemented).
-
+        Returns:
+            run_ids (List[str]): List of all processed run IDs.
         """
-        processed_meta = self._extract_custom_attributes(
-            attributes_dict)
+        # create study, if required
+        study_id = self._create_study(attributes)
 
-        # add library metadata
-        processed_meta.update(self._extract_library_info(attributes_dict))
+        # create sample, if required
+        sample_id = self._create_sample(attributes, study_id)
 
-        # add pool metadata
-        processed_meta.update(self._extract_pool_info(attributes_dict))
+        # TODO: what happens here when we asked for samples?
+        # create experiment, if required
+        exp_id = self._create_experiment(attributes, sample_id)
 
-        # add experiment metadata
-        processed_meta.update(self._extract_experiment_info(attributes_dict))
+        # TODO: what happens here when we asked for samples?
+        # create runs
+        run_ids = self._create_runs(attributes, exp_id, desired_id)
 
-        # add run set metadata
-        processed_meta.update(
-            self._extract_run_set_info(attributes_dict, extract_id))
-
-        return processed_meta
+        return run_ids
 
     @staticmethod
-    def _extract_custom_attributes(attributes_dict: dict):
+    def _custom_attributes_to_dict(attributes: List[dict], level: str):
+        """Converts attributes list into a dictionary
+
+        Args:
+            attributes (List[dict]): List of attribute dictionaries, e.g.:
+                [{'TAG': 'tag1', 'VALUE': 'value1'},
+                 {'TAG': 'tag2', 'VALUE': 'value2'},
+                 {'TAG': 'tag1', 'VALUE': 'value2'}]
+
+        Returns:
+            attr_dict (dict): De-duplicated dictionary of attributes, e.g:
+                {'tag1_1': 'value1', 'tag1_2': 'value2', 'tag2': 'value2'}
+        """
+        if isinstance(attributes, dict):
+            attributes = [attributes]
+        attributes = [attr for attr in attributes if "VALUE" in attr.keys()]
+        attrs_sorted = sorted(attributes, key=lambda x: (x['TAG'], x['VALUE']))
+        tags = [x['TAG'] for x in attrs_sorted]
+        values = [x['VALUE'] for x in attrs_sorted]
+
+        # de-duplicate tags
+        tags_dedupl = []
+        for i, tag in enumerate(tags):
+            total, count = tags.count(tag), tags[:i].count(tag)
+            if total > 1:
+                warn(
+                    f'One of the metadata keys ({tag}) is duplicated. '
+                    f'It will be retained with a numeric suffix.'
+                ) if count == 0 else False
+                tags_dedupl.append(f'{tag}_{count + 1} [{level}]')
+            else:
+                tags_dedupl.append(f'{tag} [{level}]')
+
+        return {t: v for t, v in zip(tags_dedupl, values)}
+
+    def _extract_custom_attributes(self, attributes: dict, level: str) -> dict:
         """Extracts custom attributes from the metadata dictionary.
 
         Args:
-            attributes_dict (dict): Dictionary with all the metadata
+            attributes (dict): Dictionary with all the metadata
                 from the XML response.
-
+            level (str): SRA hierarchy level at which metadata should be
+                extracted (study, sample, run).
+        Returns:
+            processed_meta (dict): All metadata extracted for the given level.
         """
         processed_meta = {}
-        keys_to_keep = {'SAMPLE', 'STUDY', 'RUN'}
-        for k1, v1 in attributes_dict.items():
-            if k1 in keys_to_keep and f'{k1}_ATTRIBUTES' in v1.keys():
-                try:
-                    dupl = 0
-                    for attr in v1[f'{k1}_ATTRIBUTES'][f'{k1}_ATTRIBUTE']:
-                        current_attr = attr['TAG']
-                        if current_attr in processed_meta.keys():
-                            warn(
-                                f'One of the metadata keys ({current_attr}) '
-                                f'is duplicated. It will be retained with '
-                                f'a "_{dupl+1}" suffix.'
-                            )
-                            dupl += 1
-                            current_attr = f'{current_attr}_{dupl}'
-                        processed_meta[current_attr] = attr.get('VALUE')
-                except Exception as e:
-                    print(f'Exception has occurred when processing {k1} '
-                          f'attributes: "{e}". Contents of the metadata '
-                          f'was: {attributes_dict}.')
-                    raise
+        level = level.upper()
+        level_items = attributes.get(f'{level}_ATTRIBUTES')
+        if level_items:
+            level_attributes = level_items.get(f'{level}_ATTRIBUTE')
+            try:
+                attr_dedupl = self._custom_attributes_to_dict(
+                    level_attributes, level)
+                processed_meta.update(attr_dedupl)
+            except Exception as e:
+                print(f'Exception has occurred when processing {level} '
+                      f'attributes: "{e}". Contents of the metadata '
+                      f'was: {attributes}.')
+                raise
         return processed_meta
-
-    @staticmethod
-    def _extract_library_info(attributes_dict: dict):
-        """Extracts library-specific information from the metadata dictionary.
-
-        Args:
-            attributes_dict (dict): Dictionary with all the metadata
-                from the XML response.
-
-        """
-        lib_meta_proc = {}
-        lib_meta = attributes_dict['EXPERIMENT']['DESIGN'].get(
-            'LIBRARY_DESCRIPTOR')
-        if lib_meta:
-            for n in {f'LIBRARY_{x}' for x in ['NAME', 'SELECTION', 'SOURCE']}:
-                new_key = " ".join(n.lower().split('_')).title()
-                lib_meta_proc[new_key] = lib_meta.get(n)
-            lib_meta_proc['Library Layout'] = list(lib_meta.get(
-                'LIBRARY_LAYOUT').keys())[0]
-        return lib_meta_proc
-
-    @staticmethod
-    def _extract_pool_info(attributes_dict: dict):
-        """Extracts pool information from the metadata dictionary.
-
-        Information like base and spot count will be retrieved here and the
-        average spot length will be calculated. Moreover, sample attributes
-        (name, accession ID, title, BioSample ID) and organism information
-        will be extracted.
-
-        Args:
-            attributes_dict (dict): Dictionary with all the metadata
-                from the XML response.
-
-        """
-        pool_meta = attributes_dict['Pool'].get('Member')
-        bases, spots = pool_meta.get('@bases'), pool_meta.get('@spots')
-        external_id = pool_meta['IDENTIFIERS'].get('EXTERNAL_ID')
-        if isinstance(external_id, list):
-            external_id = next(
-                (x for x in external_id if x['@namespace'] == 'BioSample')
-            )
-        pool_meta_proc = {
-            'Bases': bases,
-            'Spots': spots,
-            'AvgSpotLen': str(int(int(bases)/int(spots))),
-            'Organism': pool_meta.get('@organism'),
-            'Tax ID': pool_meta.get('@tax_id'),
-            'Sample Name': pool_meta.get('@sample_name'),
-            'Sample Accession': pool_meta.get('@accession'),
-            'Sample Title': pool_meta.get('@sample_title'),
-            'BioSample ID': external_id.get('#text')
-        }
-        return pool_meta_proc
-
-    @staticmethod
-    def _extract_experiment_info(attributes_dict: dict):
-        """Extracts experiment-specific data from the metadata dictionary.
-
-        Information like BioProject ID as well as instrument and platform
-        details are extracted here.
-
-        Args:
-            attributes_dict (dict): Dictionary with all the metadata
-                from the XML response.
-
-        """
-        exp_meta = attributes_dict['EXPERIMENT']
-        bioproject = exp_meta['STUDY_REF']['IDENTIFIERS'].get('EXTERNAL_ID')
-        if bioproject and bioproject['@namespace'] == 'BioProject':
-            bioproject_id = bioproject['#text']
-        elif not bioproject:  # if not found, try elsewhere:
-            study_ids = attributes_dict[
-                'STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
-            if isinstance(study_ids, list):
-                bioproject_id = next(
-                    (x for x in study_ids if x['@namespace'] == 'BioProject')
-                ).get('#text')
-            else:
-                bioproject_id = study_ids.get('#text')
-        else:
-            bioproject_id = None
-
-        platform = list(exp_meta['PLATFORM'].keys())[0]
-        instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
-
-        exp_meta_proc = {
-            'BioProject ID': bioproject_id,
-            'Experiment ID': exp_meta['IDENTIFIERS'].get('PRIMARY_ID'),
-            'Instrument': instrument,
-            'Platform': platform,
-            'Study ID': exp_meta['STUDY_REF']['IDENTIFIERS'].get('PRIMARY_ID')
-        }
-        return exp_meta_proc
-
-    @staticmethod
-    def _extract_run_set_info(attributes_dict: dict, extract_id: str = None):
-        """Extracts run data from the run set in the metadata dictionary.
-
-        attributes_dict (dict): Dictionary with all the metadata
-                from the XML response.
-        extract_id (str): ID of the run/sample for which metadata
-            should be extracted. If None, all the runs from any given
-            run set will be extracted (not implemented).
-
-        """
-        runset_meta = attributes_dict['RUN_SET']['RUN']
-        if isinstance(runset_meta, list):
-            if extract_id:
-                runset_meta = next(
-                    (x for x in runset_meta if x['@accession'] == extract_id)
-                )
-            else:
-                raise NotImplementedError('Extracting all runs from the run'
-                                          ' set is currently not supported')
-        runset_meta_proc = {
-            'Bytes': runset_meta.get('@size'),
-        }
-        if runset_meta.get('@is_public') == 'true':
-            runset_meta_proc['Consent'] = 'public'
-        else:
-            runset_meta_proc['Consent'] = 'private'
-        runset_meta_proc['Center Name'] = \
-            attributes_dict['SUBMISSION'].get('@center_name')
-        return runset_meta_proc
 
     def add_metadata(self, response, uids: List[str]):
         """Processes response received from Efetch into metadata dictionary.
@@ -259,7 +385,7 @@ class EFetchResult(EutilsResult):
         correspond to corresponding metadata extracted from the XML response.
 
         Args:
-            response (): Response received from Efetch.
+            response (io.StringIO): Response received from Efetch.
             uids (List[str]): List of accession IDs for which
                 the data was fetched.
 
@@ -271,22 +397,39 @@ class EFetchResult(EutilsResult):
 
         # TODO: we should also handle extracting multiple runs
         #  from the same experiment
-        if isinstance(parsed_results, list):
-            for i, uid in enumerate(uids):
-                self.metadata[uid] = self._process_single_run(
-                    parsed_results[i], extract_id=uid)
+        if self.id_type == 'run':
+            if isinstance(parsed_results, list):
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results[i], desired_id=uid)
+            else:
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results, desired_id=uid)
+        # TODO: not sure whether this actually works: the API hangs and we
+        #  never get a response when submitting sample ids...
+        elif self.id_type == 'sample':
+            if isinstance(parsed_results, list):
+                for i, uid in enumerate(uids):
+                    self.metadata[i] = self._process_single_id(
+                        parsed_results[i])
+            else:
+                self.metadata[0] = self._process_single_id(
+                    parsed_results)
         else:
-            self.metadata[uids[0]] = self._process_single_run(
-                parsed_results, extract_id=uids[0])
+            raise NotImplementedError('Extracting metadata based on IDs '
+                                      'different than "sample" and "run" '
+                                      'is currently not supported.')
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
-    def __init__(self):
+    def __init__(self, id_type):
         super().__init__()
+        self.id_type = id_type
 
     def init_result(self, response, request):
         if not self.result:
-            self.result = EFetchResult(response, request)
+            self.result = EFetchResult(response, request, self.id_type)
 
     def analyze_error(self, response, request):
         print(json.dumps({
