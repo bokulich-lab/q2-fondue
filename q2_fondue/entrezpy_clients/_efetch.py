@@ -79,10 +79,12 @@ class EFetchResult(EutilsResult):
         df = rename_columns(df)
 
         # reorder columns in a more sensible fashion
-        cols = ['Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
-                'Sample Accession', 'Organism', 'Library Source',
-                'Library Selection', 'Instrument', 'Platform', 'Bases',
-                'Spots', 'Avg Spot Len', 'Bytes', 'Public']
+        cols = [
+            'Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
+            'Sample Accession', 'Organism', 'Library Source', 'Library Layout',
+            'Library Selection', 'Instrument', 'Platform', 'Bases', 'Spots',
+            'Avg Spot Len', 'Bytes', 'Public'
+        ]
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
