@@ -29,14 +29,14 @@ To fetch metadata associated with a number of runs, execute the following comman
 
 ```shell
 qiime fondue get-metadata \
-              --m-sample-ids-file metadata_file.tsv \
+              --m-accession-ids-file metadata_file.tsv \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
 
 where:
-- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
+- `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
@@ -45,31 +45,33 @@ The resulting artifact will contain a TSV file containing all the available meta
 for all of the requested runs.
 
 ### Fetching sequences
+
 To get single-read and paired-end sequences associated with a number of runs, execute this command:
 ```shell
 qiime fondue get-sequences \
-              --m-sample-ids-file metadata_file.tsv \
+              --m-accession-ids-file metadata_file.tsv \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired
 ```
 
 where:
-- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
+- `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 
 The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If the provided accession numbers only contain sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
 
 ### Fetching metadata and sequences
+
 To fetch both sequence-associated metadata and sequences associated with the accession numbers, execute this command:
 
 ```shell
 qiime fondue get-all \
-              --m-sample-ids-file metadata_file.tsv \ 
+              --m-accession-ids-file metadata_file.tsv \ 
               --p-email your_email@somewhere.com \
               --output-dir output-dir-name
 ```
 where:
-- `--m-sample-ids-file` is a TSV containing accession numbers for all of the runs
+- `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata and sequences are stored as Q2 artifacts
