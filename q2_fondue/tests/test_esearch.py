@@ -15,7 +15,7 @@ from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
-class TestEntrezClients(_TestPluginWithEntrezFakeComponents):
+class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
     package = 'q2_fondue.tests'
 
     def test_esresult_parse_search_results(self):

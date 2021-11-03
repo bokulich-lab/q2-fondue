@@ -17,13 +17,15 @@ from q2_fondue.entrezpy_clients._efetch import InvalidIDs
 
 
 class ESearchResult(EutilsResult):
-    """Entrezpy client for ESearch utility used to validate
+    """Entrezpy client for ESearch utility used to search for or validate
         provided accession IDs.
     """
     def __init__(self, response, request):
         super().__init__(request.eutil, request.query_id, request.db)
         self.result_raw = None
         self.result = None
+        self.query_key = None
+        self.webenv = None
 
     def size(self):
         return self.result.shape[0]
@@ -38,7 +40,11 @@ class ESearchResult(EutilsResult):
                                 'eutil': self.function}}}
 
     def get_link_parameter(self, reqnum=0):
-        return {}
+        """Generates params required for an ELink query"""
+        return {
+            'db': self.db, 'queryid': self.query_id, 'WebEnv': self.webenv,
+            'query_key': self.query_key, 'cmd': 'neighbor_history'
+        }
 
     def validate_result(self):
         """Validates hit counts obtained for all the provided UIDs.
@@ -70,7 +76,7 @@ class ESearchResult(EutilsResult):
         raise InvalidIDs(error_msg)
 
     def parse_search_results(self, response, uids: List[str]):
-        """Parses response received from Esearch a pandas Series object.
+        """Parses response received from Esearch as a pandas Series object.
 
         Hit counts obtained in the response will be extracted and assigned to
         their respective query IDs. IDs not found in the results but present
@@ -83,6 +89,8 @@ class ESearchResult(EutilsResult):
 
         """
         self.result_raw = response
+        self.webenv = self.result_raw['esearchresult'].get('webenv')
+        self.query_key = self.result_raw['esearchresult'].get('querykey')
 
         translation_stack = self.result_raw[
             'esearchresult'].get('translationstack')

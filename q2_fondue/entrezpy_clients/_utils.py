@@ -14,7 +14,7 @@ PREFIX = {
     'experiment': ('SRX', 'ERX', 'DRX'),
     'sample': ('SRS', 'ERS', 'DRS'),
     'study': ('SRP', 'ERP', 'DRP'),
-    'bioproject': ('PRJN', 'PRJE', 'PRJD')
+    'bioproject': ('PRJ', )
 }
 
 
@@ -43,4 +43,9 @@ def rename_columns(df: pd.DataFrame):
     for col in remainder_cols:
         col_map[col] = col.capitalize()
 
-    return df.rename(columns=col_map, inplace=False)
+    df.rename(columns=col_map, inplace=True)
+
+    # rename Sample ID to Sample Accession (incompatible with qiime naming)
+    df.rename(columns={'Sample ID': 'Sample Accession'}, inplace=True)
+
+    return df

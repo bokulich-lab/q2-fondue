@@ -11,10 +11,12 @@ import json
 
 import pandas as pd
 from entrezpy.efetch.efetch_request import EfetchRequest
+from entrezpy.elink.elink_request import ElinkRequest
 from entrezpy.esearch.esearch_request import EsearchRequest
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_fondue.entrezpy_clients._efetch import (EFetchAnalyzer, EFetchResult)
+from q2_fondue.entrezpy_clients._elink import ELinkResult
 from q2_fondue.entrezpy_clients._esearch import ESearchResult
 from q2_fondue.entrezpy_clients._sra_meta import (SRAStudy, SRASample,
                                                   SRAExperiment,
@@ -27,7 +29,12 @@ class FakeParams:
         self.query_id = 'some-id-123'
         self.term = term
         self.usehistory = False
+        self.cmd = None
+        self.linkname = None
+        self.holding = False
+        self.doseq = None
         self.db = 'sra'
+        self.dbfrom = 'sra'
         self.eutil = eutil
         self.uids = uids
         self.webenv = None
@@ -53,9 +60,9 @@ class FakeParams:
 class _TestPluginWithEntrezFakeComponents(TestPluginBase):
     def setUp(self):
         super().setUp()
-        self.efetch_result_single = self.generate_ef_result('single', 'run')
-        self.efetch_result_multi = self.generate_ef_result('multi', 'run')
-        self.efetch_analyzer = EFetchAnalyzer('run')
+        self.efetch_result_single = self.generate_ef_result('single')
+        self.efetch_result_multi = self.generate_ef_result('multi')
+        self.efetch_analyzer = EFetchAnalyzer()
         self.efetch_request_properties = {
             'db', 'eutil', 'uids', 'webenv', 'querykey', 'rettype', 'retmode',
             'strand', 'seqstart', 'seqstop', 'complexity'
@@ -72,13 +79,13 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             self.metadata_dict = json.load(ff)
         self.maxDiff = None
 
-    def xml_to_response(self, kind, suffix=''):
-        path = self.get_data_path(f'metadata_response_{kind}{suffix}.xml')
+    def xml_to_response(self, kind, suffix='', prefix='metadata'):
+        path = self.get_data_path(f'{prefix}_response_{kind}{suffix}.xml')
         response = io.open(path, "rb", buffering=0)
         return response
 
-    def json_to_response(self, kind, suffix='', raw=False):
-        path = self.get_data_path(f'esearch_response_{kind}{suffix}.json')
+    def json_to_response(self, kind, suffix='', raw=False, utility='esearch'):
+        path = self.get_data_path(f'{utility}_response_{kind}{suffix}.json')
         response = io.open(path, "rb", buffering=0)
         if raw:
             return response
@@ -93,9 +100,9 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             start=start,
             size=size)
 
-    def generate_ef_result(self, kind, id_type):
+    def generate_ef_result(self, kind, prefix='metadata'):
         return EFetchResult(
-            response=self.xml_to_response(kind), id_type=id_type,
+            response=self.xml_to_response(kind, prefix=prefix),
             request=self.generate_ef_request(['FAKEID1', 'FAKEID2'])
         )
 
@@ -158,5 +165,15 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
 
     def generate_es_result(self, kind, suffix):
         return ESearchResult(
-            response=self.json_to_response(kind, suffix),
+            response=self.json_to_response(kind, suffix, utility='esearch'),
             request=self.generate_es_request(term="abc OR 123"))
+
+    def generate_el_request(self):
+        request_params = FakeParams(self.temp_dir.name, retmode='json',
+                                    eutil='elink.fcgi')
+        return ElinkRequest(eutil='elink.fcgi', parameter=request_params)
+
+    def generate_el_result(self, kind, suffix):
+        return ELinkResult(
+            response=self.json_to_response(kind, suffix, utility='elink'),
+            request=self.generate_el_request())

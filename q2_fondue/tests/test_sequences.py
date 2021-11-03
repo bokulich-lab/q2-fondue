@@ -95,7 +95,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                     ls_accIDs[0]]
 
         _run_fasterq_dump_for_all(
-            ls_accIDs, test_temp_dir.name, threads=6, general_retries=0)
+            ls_accIDs, test_temp_dir.name, threads=6, retries=0)
         mock_subprocess.assert_called_once_with(exp_comd, text=True,
                                                 capture_output=True)
 
@@ -107,7 +107,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
-                ls_accIDs, test_temp_dir.name, threads=6, general_retries=1)
+                ls_accIDs, test_temp_dir.name, threads=6, retries=1)
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
 

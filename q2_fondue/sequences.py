@@ -19,13 +19,12 @@ from q2_types.per_sample_sequences import \
 from qiime2 import Metadata
 
 
-def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
-                     retries: int):
+def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
     """
     Helper function running fasterq-dump `retries` times
     """
 
-    print("Downloading sequences of sample: {}...".format(acc))
+    print("Downloading sequences for run: {}...".format(acc))
 
     acc_fastq_single = os.path.join(output_dir,
                                     acc + '.fastq')
@@ -52,17 +51,15 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int,
     return result
 
 
-def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads,
-                              general_retries):
+def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads, retries):
     """
     Helper function that runs fasterq-dump for all ids in study-ids
     """
     for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads,
-                                  general_retries)
+        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries)
 
         if len(os.listdir(tmpdirname)) == 0:
-            # raise error if all general_retries attempts failed
+            # raise error if all retries attempts failed
             raise ValueError('{} could not be downloaded with the '
                              'following fasterq-dump error '
                              'returned: {}'
@@ -138,8 +135,8 @@ def _write_empty_casava(read_type, casava_out_path):
             pass
 
 
-def _write2casava_dir_single(tmpdirname, casava_result_path,
-                             ls_files_2_consider):
+def _write2casava_dir_single(
+        tmpdirname, casava_result_path, ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
     from tmpdirname to casava_result_path following single
@@ -157,8 +154,8 @@ def _write2casava_dir_single(tmpdirname, casava_result_path,
                     fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
 
-def _write2casava_dir_paired(tmpdirname, casava_result_path,
-                             ls_files_2_consider):
+def _write2casava_dir_paired(
+        tmpdirname, casava_result_path, ls_files_2_consider):
     """
     Helper function that writes downloaded sequence files
     from tmpdirname to casava_result_path following paired-end
@@ -190,11 +187,9 @@ def _write2casava_dir_paired(tmpdirname, casava_result_path,
 
 
 def get_sequences(
-        sample_ids: Metadata,
-        retries: int = 2,
-        threads:
-        int = 6) -> (CasavaOneEightSingleLanePerSampleDirFmt,
-                     CasavaOneEightSingleLanePerSampleDirFmt):
+        accession_ids: Metadata, retries: int = 2, threads: int = 6
+) -> (CasavaOneEightSingleLanePerSampleDirFmt,
+      CasavaOneEightSingleLanePerSampleDirFmt):
     """
     Fetches single-read and paired-end sequences based on provided
     accession IDs.
@@ -204,7 +199,7 @@ def get_sequences(
     and can use multiple `threads`.
 
     Args:
-        sample_ids (Metadata): List of all sample IDs to be fetched.
+        accession_ids (Metadata): List of all sample IDs to be fetched.
         retries (int, default=2): Number of retries to fetch sequences.
         threads (int, default=6): Number of threads to be used in parallel.
 
@@ -217,11 +212,11 @@ def get_sequences(
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
-    sample_id_set = list(sample_ids.get_ids())
+    accession_ids = list(accession_ids.get_ids())
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(sample_id_set, tmpdirname, threads,
+        _run_fasterq_dump_for_all(accession_ids, tmpdirname, threads,
                                   retries)
 
         # processing downloaded files
