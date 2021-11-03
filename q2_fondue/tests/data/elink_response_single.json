@@ -1,0 +1,20 @@
+{
+  "header": {
+    "type": "elink",
+    "version": "0.3"
+  },
+  "linksets": [
+    {
+      "dbfrom": "bioproject",
+      "ids": [
+        "33627"
+      ],
+      "linksetdbhistories": [
+        {
+          "dbto": "sra",
+          "linkname": "bioproject_sra",
+          "querykey": "2"
+        }
+      ],
+      "webenv": "MCID_61725b77d7807e40801b66a9"
+}]}

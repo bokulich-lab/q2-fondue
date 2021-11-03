@@ -14,7 +14,8 @@ from qiime2.plugin import model
 class SRAMetadataFormat(model.TextFileFormat):
 
     REQUIRED_IDS = [
-        'ID', 'Biosample ID', 'Bioproject ID', 'Experiment ID', 'Study ID'
+        'ID', 'Biosample ID', 'Bioproject ID', 'Experiment ID',
+        'Study ID', 'Sample Accession'
     ]
     REQUIRED_HEADER_FIELDS = [
         'Organism', 'Instrument', 'Platform', 'Bases', 'Bytes', 'Public',

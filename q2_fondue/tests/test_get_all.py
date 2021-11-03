@@ -37,7 +37,7 @@ class TestGetAll(SequenceTests):
         mock_validation.return_value = True
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
-        mock_inquire.return_value = pd.read_csv(path2df, sep='\t')
+        mock_inquire.return_value = pd.read_csv(path2df, sep='\t', index_col=0)
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
@@ -54,7 +54,7 @@ class TestGetAll(SequenceTests):
         mock_efetcher.assert_called_once_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, [acc_id], 'run')
+        mock_inquire.assert_called_once_with(ANY, [acc_id])
 
         # function call assertions for get_sequences within
         mock_subprocess.assert_called_once_with(
