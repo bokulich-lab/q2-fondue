@@ -143,7 +143,10 @@ class SRARun(SRABaseMeta):
     def __post_init__(self):
         """Calculates an average spot length."""
         super().__post_init__()
-        self.avg_spot_len = int(self.bases/self.spots)
+        if self.spots > 0:
+            self.avg_spot_len = int(self.bases/self.spots)
+        else:
+            self.avg_spot_len = 0
 
     def generate_meta(self) -> pd.DataFrame:
         """Generates run's metadata.
