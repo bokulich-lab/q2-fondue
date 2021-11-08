@@ -235,6 +235,20 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         self.assertEqual(2, patch_ef.call_count)
 
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta_not_all_found(self, patch_ef, patch_val, patch_es):
+        exp_df = pd.DataFrame(
+            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
+            index=['AB', 'cd', 'Ef']
+        )
+        patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(11)]
+
+        with self.assertWarnsRegex(
+                Warning, 'could not be fetched: Ef. Please try fetching'):
+            _ = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:

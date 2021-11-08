@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 from typing import List, Tuple
+from warnings import warn
 
 import entrezpy.conduit as ec
 import entrezpy.efetch.efetcher as ef
@@ -117,10 +118,18 @@ def _get_run_meta(email, n_jobs, run_ids):
     # metadata will be fetched - in that case, keep running efetcher
     # until all runs are retrieved
     meta_df = [meta_df]
-    while missing_ids:
+    retries = 10
+    while missing_ids and retries > 0:
         # TODO: add a logging statement here
         df, missing_ids = _execute_efetcher(email, n_jobs, missing_ids)
         meta_df.append(df)
+        retries -= 1
+
+    if retries == 0 and missing_ids:
+        # TODO: add a logging statement here
+        warn('Metadata for the following run IDs could not be fetched: '
+             f'{",".join(missing_ids)}. '
+             f'Please try fetching those independently.')
 
     return pd.concat(meta_df, axis=0)
 
