@@ -18,6 +18,8 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
 
+from q2_fondue.utils import _determine_id_type, _get_run_ids_from_projects
+
 
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
     """
@@ -187,7 +189,7 @@ def _write2casava_dir_paired(
 
 
 def get_sequences(
-        accession_ids: Metadata, retries: int = 2, threads: int = 6
+        accession_ids: Metadata, email: str, retries: int = 2, threads: int = 6
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt):
     """
@@ -200,6 +202,7 @@ def get_sequences(
 
     Args:
         accession_ids (Metadata): List of all sample IDs to be fetched.
+        email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
         threads (int, default=6): Number of threads to be used in parallel.
 
@@ -213,6 +216,12 @@ def get_sequences(
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
     accession_ids = list(accession_ids.get_ids())
+
+    id_type = _determine_id_type(accession_ids)
+    if id_type == 'bioproject':
+        accession_ids = _get_run_ids_from_projects(
+            email, threads, accession_ids
+        )
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
