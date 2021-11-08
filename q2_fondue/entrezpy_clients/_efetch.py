@@ -477,21 +477,17 @@ class EFetchResult(EutilsResult):
         run_id_map = {}
         for i, res in enumerate(parsed_results):
             runset = res.get('RUN_SET')
-            if not isinstance(runset, list):
-                runset = [runset]
+            runset = [runset] if not isinstance(runset, list) else runset
 
             run_id_map[i] = []
             for run in runset:
-                if not isinstance(run, list):
-                    run = [run]
+                run = [run] if not isinstance(run, list) else run
                 run_ids = []
                 for r in run:
-                    if not isinstance(r, list):
-                        r = [r]
+                    r = [r] if not isinstance(r, list) else r
                     for _r in r:
                         _r = _r.get('RUN')
-                        if not isinstance(_r, list):
-                            _r = [_r]
+                        _r = [_r] if not isinstance(_r, list) else _r
                         run_ids.extend([__r.get('@accession') for __r in _r])
                 run_id_map[i].extend(run_ids)
 

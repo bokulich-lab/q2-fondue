@@ -153,6 +153,43 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_request.assert_called_once()
         self.assertTrue(obs_result)
 
+    def test_find_all_run_ids(self):
+        fake_results = [
+            {'RUN_SET': {'RUN': {'@accession': 'abc123', '@alias': 'run123'}}},
+            {'RUN_SET': {'RUN': {'@accession': 'cde234', '@alias': 'run124'}}}
+        ]
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'abc123': 0, 'cde234': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
+    def test_find_all_run_ids_big_runset(self):
+        fake_results = [
+            {'RUN_SET': [{'RUN': {'@accession': 'ab12', '@alias': 'run123'}},
+                         {'RUN': {'@accession': 'bc23', '@alias': 'run124'}}]},
+            {'RUN_SET': {'RUN': {'@accession': 'de34', '@alias': 'run125'}}}
+        ]
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'ab12': 0, 'bc23': 0, 'de34': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
+    def test_find_all_run_ids_big_runset_big_run(self):
+        fake_results = [
+            {'RUN_SET': [
+                {'RUN': [
+                    {'@accession': 'ab12', '@alias': 'run123'},
+                    {'@accession': 'bc23', '@alias': 'run124'}
+                ]},
+                {'RUN': [
+                    {'@accession': 'cd34', '@alias': 'run125'},
+                    {'@accession': 'de45', '@alias': 'run126'}
+                ]}]},
+            {'RUN_SET': {'RUN': {'@accession': 'ef56', '@alias': 'run127'}}}
+        ]
+
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'ab12': 0, 'bc23': 0, 'cd34': 0, 'de45': 0, 'ef56': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
     @patch.object(esearcher, 'Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata._execute_efetcher')
