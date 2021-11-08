@@ -91,7 +91,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_single(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('single')
-            obs_df = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
+            obs_df, _ = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(['FAKEID1'])
         exp_df = self.generate_expected_df().iloc[[0]]
@@ -106,7 +106,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_multi(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')
-            obs_df = _efetcher_inquire(
+            obs_df, _ = _efetcher_inquire(
                 self.fake_efetcher, ['FAKEID1', 'FAKEID2'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(

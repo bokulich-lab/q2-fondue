@@ -37,7 +37,9 @@ class TestGetAll(SequenceTests):
         mock_validation.return_value = True
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
-        mock_inquire.return_value = pd.read_csv(path2df, sep='\t', index_col=0)
+        mock_inquire.return_value = (
+            pd.read_csv(path2df, sep='\t', index_col=0), []
+        )
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
