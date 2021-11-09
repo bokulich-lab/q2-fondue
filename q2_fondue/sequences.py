@@ -189,7 +189,8 @@ def _write2casava_dir_paired(
 
 
 def get_sequences(
-        accession_ids: Metadata, email: str, retries: int = 2, threads: int = 6
+        accession_ids: Metadata, email: str, retries: int = 2,
+        n_jobs: int = 1, log_level: str = 'INFO',
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt):
     """
@@ -204,7 +205,8 @@ def get_sequences(
         accession_ids (Metadata): List of all sample IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
-        threads (int, default=6): Number of threads to be used in parallel.
+        n_jobs (int, default=1): Number of threads to be used in parallel.
+        log_level (str, default='INFO'): Logging level.
 
     Returns:
         Two directories with fetched single-read and paired-end sequences
@@ -220,13 +222,12 @@ def get_sequences(
     id_type = _determine_id_type(accession_ids)
     if id_type == 'bioproject':
         accession_ids = _get_run_ids_from_projects(
-            email, threads, accession_ids
+            email, n_jobs, accession_ids
         )
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(accession_ids, tmpdirname, threads,
-                                  retries)
+        _run_fasterq_dump_for_all(accession_ids, tmpdirname, n_jobs, retries)
 
         # processing downloaded files
         ls_single_files, ls_paired_files = _process_downloaded_sequences(

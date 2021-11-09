@@ -6,6 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import logging
+import sys
 from typing import List, Tuple
 from warnings import warn
 
@@ -34,10 +36,10 @@ def _efetcher_inquire(
     """
     # TODO: this is just temporary - for debugging purposes;
     #  we should really make Entrez logging configurable
-    # efetcher.logger.addHandler(logging.StreamHandler(sys.stdout))
-    # efetcher.logger.setLevel('DEBUG')
-    # efetcher.request_pool.logger.addHandler(logging.StreamHandler(sys.stdout))
-    # efetcher.request_pool.logger.setLevel('DEBUG')
+    efetcher.logger.addHandler(logging.StreamHandler(sys.stdout))
+    efetcher.logger.setLevel('DEBUG')
+    efetcher.request_pool.logger.addHandler(logging.StreamHandler(sys.stdout))
+    efetcher.request_pool.logger.setLevel('DEBUG')
 
     metadata_response = efetcher.inquire(
         {
@@ -100,7 +102,9 @@ def _get_project_meta(email, n_jobs, project_ids):
 
 
 def get_metadata(
-        accession_ids: Metadata, email: str, n_jobs: int = 1) -> pd.DataFrame:
+        accession_ids: Metadata, email: str,
+        n_jobs: int = 1, log_level: str = 'INFO'
+) -> pd.DataFrame:
     """Fetches metadata using the provided run/bioproject accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
