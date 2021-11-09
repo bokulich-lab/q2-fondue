@@ -5,21 +5,12 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import logging
-import sys
 from typing import List
 
-from entrezpy import conduit as ec
 from entrezpy.esearch import esearcher as es
 
-from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
-from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
-from q2_fondue.entrezpy_clients._utils import PREFIX
-
-
-class InvalidIDs(Exception):
-    pass
+from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs
 
 
 def _validate_esearch_result(
@@ -54,79 +45,3 @@ def _determine_id_type(ids: list):
                      'IDs of mixed types were provided. Please provide IDs '
                      'corresponding to either SRA runs (#SRR) or NCBI '
                      'BioProject IDs (#PRJ).')
-
-
-def set_up_entrezpy_logging(entrezpy_obj, log_level):
-    """Sets up logging for the given Entrezpy object.
-
-    Args:
-        entrezpy_obj (object): An Entrezpy object that has a logger attribute.
-        log_level (str): The log level to set.
-    """
-    handler = set_up_logging_handler(log_level)
-
-    for logger in (entrezpy_obj.logger, entrezpy_obj.request_pool.logger):
-        logger.addHandler(handler)
-        logger.setLevel(log_level)
-
-
-def set_up_logger(log_level, cls_obj=None):
-    """Sets up the module logger.
-
-    Args:
-        log_level (str): The log level to set.
-        cls_obj: Class instance for which the logger should be created.
-
-    Returns:
-        logging.Logger: The module logger.
-    """
-    if cls_obj:
-        logger = logging.getLogger(
-            f'{cls_obj.__module__}.{cls_obj.__qualname__}'
-        )
-    else:
-        logger = logging.getLogger(__name__)
-    logger.setLevel(log_level)
-    handler = set_up_logging_handler(log_level)
-    logger.addHandler(handler)
-    return logger
-
-
-def set_up_logging_handler(log_level):
-    """Sets up logging handler.
-
-    Args:
-        log_level (str): The log level to set.
-    """
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        '%(asctime)s [%(threadName)s] [%(levelname)s] '
-        '[%(name)s]: %(message)s')
-    handler.setFormatter(formatter)
-    return handler
-
-
-def _get_run_ids_from_projects(email, n_jobs, project_ids, log_level) -> list:
-    econduit = ec.Conduit(email=email, threads=n_jobs)
-    set_up_entrezpy_logging(econduit, log_level)
-
-    samp_ids_pipeline = econduit.new_pipeline()
-
-    # search for project IDs
-    es = samp_ids_pipeline.add_search(
-        {'db': 'bioproject', 'term': " OR ".join(project_ids)},
-        analyzer=ESearchAnalyzer(project_ids)
-    )
-    # given bioproject, find linked SRA runs
-    el = samp_ids_pipeline.add_link(
-        {'db': 'sra'},
-        analyzer=ELinkAnalyzer(), dependency=es
-    )
-    # given SRA run IDs, fetch all metadata
-    samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
-        analyzer=EFetchAnalyzer(), dependency=el
-    )
-
-    a = econduit.run(samp_ids_pipeline)
-    return a.result.metadata_to_series().tolist()

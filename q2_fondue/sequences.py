@@ -18,8 +18,9 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
 
-from q2_fondue.utils import (_determine_id_type, _get_run_ids_from_projects,
-                             set_up_logger)
+from q2_fondue.utils import (_determine_id_type)
+from q2_fondue.entrezpy_clients._utils import set_up_logger
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
 def _run_cmd_fasterq(
@@ -61,6 +62,9 @@ def _run_fasterq_dump_for_all(
     """
     Helper function that runs fasterq-dump for all ids in study-ids
     """
+    logger.info(
+        f'Downloading sequences for {len(sample_ids)} accession IDs...'
+    )
     for acc in sample_ids:
         result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
@@ -72,6 +76,7 @@ def _run_fasterq_dump_for_all(
                              .format(acc, result.stderr))
         else:
             continue
+    logger.info('Download finished.')
 
 
 def _process_downloaded_sequences(output_dir):

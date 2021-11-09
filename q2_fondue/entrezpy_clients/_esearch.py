@@ -12,8 +12,7 @@ from typing import List
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
-
-from q2_fondue.entrezpy_clients._efetch import InvalidIDs
+from q2_fondue.entrezpy_clients._utils import InvalidIDs
 
 
 class ESearchResult(EutilsResult):

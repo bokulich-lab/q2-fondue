@@ -9,8 +9,8 @@
 import unittest
 
 import pandas as pd
+from q2_fondue.entrezpy_clients._utils import InvalidIDs
 
-from q2_fondue.entrezpy_clients._efetch import InvalidIDs
 from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 

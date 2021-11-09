@@ -6,8 +6,10 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import pandas as pd
+import logging
+import sys
 
+import pandas as pd
 
 PREFIX = {
     'run': ('SRR', 'ERR', 'DRR'),
@@ -16,6 +18,10 @@ PREFIX = {
     'study': ('SRP', 'ERP', 'DRP'),
     'bioproject': ('PRJ', )
 }
+
+
+class InvalidIDs(Exception):
+    pass
 
 
 def get_attrs(obj, excluded=()):
@@ -49,3 +55,49 @@ def rename_columns(df: pd.DataFrame):
     df.rename(columns={'Sample ID': 'Sample Accession'}, inplace=True)
 
     return df
+
+
+def set_up_entrezpy_logging(entrezpy_obj, log_level):
+    """Sets up logging for the given Entrezpy object.
+
+    Args:
+        entrezpy_obj (object): An Entrezpy object that has a logger attribute.
+        log_level (str): The log level to set.
+    """
+    handler = set_up_logging_handler()
+
+    for logger in (entrezpy_obj.logger, entrezpy_obj.request_pool.logger):
+        logger.addHandler(handler)
+        logger.setLevel(log_level)
+
+
+def set_up_logger(log_level, cls_obj=None) -> logging.Logger:
+    """Sets up the module/class logger.
+
+    Args:
+        log_level (str): The log level to set.
+        cls_obj: Class instance for which the logger should be created.
+
+    Returns:
+        logging.Logger: The module logger.
+    """
+    if cls_obj:
+        logger = logging.getLogger(
+            f'{cls_obj.__module__}'
+        )
+    else:
+        logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
+    handler = set_up_logging_handler()
+    logger.addHandler(handler)
+    return logger
+
+
+def set_up_logging_handler():
+    """Sets up logging handler."""
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        '%(asctime)s [%(threadName)s] [%(levelname)s] '
+        '[%(name)s]: %(message)s')
+    handler.setFormatter(formatter)
+    return handler

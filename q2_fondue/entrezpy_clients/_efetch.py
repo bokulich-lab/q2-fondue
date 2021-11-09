@@ -13,17 +13,12 @@ from typing import List, Union
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
-from q2_fondue.utils import set_up_logger
 from xmltodict import parse as parsexml
 
-from q2_fondue.entrezpy_clients._utils import (rename_columns)
+from q2_fondue.entrezpy_clients._utils import (rename_columns, set_up_logger)
 from q2_fondue.entrezpy_clients._sra_meta import (LibraryMetadata, SRARun,
                                                   SRAExperiment, SRASample,
                                                   SRAStudy)
-
-
-class InvalidIDs(Exception):
-    pass
 
 
 class EFetchResult(EutilsResult):

@@ -16,13 +16,14 @@ from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type, _get_run_ids_from_projects,
-    set_up_entrezpy_logging
+    _validate_esearch_result, _determine_id_type
 )
+from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging)
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
 def _efetcher_inquire(
-        efetcher: ef.Efetcher, run_ids: List[str],
+        efetcher: ef.Efetcher, run_ids: List[str], log_level: str
 ) -> Tuple[pd.DataFrame, list]:
     """Makes an EFetch request using the provided IDs.
 
@@ -40,7 +41,7 @@ def _efetcher_inquire(
             'id': run_ids,
             'rettype': 'xml',
             'retmode': 'text'
-        }, analyzer=EFetchAnalyzer()
+        }, analyzer=EFetchAnalyzer(log_level)
     )
 
     return (
@@ -55,7 +56,7 @@ def _execute_efetcher(email, n_jobs, run_ids, log_level):
         apikey_var=None, threads=n_jobs, qid=None
     )
     set_up_entrezpy_logging(efetcher, log_level)
-    meta_df, missing_ids = _efetcher_inquire(efetcher, run_ids)
+    meta_df, missing_ids = _efetcher_inquire(efetcher, run_ids, log_level)
     return meta_df, missing_ids
 
 
