@@ -30,7 +30,7 @@ from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 class FakeConduit:
     def __init__(self, fake_efetch_result, fake_efetch_response):
-        self.logging = MagicMock()
+        self.logger = MagicMock()
         self.fake_efetch_result = fake_efetch_result
         self.fake_efetch_response = fake_efetch_response
         self.pipeline = MagicMock()
@@ -42,7 +42,7 @@ class FakeConduit:
         return self.pipeline
 
     def run(self, pipeline):
-        analyzer = EFetchAnalyzer()
+        analyzer = EFetchAnalyzer('INFO')
         analyzer.result = self.fake_efetch_result
         analyzer.result.extract_run_ids(self.fake_efetch_response)
         return analyzer
@@ -96,7 +96,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_single(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('single')
-            obs_df, _ = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
+            obs_df, _ = _efetcher_inquire(
+                self.fake_efetcher, ['FAKEID1'], 'INFO'
+            )
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(['FAKEID1'])
         exp_df = self.generate_expected_df().iloc[[0]]
@@ -112,7 +114,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')
             obs_df, _ = _efetcher_inquire(
-                self.fake_efetcher, ['FAKEID1', 'FAKEID2'])
+                self.fake_efetcher, ['FAKEID1', 'FAKEID2'], 'INFO'
+            )
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(
             ['FAKEID1', 'FAKEID2'], size=2)
@@ -256,7 +259,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_get_project_meta(self, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:
             mock_conduit.return_value = self.fake_econduit
-            _ = _get_project_meta('someone@somewhere.com', 1, ['AB', 'cd'])
+            _ = _get_project_meta(
+                'someone@somewhere.com', 1, ['AB', 'cd'], 'INFO'
+            )
 
             exp_ids = ['SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
                        'SRR000038', 'SRR000043', 'SRR000046', 'SRR000048',
@@ -266,7 +271,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
             )
             patched_get.assert_called_once_with(
-                'someone@somewhere.com', 1, exp_ids
+                'someone@somewhere.com', 1, exp_ids, 'INFO'
             )
 
     @patch('q2_fondue.metadata._get_run_meta')
@@ -276,7 +281,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
         patched_get_run.assert_called_once_with(
-            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345']
+            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345'], 'INFO'
         )
         patched_get_project.assert_not_called()
 
@@ -287,7 +292,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
         patched_get_project.assert_called_once_with(
-            'abc@def.com', 2, ['PRJNA123', 'PRJNA234']
+            'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'INFO'
         )
         patched_get_run.assert_not_called()
 

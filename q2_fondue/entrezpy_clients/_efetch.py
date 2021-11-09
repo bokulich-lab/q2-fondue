@@ -109,10 +109,11 @@ class EFetchResult(EutilsResult):
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
                             self.metadata[i] = [x.get('@acc') for x in runs]
-        self.logger.error(
-            'Document summary was not found in the result received from'
-            f'EFetch. The contents was: {json.dumps(response)}.'
-        )
+        else:
+            self.logger.error(
+                'Document summary was not found in the result received from '
+                f'EFetch. The contents was: {json.dumps(response)}.'
+            )
 
     @staticmethod
     def _find_bioproject_id(bioproject: Union[list, dict]) -> str:

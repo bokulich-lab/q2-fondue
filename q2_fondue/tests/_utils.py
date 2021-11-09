@@ -62,7 +62,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         super().setUp()
         self.efetch_result_single = self.generate_ef_result('single')
         self.efetch_result_multi = self.generate_ef_result('multi')
-        self.efetch_analyzer = EFetchAnalyzer()
+        self.efetch_analyzer = EFetchAnalyzer(log_level='INFO')
         self.efetch_request_properties = {
             'db', 'eutil', 'uids', 'webenv', 'querykey', 'rettype', 'retmode',
             'strand', 'seqstart', 'seqstop', 'complexity'
@@ -98,12 +98,14 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
             eutil='efetch.fcgi',
             parameter=request_params,
             start=start,
-            size=size)
+            size=size
+        )
 
     def generate_ef_result(self, kind, prefix='metadata'):
         return EFetchResult(
             response=self.xml_to_response(kind, prefix=prefix),
-            request=self.generate_ef_request(['FAKEID1', 'FAKEID2'])
+            request=self.generate_ef_request(['FAKEID1', 'FAKEID2']),
+            log_level='INFO'
         )
 
     def generate_sra_metadata(self):

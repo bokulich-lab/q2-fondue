@@ -66,9 +66,12 @@ def set_up_entrezpy_logging(entrezpy_obj, log_level):
     """
     handler = set_up_logging_handler()
 
-    for logger in (entrezpy_obj.logger, entrezpy_obj.request_pool.logger):
-        logger.addHandler(handler)
-        logger.setLevel(log_level)
+    entrezpy_obj.logger.addHandler(handler)
+    entrezpy_obj.logger.setLevel(log_level)
+
+    if hasattr(entrezpy_obj, 'request_pool'):
+        entrezpy_obj.request_pool.logger.addHandler(handler)
+        entrezpy_obj.request_pool.logger.setLevel(log_level)
 
 
 def set_up_logger(log_level, cls_obj=None) -> logging.Logger:
