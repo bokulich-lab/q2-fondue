@@ -18,15 +18,17 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
 
-from q2_fondue.utils import _determine_id_type, _get_run_ids_from_projects
+from q2_fondue.utils import (_determine_id_type, _get_run_ids_from_projects,
+                             set_up_logger)
 
 
-def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
+def _run_cmd_fasterq(
+        acc: str, output_dir: str, threads: int, retries: int, logger):
     """
     Helper function running fasterq-dump `retries` times
     """
 
-    print("Downloading sequences for run: {}...".format(acc))
+    logger.debug(f'Downloading sequences for run: {acc}...')
 
     acc_fastq_single = os.path.join(output_dir,
                                     acc + '.fastq')
@@ -46,19 +48,21 @@ def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, retries: int):
         if not (os.path.isfile(acc_fastq_single) |
                 os.path.isfile(acc_fastq_paired)):
             retries -= 1
-            print('retrying {} times'.format(retries+1))
+            logger.warning(f'Retrying {retries+1} times...')
         else:
             retries = -1
 
     return result
 
 
-def _run_fasterq_dump_for_all(sample_ids, tmpdirname, threads, retries):
+def _run_fasterq_dump_for_all(
+        sample_ids, tmpdirname, threads, retries, logger
+):
     """
     Helper function that runs fasterq-dump for all ids in study-ids
     """
     for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries)
+        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
         if len(os.listdir(tmpdirname)) == 0:
             # raise error if all retries attempts failed
@@ -115,14 +119,15 @@ def _read_fastq_seqs(filepath):
                qual.strip())
 
 
-def _write_empty_casava(read_type, casava_out_path):
+def _write_empty_casava(read_type, casava_out_path, logger):
     """
     Helper function that warns about `read_type` sequences
     that are not available and saves empty casava file
     """
 
-    warnings.warn('No {}-read sequences '
-                  'available for these sample IDs'.format(read_type))
+    warn_msg = f'No {read_type}-read sequences available for these sample IDs.'
+    warnings.warn(warn_msg)
+    logger.warning(warn_msg)
 
     if read_type == 'single':
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
@@ -214,6 +219,8 @@ def get_sequences(
         only contain one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
     """
+    logger = set_up_logger(log_level)
+
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
@@ -222,12 +229,13 @@ def get_sequences(
     id_type = _determine_id_type(accession_ids)
     if id_type == 'bioproject':
         accession_ids = _get_run_ids_from_projects(
-            email, n_jobs, accession_ids
+            email, n_jobs, accession_ids, log_level
         )
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(accession_ids, tmpdirname, n_jobs, retries)
+        _run_fasterq_dump_for_all(
+            accession_ids, tmpdirname, n_jobs, retries, logger)
 
         # processing downloaded files
         ls_single_files, ls_paired_files = _process_downloaded_sequences(
@@ -235,14 +243,14 @@ def get_sequences(
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(ls_single_files) == 0:
-            _write_empty_casava('single', casava_out_single)
+            _write_empty_casava('single', casava_out_single, logger)
         else:
             _write2casava_dir_single(tmpdirname, casava_out_single,
                                      ls_single_files)
 
         # write downloaded paired-end seqs from tmp to casava dir
         if len(ls_paired_files) == 0:
-            _write_empty_casava('paired', casava_out_paired)
+            _write_empty_casava('paired', casava_out_paired, logger)
         else:
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)

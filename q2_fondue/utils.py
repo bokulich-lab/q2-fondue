@@ -70,6 +70,28 @@ def set_up_entrezpy_logging(entrezpy_obj, log_level):
         logger.setLevel(log_level)
 
 
+def set_up_logger(log_level, cls_obj=None):
+    """Sets up the module logger.
+
+    Args:
+        log_level (str): The log level to set.
+        cls_obj: Class instance for which the logger should be created.
+
+    Returns:
+        logging.Logger: The module logger.
+    """
+    if cls_obj:
+        logger = logging.getLogger(
+            f'{cls_obj.__module__}.{cls_obj.__qualname__}'
+        )
+    else:
+        logger = logging.getLogger(__name__)
+    logger.setLevel(log_level)
+    handler = set_up_logging_handler(log_level)
+    logger.addHandler(handler)
+    return logger
+
+
 def set_up_logging_handler(log_level):
     """Sets up logging handler.
 
@@ -78,8 +100,8 @@ def set_up_logging_handler(log_level):
     """
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        '%(asctime)s [%(threadName)s]\t[%(levelname)s]'
-        '\t[%(name)s]: %(message)s')
+        '%(asctime)s [%(threadName)s] [%(levelname)s] '
+        '[%(name)s]: %(message)s')
     handler.setFormatter(formatter)
     return handler
 

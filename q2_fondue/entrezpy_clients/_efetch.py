@@ -9,11 +9,11 @@
 import json
 from itertools import chain
 from typing import List, Union
-from warnings import warn
 
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
+from q2_fondue.utils import set_up_logger
 from xmltodict import parse as parsexml
 
 from q2_fondue.entrezpy_clients._utils import (rename_columns)
@@ -29,7 +29,7 @@ class InvalidIDs(Exception):
 class EFetchResult(EutilsResult):
     """Entrezpy client for EFetch utility used to fetch SRA metadata."""
 
-    def __init__(self, response, request):
+    def __init__(self, response, request, log_level):
         super().__init__(request.eutil, request.query_id, request.db)
         self.metadata_raw = None
         self.metadata = {}
@@ -38,6 +38,7 @@ class EFetchResult(EutilsResult):
         self.experiments = {}
         self.runs = {}
         self.missing_uids = []
+        self.logger = set_up_logger(log_level, self)
 
     def size(self):
         return len(self.metadata)
@@ -113,8 +114,10 @@ class EFetchResult(EutilsResult):
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
                             self.metadata[i] = [x.get('@acc') for x in runs]
-        # TODO: this needs an else-statement with a proper message
-        #  when we have logging enabled
+        self.logger.error(
+            'Document summary was not found in the result received from'
+            f'EFetch. The contents was: {json.dumps(response)}.'
+        )
 
     @staticmethod
     def _find_bioproject_id(bioproject: Union[list, dict]) -> str:
@@ -356,8 +359,7 @@ class EFetchResult(EutilsResult):
 
         return run_ids
 
-    @staticmethod
-    def _custom_attributes_to_dict(attributes: List[dict], level: str):
+    def _custom_attributes_to_dict(self, attributes: List[dict], level: str):
         """Converts attributes list into a dictionary
 
         Args:
@@ -382,7 +384,7 @@ class EFetchResult(EutilsResult):
         for i, tag in enumerate(tags):
             total, count = tags.count(tag), tags[:i].count(tag)
             if total > 1:
-                warn(
+                self.logger.warning(
                     f'One of the metadata keys ({tag}) is duplicated. '
                     f'It will be retained with a numeric suffix.'
                 ) if count == 0 else False
@@ -413,9 +415,10 @@ class EFetchResult(EutilsResult):
                     level_attributes, level)
                 processed_meta.update(attr_dedupl)
             except Exception as e:
-                print(f'Exception has occurred when processing {level} '
-                      f'attributes: "{e}". Contents of the metadata '
-                      f'was: {attributes}.')
+                self.logger.exception(
+                    f'Exception has occurred when processing {level} '
+                    f'attributes: "{e}". Contents of the metadata '
+                    f'was: {attributes}.')
                 raise
         return processed_meta
 
@@ -500,17 +503,19 @@ class EFetchResult(EutilsResult):
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
-    def __init__(self):
+    def __init__(self, log_level):
         super().__init__()
+        self.log_level = log_level
         self.response_type = None
+        self.logger = set_up_logger(log_level, self)
 
     def init_result(self, response, request):
         self.response_type = request.rettype
         if not self.result:
-            self.result = EFetchResult(response, request)
+            self.result = EFetchResult(response, request, self.log_level)
 
     def analyze_error(self, response, request):
-        print(json.dumps({
+        self.logger.error(json.dumps({
             __name__: {
                 'Response': {
                     'dump': request.dump(),
