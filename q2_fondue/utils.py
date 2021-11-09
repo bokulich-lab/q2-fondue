@@ -5,7 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-
+import logging
+import sys
 from typing import List
 
 from entrezpy import conduit as ec
@@ -55,13 +56,37 @@ def _determine_id_type(ids: list):
                      'BioProject IDs (#PRJ).')
 
 
-def _get_run_ids_from_projects(email, n_jobs, project_ids) -> list:
-    econduit = ec.Conduit(email=email, threads=n_jobs)
+def set_up_entrezpy_logging(entrezpy_obj, log_level):
+    """Sets up logging for the given Entrezpy object.
 
-    # TODO: create a separate function to set this all up everywhere
-    # handler = logging.StreamHandler(sys.stdout)
-    # econduit.logger.setLevel("DEBUG")
-    # econduit.logger.addHandler(handler)
+    Args:
+        entrezpy_obj (object): An Entrezpy object that has a logger attribute.
+        log_level (str): The log level to set.
+    """
+    handler = set_up_logging_handler(log_level)
+
+    for logger in (entrezpy_obj.logger, entrezpy_obj.request_pool.logger):
+        logger.addHandler(handler)
+        logger.setLevel(log_level)
+
+
+def set_up_logging_handler(log_level):
+    """Sets up logging handler.
+
+    Args:
+        log_level (str): The log level to set.
+    """
+    handler = logging.StreamHandler(sys.stdout)
+    formatter = logging.Formatter(
+        '%(asctime)s [%(threadName)s]\t[%(levelname)s]'
+        '\t[%(name)s]: %(message)s')
+    handler.setFormatter(formatter)
+    return handler
+
+
+def _get_run_ids_from_projects(email, n_jobs, project_ids, log_level) -> list:
+    econduit = ec.Conduit(email=email, threads=n_jobs)
+    set_up_entrezpy_logging(econduit, log_level)
 
     samp_ids_pipeline = econduit.new_pipeline()
 

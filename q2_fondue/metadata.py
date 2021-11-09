@@ -6,8 +6,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import logging
-import sys
 from typing import List, Tuple
 from warnings import warn
 
@@ -17,8 +15,10 @@ import pandas as pd
 from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
-from q2_fondue.utils import (_validate_esearch_result, _determine_id_type,
-                             _get_run_ids_from_projects)
+from q2_fondue.utils import (
+    _validate_esearch_result, _determine_id_type, _get_run_ids_from_projects,
+    set_up_entrezpy_logging
+)
 
 
 def _efetcher_inquire(
@@ -34,13 +34,6 @@ def _efetcher_inquire(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
         list: List of all the run IDs that were not found.
     """
-    # TODO: this is just temporary - for debugging purposes;
-    #  we should really make Entrez logging configurable
-    efetcher.logger.addHandler(logging.StreamHandler(sys.stdout))
-    efetcher.logger.setLevel('DEBUG')
-    efetcher.request_pool.logger.addHandler(logging.StreamHandler(sys.stdout))
-    efetcher.request_pool.logger.setLevel('DEBUG')
-
     metadata_response = efetcher.inquire(
         {
             'db': 'sra',
@@ -56,25 +49,27 @@ def _efetcher_inquire(
     )
 
 
-def _execute_efetcher(email, n_jobs, run_ids):
+def _execute_efetcher(email, n_jobs, run_ids, log_level):
     efetcher = ef.Efetcher(
         'efetcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
+    set_up_entrezpy_logging(efetcher, log_level)
     meta_df, missing_ids = _efetcher_inquire(efetcher, run_ids)
     return meta_df, missing_ids
 
 
-def _get_run_meta(email, n_jobs, run_ids):
-    # validate the ids
+def _get_run_meta(email, n_jobs, run_ids, log_level):
+    # validate the IDs
     esearcher = es.Esearcher(
         'esearcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
+    set_up_entrezpy_logging(esearcher, log_level)
     _validate_esearch_result(esearcher, run_ids)
 
     # fetch metadata
-    meta_df, missing_ids = _execute_efetcher(email, n_jobs, run_ids)
+    meta_df, missing_ids = _execute_efetcher(email, n_jobs, run_ids, log_level)
 
     # when hundreds of runs were requested, it could happen that not all
     # metadata will be fetched - in that case, keep running efetcher
@@ -83,7 +78,9 @@ def _get_run_meta(email, n_jobs, run_ids):
     retries = 20
     while missing_ids and retries > 0:
         # TODO: add a logging statement here
-        df, missing_ids = _execute_efetcher(email, n_jobs, missing_ids)
+        df, missing_ids = _execute_efetcher(
+            email, n_jobs, missing_ids, log_level
+        )
         meta_df.append(df)
         retries -= 1
 
@@ -96,9 +93,9 @@ def _get_run_meta(email, n_jobs, run_ids):
     return pd.concat(meta_df, axis=0)
 
 
-def _get_project_meta(email, n_jobs, project_ids):
-    run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids)
-    return _get_run_meta(email, n_jobs, run_ids)
+def _get_project_meta(email, n_jobs, project_ids, log_level):
+    run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids, log_level)
+    return _get_run_meta(email, n_jobs, run_ids, log_level)
 
 
 def get_metadata(
@@ -127,7 +124,7 @@ def get_metadata(
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':
-        return _get_run_meta(email, n_jobs, accession_ids)
+        return _get_run_meta(email, n_jobs, accession_ids, log_level)
 
     elif id_type == 'bioproject':
-        return _get_project_meta(email, n_jobs, accession_ids)
+        return _get_project_meta(email, n_jobs, accession_ids, log_level)
