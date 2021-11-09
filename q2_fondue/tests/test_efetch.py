@@ -206,6 +206,18 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.assertEqual(2, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
 
+    def test_efetch_add_metadata_many_experiments_many_runs_missing_ids(self):
+        self.efetch_result_single.add_metadata(
+            self.xml_to_response('single'), ['FAKEID1', 'FAKEID2']
+        )
+
+        self.assertDictEqual(self.efetch_result_single.metadata,
+                             {0: ['FAKEID1']})
+        self.assertEqual(1, self.efetch_result_single.size())
+        self.assertFalse(self.efetch_result_single.isEmpty())
+        self.assertListEqual(['FAKEID2'],
+                             self.efetch_result_single.missing_uids)
+
     def test_efetch_to_df(self):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('multi'), ['FAKEID1', 'FAKEID2'])

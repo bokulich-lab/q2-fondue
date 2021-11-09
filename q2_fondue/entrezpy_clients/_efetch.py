@@ -37,6 +37,7 @@ class EFetchResult(EutilsResult):
         self.samples = {}
         self.experiments = {}
         self.runs = {}
+        self.missing_uids = []
 
     def size(self):
         return len(self.metadata)
@@ -451,6 +452,52 @@ class EFetchResult(EutilsResult):
                 raise
         return processed_meta
 
+    @staticmethod
+    def _find_all_run_ids(parsed_results: list) -> dict:
+        """Finds all run IDs and maps them to Experiment Package positions
+
+        This looks very nested as we need to go through every level of a
+        run_set, which can have many runs, which in turn can be a list of run
+        entries. So, for an EXPERIMENT_PACKAGE we can have:
+            EXPERIMENT_PACKAGE -> RUN_SET [list or dict] ->
+                RUN (list or dict)
+
+        This will provide a map in a form of:
+            {run_id: position in experiment package}
+        Those positions can later be used to pass a specific set of runs
+        for metadata extraction given a specific run ID.
+
+        Args:
+            parsed_results (list): A list containing the Experiment Package.
+
+        Returns:
+            new_map (dict): Mapping between run IDs and their positions in
+                the Experiment Package.
+        """
+        run_id_map = {}
+        for i, res in enumerate(parsed_results):
+            runset = res.get('RUN_SET')
+            runset = [runset] if not isinstance(runset, list) else runset
+
+            run_id_map[i] = []
+            for run in runset:
+                run = [run] if not isinstance(run, list) else run
+                run_ids = []
+                for r in run:
+                    r = [r] if not isinstance(r, list) else r
+                    for _r in r:
+                        _r = _r.get('RUN')
+                        _r = [_r] if not isinstance(_r, list) else _r
+                        run_ids.extend([__r.get('@accession') for __r in _r])
+                run_id_map[i].extend(run_ids)
+
+        new_map = {}
+        for k, v in run_id_map.items():
+            for _v in v:
+                new_map[_v] = k
+
+        return new_map
+
     def add_metadata(self, response, uids: List[str]):
         """Processes response received from Efetch into metadata dictionary.
 
@@ -470,14 +517,19 @@ class EFetchResult(EutilsResult):
 
         # TODO: we should also handle extracting multiple runs
         #  from the same experiment
-        if isinstance(parsed_results, list):
-            for i, uid in enumerate(uids):
+        if not isinstance(parsed_results, list):
+            parsed_results = [parsed_results]
+        run_ids_map = self._find_all_run_ids(parsed_results)
+
+        found_uids = set(run_ids_map.keys())
+        for i, uid in enumerate(uids):
+            if uid in found_uids:
+                current_run = run_ids_map[uid]
                 self.metadata[i] = self._process_single_id(
-                    parsed_results[i], desired_id=uid)
-        else:
-            for i, uid in enumerate(uids):
-                self.metadata[i] = self._process_single_id(
-                    parsed_results, desired_id=uid)
+                    parsed_results[current_run], desired_id=uid)
+
+        self.missing_uids.extend(set(uids) - found_uids)
+        # TODO: add a logging statement here
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
