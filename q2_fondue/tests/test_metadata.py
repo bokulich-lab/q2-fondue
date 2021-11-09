@@ -7,19 +7,21 @@
 # ----------------------------------------------------------------------------
 
 import unittest
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock, ANY, call
 
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
 from entrezpy import conduit
+from entrezpy.esearch import esearcher
 from entrezpy.requester.requester import Requester
+from pandas._testing import assert_frame_equal
 from qiime2.metadata import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.metadata import (_efetcher_inquire, _validate_esearch_result,
                                 _determine_id_type, InvalidIDs,
-                                _get_project_meta, get_metadata)
+                                _get_project_meta, get_metadata, _get_run_meta)
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
@@ -91,7 +93,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_single(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('single')
-            obs_df = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
+            obs_df, _ = _efetcher_inquire(self.fake_efetcher, ['FAKEID1'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(['FAKEID1'])
         exp_df = self.generate_expected_df().iloc[[0]]
@@ -106,7 +108,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_efetcher_inquire_multi(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')
-            obs_df = _efetcher_inquire(
+            obs_df, _ = _efetcher_inquire(
                 self.fake_efetcher, ['FAKEID1', 'FAKEID2'])
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_ef_request(
@@ -150,6 +152,102 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 getattr(exp_request, arg), getattr(obs_request, arg))
         mock_request.assert_called_once()
         self.assertTrue(obs_result)
+
+    def test_find_all_run_ids(self):
+        fake_results = [
+            {'RUN_SET': {'RUN': {'@accession': 'abc123', '@alias': 'run123'}}},
+            {'RUN_SET': {'RUN': {'@accession': 'cde234', '@alias': 'run124'}}}
+        ]
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'abc123': 0, 'cde234': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
+    def test_find_all_run_ids_big_runset(self):
+        fake_results = [
+            {'RUN_SET': [{'RUN': {'@accession': 'ab12', '@alias': 'run123'}},
+                         {'RUN': {'@accession': 'bc23', '@alias': 'run124'}}]},
+            {'RUN_SET': {'RUN': {'@accession': 'de34', '@alias': 'run125'}}}
+        ]
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'ab12': 0, 'bc23': 0, 'de34': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
+    def test_find_all_run_ids_big_runset_big_run(self):
+        fake_results = [
+            {'RUN_SET': [
+                {'RUN': [
+                    {'@accession': 'ab12', '@alias': 'run123'},
+                    {'@accession': 'bc23', '@alias': 'run124'}
+                ]},
+                {'RUN': [
+                    {'@accession': 'cd34', '@alias': 'run125'},
+                    {'@accession': 'de45', '@alias': 'run126'}
+                ]}]},
+            {'RUN_SET': {'RUN': {'@accession': 'ef56', '@alias': 'run127'}}}
+        ]
+
+        obs_map = self.efetch_result_single._find_all_run_ids(fake_results)
+        exp_map = {'ab12': 0, 'bc23': 0, 'cd34': 0, 'de45': 0, 'ef56': 1}
+        self.assertDictEqual(exp_map, obs_map)
+
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta(self, patch_ef, patch_val, patch_es):
+        exp_df = pd.DataFrame(
+            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
+            index=['AB', 'cd', 'Ef']
+        )
+        patch_ef.return_value = (exp_df, [])
+        obs_df = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+
+        assert_frame_equal(exp_df, obs_df)
+        patch_es.assert_called_once_with(
+            'esearcher', 'someone@somewhere.com', apikey=None,
+            apikey_var=None, threads=1, qid=None
+        )
+        patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'])
+        patch_ef.assert_called_once_with(
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef']
+        )
+
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta_missing_ids(self, patch_ef, patch_val, patch_es):
+        exp_df = pd.DataFrame(
+            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
+            index=['AB', 'cd', 'Ef']
+        )
+        patch_ef.side_effect = [(exp_df.iloc[:2, :], ['Ef']),
+                                (exp_df.iloc[2:, :], [])]
+        obs_df = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+
+        assert_frame_equal(exp_df, obs_df)
+        patch_es.assert_called_once_with(
+            'esearcher', 'someone@somewhere.com', apikey=None,
+            apikey_var=None, threads=1, qid=None
+        )
+        patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'])
+        patch_ef.assert_has_calls(
+            [call('someone@somewhere.com', 1, ['AB', 'cd', 'Ef']),
+             call('someone@somewhere.com', 1, ['Ef'])], any_order=False
+        )
+        self.assertEqual(2, patch_ef.call_count)
+
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta_not_all_found(self, patch_ef, patch_val, patch_es):
+        exp_df = pd.DataFrame(
+            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
+            index=['AB', 'cd', 'Ef']
+        )
+        patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(11)]
+
+        with self.assertWarnsRegex(
+                Warning, 'could not be fetched: Ef. Please try fetching'):
+            _ = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
 
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):

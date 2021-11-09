@@ -6,7 +6,8 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from typing import List
+from typing import List, Tuple
+from warnings import warn
 
 import entrezpy.conduit as ec
 import entrezpy.efetch.efetcher as ef
@@ -26,7 +27,7 @@ class InvalidIDs(Exception):
 
 def _efetcher_inquire(
         efetcher: ef.Efetcher, run_ids: List[str],
-) -> pd.DataFrame:
+) -> Tuple[pd.DataFrame, list]:
     """Makes an EFetch request using the provided IDs.
 
     Args:
@@ -35,7 +36,7 @@ def _efetcher_inquire(
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
-
+        list: List of all the run IDs that were not found.
     """
     # TODO: this is just temporary - for debugging purposes;
     #  we should really make Entrez logging configurable
@@ -47,12 +48,16 @@ def _efetcher_inquire(
     metadata_response = efetcher.inquire(
         {
             'db': 'sra',
-            'id': run_ids,  # this has to be a list
+            'id': run_ids,
             'rettype': 'xml',
             'retmode': 'text'
         }, analyzer=EFetchAnalyzer()
     )
-    return metadata_response.result.metadata_to_df()
+
+    return (
+        metadata_response.result.metadata_to_df(),
+        metadata_response.result.missing_uids
+    )
 
 
 def _validate_esearch_result(
@@ -89,6 +94,15 @@ def _determine_id_type(ids: list):
                      'BioProject IDs (#PRJ).')
 
 
+def _execute_efetcher(email, n_jobs, run_ids):
+    efetcher = ef.Efetcher(
+        'efetcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None
+    )
+    meta_df, missing_ids = _efetcher_inquire(efetcher, run_ids)
+    return meta_df, missing_ids
+
+
 def _get_run_meta(email, n_jobs, run_ids):
     # validate the ids
     esearcher = es.Esearcher(
@@ -96,11 +110,28 @@ def _get_run_meta(email, n_jobs, run_ids):
         apikey_var=None, threads=n_jobs, qid=None
     )
     _validate_esearch_result(esearcher, run_ids)
-    efetcher = ef.Efetcher(
-        'efetcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None
-    )
-    return _efetcher_inquire(efetcher, run_ids)
+
+    # fetch metadata
+    meta_df, missing_ids = _execute_efetcher(email, n_jobs, run_ids)
+
+    # when hundreds of runs were requested, it could happen that not all
+    # metadata will be fetched - in that case, keep running efetcher
+    # until all runs are retrieved
+    meta_df = [meta_df]
+    retries = 10
+    while missing_ids and retries > 0:
+        # TODO: add a logging statement here
+        df, missing_ids = _execute_efetcher(email, n_jobs, missing_ids)
+        meta_df.append(df)
+        retries -= 1
+
+    if retries == 0 and missing_ids:
+        # TODO: add a logging statement here
+        warn('Metadata for the following run IDs could not be fetched: '
+             f'{",".join(missing_ids)}. '
+             f'Please try fetching those independently.')
+
+    return pd.concat(meta_df, axis=0)
 
 
 def _get_project_meta(email, n_jobs, project_ids):
