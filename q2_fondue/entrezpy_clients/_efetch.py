@@ -185,7 +185,10 @@ class EFetchResult(EutilsResult):
         Returns:
             sample_id (str): ID of the processed sample.
         """
-        pool_meta = attributes['Pool'].get('Member')
+        if 'Pool' in attributes.keys():
+            pool_meta = attributes['Pool'].get('Member')
+        else:
+            pool_meta = attributes['SAMPLE']
         sample_attributes = attributes['SAMPLE']
         if not isinstance(pool_meta, list):
             # we have one sample
@@ -212,8 +215,8 @@ class EFetchResult(EutilsResult):
                     name=sample.get('@sample_name'),
                     title=sample.get('@sample_title'),
                     biosample_id=biosample_id.get('#text'),
-                    organism=sample.get('@organism'),
-                    tax_id=sample.get('@tax_id'),
+                    organism=sample.get('@organism', ''),
+                    tax_id=sample.get('@tax_id', ''),
                     study_id=study_id,
                     custom_meta=custom_meta
                 )
@@ -273,7 +276,7 @@ class EFetchResult(EutilsResult):
         return exp_id
 
     def _create_single_run(
-            self, pool_meta: dict, run: dict, exp_id: str) -> str:
+            self, attributes: dict, exp_id: str, desired_id: str) -> str:
         """Creates a single SRARun object.
 
         Information like Run ID, count of bases as well as other custom
@@ -282,20 +285,23 @@ class EFetchResult(EutilsResult):
         Args:
             attributes (dict): Dictionary with all the metadata from
                 the XML response.
-            run (dict): Dictionary with run metadata.
             exp_id (str): ID of the experiment which the run belongs to.
+            desired_id (str): ID of the desired run.
         Returns:
-            run_id (str): ID of the processed study.
+            run_id (str): ID of the processed run.
         """
+        runset = attributes['RUN_SET']['RUN']
+        if not isinstance(runset, list):
+            runset = [runset]
+
+        run = next(
+            (x for x in runset if x['@accession'] == desired_id)
+        )
+        pool_meta = self._get_pool_meta_from_run(run)
+
         run_id = run.get('@accession')
-
-        if run.get('@is_public') == 'true':
-            is_public = True
-        else:
-            is_public = False
-
-        custom_meta = self._extract_custom_attributes(
-            run, 'run')
+        is_public = True if run.get('@is_public') == 'true' else False
+        custom_meta = self._extract_custom_attributes(run, 'run')
 
         if run_id not in self.runs.keys():
             self.runs[run_id] = SRARun(
@@ -311,53 +317,17 @@ class EFetchResult(EutilsResult):
             self.experiments[exp_id].runs.append(self.runs[run_id])
         return run_id
 
-    def _create_runs(
-            self, attributes: dict, exp_id: str,
-            sample_id: str, desired_id: str = None
-    ) -> List[str]:
-        """Creates all the required runs.
-
-        Depending on whether a specific run should be extracted from the run
-        set (defined by desired_id), either just one run will be created or
-        one run object per run in the entire run set.
-
-        Args:
-            attributes (dict): Dictionary with all the metadata from
-                the XML response.
-            exp_id (str): ID of the experiment which the run belongs to.
-            sample_id (str): ID of the sample which the run belongs to.
-            desired_id (str): ID of the run to be extracted. If None, all runs
-                will be added.
-        Returns:
-            run_ids (List[str]): List of all processed run IDs.
-        """
-        runset = attributes['RUN_SET']['RUN']
-        if not isinstance(runset, list):
-            runset = [runset]
-
-        # TODO: make sure that this is correct
-        pool_meta = attributes['Pool'].get('Member')
-
-        # find the desired run (project and run case)
-        if desired_id:
-            run = next(
-                (x for x in runset if x['@accession'] == desired_id)
-            )
-            if isinstance(pool_meta, list):
-                pool_meta = next(
-                    (x for x in pool_meta if x['@accession'] == sample_id)
-                )
-            run_ids = [self._create_single_run(pool_meta, run, exp_id)]
-        # get all available runs (that should happen when we ask for samples)
-        else:
-            run_ids = []
-            for run in runset:
-                run_id = self._create_single_run(pool_meta, run, exp_id)
-                run_ids.append(run_id)
-        return run_ids
+    @staticmethod
+    def _get_pool_meta_from_run(run: dict) -> dict:
+        bases, stats = run.get('Bases'), run.get('Statistics')
+        pool_meta = {
+            '@bases': bases.get('@count') if bases else 0,
+            '@spots': stats.get('@nspots') if stats else 0
+        }
+        return pool_meta
 
     def _process_single_id(
-            self, attributes: dict, desired_id: str = None) -> List[str]:
+            self, attributes: dict, desired_id: str) -> List[str]:
         """Processes metadata obtained for a single accession ID.
 
         Args:
@@ -375,19 +345,16 @@ class EFetchResult(EutilsResult):
         # create sample, if required
         sample_ids = self._create_samples(attributes, study_id)
 
-        # TODO: what happens here when we asked for samples?
-        # create experiment, if required
-        run_ids_all = []
+        run_ids = []
         for sample_id in sample_ids:
+            # create experiment, if required
             exp_id = self._create_experiment(attributes, sample_id)
 
-            # TODO: what happens here when we asked for samples?
-            # create runs
-            run_ids = self._create_runs(
-                attributes, exp_id, sample_id, desired_id)
-            run_ids_all.extend(run_ids)
+            # create run
+            run_id = self._create_single_run(attributes, exp_id, desired_id)
+            run_ids.append(run_id)
 
-        return run_ids_all
+        return run_ids
 
     @staticmethod
     def _custom_attributes_to_dict(attributes: List[dict], level: str):

@@ -243,7 +243,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
             index=['AB', 'cd', 'Ef']
         )
-        patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(11)]
+        patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(21)]
 
         with self.assertWarnsRegex(
                 Warning, 'could not be fetched: Ef. Please try fetching'):

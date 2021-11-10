@@ -72,48 +72,12 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.experiments[experiment_id] = exp_exp
 
         obs_id = self.efetch_result_single._create_single_run(
-            self.metadata_dict['Pool']['Member'],
-            run=self.metadata_dict['RUN_SET']['RUN'],
-            exp_id=experiment_id
+            self.metadata_dict,
+            exp_id=experiment_id,
+            desired_id='FAKEID1'
         )
 
         self.assertEqual('FAKEID1', obs_id)
-        self.assertEqual(1, len(self.efetch_result_single.runs))
-
-        obs_run = self.efetch_result_single.runs['FAKEID1']
-        self.assertEqual(exp_runs[0], obs_run)
-
-    def test_create_runs_single(self):
-        study_id, sample_id, = 'ERP120343', 'ERS4372624'
-        experiment_id, run_id = 'ERX3980916', 'FAKEID1'
-        exp_std, exp_samp, exp_exp, exp_runs = self.generate_sra_metadata()
-        self.efetch_result_single.studies[study_id] = exp_std
-        self.efetch_result_single.samples[sample_id] = exp_samp
-        self.efetch_result_single.experiments[experiment_id] = exp_exp
-
-        obs_ids = self.efetch_result_single._create_runs(
-            self.metadata_dict, exp_id=experiment_id,
-            sample_id=sample_id, desired_id=run_id)
-
-        self.assertListEqual(['FAKEID1'], obs_ids)
-        self.assertEqual(1, len(self.efetch_result_single.runs))
-
-        obs_run = self.efetch_result_single.runs['FAKEID1']
-        self.assertEqual(exp_runs[0], obs_run)
-
-    def test_create_runs_all(self):
-        study_id, sample_id, = 'ERP120343', 'ERS4372624'
-        experiment_id, _ = 'ERX3980916', ['FAKEID1']
-        exp_std, exp_samp, exp_exp, exp_runs = self.generate_sra_metadata()
-        self.efetch_result_single.studies[study_id] = exp_std
-        self.efetch_result_single.samples[sample_id] = exp_samp
-        self.efetch_result_single.experiments[experiment_id] = exp_exp
-
-        obs_ids = self.efetch_result_single._create_runs(
-            self.metadata_dict, exp_id=experiment_id,
-            sample_id=sample_id, desired_id=None)
-
-        self.assertListEqual(['FAKEID1'], obs_ids)
         self.assertEqual(1, len(self.efetch_result_single.runs))
 
         obs_run = self.efetch_result_single.runs['FAKEID1']
