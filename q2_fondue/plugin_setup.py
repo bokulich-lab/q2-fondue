@@ -20,9 +20,9 @@ from q2_types.per_sample_sequences import (
 from q2_fondue.sequences import get_sequences
 from q2_fondue.get_all import get_all
 
-str_acc_ids_desc = 'Path to file containing run or BioProject IDs for '
+str_acc_ids_desc = ('Path to file containing run or BioProject IDs for '
 'which the {0} should be fetched. Should conform to QIIME Metadata '
-'format.'
+'format.')
 
 dict_parameter_descriptions = {
     'email': 'Your e-mail address (required by NCBI for metadata fetching).',
