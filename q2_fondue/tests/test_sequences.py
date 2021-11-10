@@ -119,6 +119,20 @@ class TestUtils4SequenceFetching(SequenceTests):
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
 
+    @patch('subprocess.run')
+    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess):
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
+        ls_acc_ids = ['test_accERROR', 'testaccA']
+
+        with self.assertRaisesRegex(
+                ValueError, 'could not be downloaded with'):
+            _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=1, logger=self.logger
+            )
+            # check retry procedure:
+            self.assertEqual(mock_subprocess.call_count, 3)
+
     def test_process_downloaded_sequences(self):
         ls_fastq_files = ['testaccA.fastq',
                           'testacc_1.fastq', 'testacc_2.fastq']
