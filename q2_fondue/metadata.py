@@ -117,6 +117,7 @@ def get_metadata(
         accession_ids (Metadata): List of all the sample IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
+        log_level (str, default='INFO'): Logging level.
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.

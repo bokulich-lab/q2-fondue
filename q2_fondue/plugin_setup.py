@@ -24,8 +24,8 @@ from q2_fondue.get_all import get_all
 
 common_param_descr = {
     'accession_ids': 'Path to file containing run or BioProject IDs for '
-                     'which the (meta)data should be fetched. Should '
-                     'conform to QIIME Metadata format.',
+                     'which the metadata and/or sequences should be fetched. '
+                     'Should conform to QIIME Metadata format.',
     'email': 'Your e-mail address (required by NCBI).',
     'n_jobs': 'Number of concurrent download jobs (default: 1).',
     'log_level': 'Logging level.'
