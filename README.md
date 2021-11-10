@@ -50,12 +50,14 @@ To get single-read and paired-end sequences associated with a number of runs, ex
 ```shell
 qiime fondue get-sequences \
               --m-accession-ids-file metadata_file.tsv \
+              --p-email your_email@somewhere.com \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired
 ```
 
 where:
 - `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
+- `--p-email` is your email address (required by NCBI)
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 

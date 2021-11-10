@@ -19,9 +19,11 @@ from pandas._testing import assert_frame_equal
 from qiime2.metadata import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
-from q2_fondue.metadata import (_efetcher_inquire, _validate_esearch_result,
-                                _determine_id_type, InvalidIDs,
-                                _get_project_meta, get_metadata, _get_run_meta)
+from q2_fondue.metadata import (
+    _efetcher_inquire, _get_project_meta, get_metadata, _get_run_meta
+)
+from q2_fondue.utils import (InvalidIDs, _validate_esearch_result,
+                             _determine_id_type)
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 

@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 import os
 import gzip
 import shutil
@@ -87,27 +87,27 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
 
-        ls_accIDs = ['testaccA']
-        exp_comd = ["fasterq-dump",
-                    "-O", test_temp_dir.name,
-                    "-t", test_temp_dir.name,
-                    "-e", "6",
-                    ls_accIDs[0]]
+        ls_acc_ids = ['testaccA']
+        exp_comd = ['fasterq-dump',
+                    '-O', test_temp_dir.name,
+                    '-t', test_temp_dir.name,
+                    '-e', '6',
+                    ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
-            ls_accIDs, test_temp_dir.name, threads=6, retries=0)
+            ls_acc_ids, test_temp_dir.name, threads=6, retries=0)
         mock_subprocess.assert_called_once_with(exp_comd, text=True,
                                                 capture_output=True)
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error(self, mock_subprocess):
         test_temp_dir = MockTempDir()
-        ls_accIDs = ['test_accERROR']
+        ls_acc_ids = ['test_accERROR']
 
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
-                ls_accIDs, test_temp_dir.name, threads=6, retries=1)
+                ls_acc_ids, test_temp_dir.name, threads=6, retries=1)
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
 
@@ -130,7 +130,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         empty_seq_type = 'single'
         with self.assertWarnsRegex(Warning,
-                                   "No {}-read sequences".format(
+                                   'No {}-read sequences'.format(
                                        empty_seq_type)):
             _write_empty_casava(empty_seq_type, casava_out_single)
             exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
@@ -142,7 +142,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         empty_seq_type = 'paired'
         with self.assertWarnsRegex(Warning,
-                                   "No {}-read sequences".format(
+                                   'No {}-read sequences'.format(
                                        empty_seq_type)):
             _write_empty_casava(empty_seq_type, casava_out_paired)
 
@@ -183,20 +183,23 @@ class TestUtils4SequenceFetching(SequenceTests):
 
 class TestSequenceFetching(SequenceTests):
 
+    def prepare_metadata(self, acc_id):
+        acc_id_tsv = acc_id + '_md.tsv'
+        _ = self.move_files_2_tmp_dir([acc_id_tsv])
+        return Metadata.load(self.get_data_path(acc_id_tsv))
+
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
-        accID = 'SRR123456'
-        test_temp_dir = self.move_files_2_tmp_dir([accID + '.fastq'])
+        acc_id = 'SRR123456'
+        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
         mock_tmpdir.return_value = test_temp_dir
 
-        accID_tsv = accID + '_md.tsv'
-        _ = self.move_files_2_tmp_dir([accID_tsv])
-        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+        test_temp_md = self.prepare_metadata(acc_id)
 
-        with self.assertWarnsRegex(Warning, "No paired-read sequences"):
+        with self.assertWarnsRegex(Warning, 'No paired-read sequences'):
             casava_single, casava_paired = get_sequences(
-                test_temp_md, retries=0)
+                test_temp_md, email='some@where.com', retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -206,18 +209,16 @@ class TestSequenceFetching(SequenceTests):
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
-        accID = 'SRR123457'
-        ls_file_names = [accID + '_1.fastq', accID + '_2.fastq']
+        acc_id = 'SRR123457'
+        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq']
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
         mock_tmpdir.return_value = test_temp_dir
 
-        accID_tsv = accID + '_md.tsv'
-        _ = self.move_files_2_tmp_dir([accID_tsv])
-        test_temp_md = Metadata.load(self.get_data_path(accID_tsv))
+        test_temp_md = self.prepare_metadata(acc_id)
 
-        with self.assertWarnsRegex(Warning, "No single-read sequences"):
+        with self.assertWarnsRegex(Warning, 'No single-read sequences'):
             casava_single, casava_paired = get_sequences(
-                test_temp_md, retries=0)
+                test_temp_md, email='some@where.com', retries=0)
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -231,14 +232,29 @@ class TestSequenceFetching(SequenceTests):
             'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
-        acc_id_tsv = 'testaccBC_md.tsv'
-        _ = self.move_files_2_tmp_dir([acc_id_tsv])
-        test_temp_md = Metadata.load(self.get_data_path(acc_id_tsv))
+        test_temp_md = self.prepare_metadata('testaccBC')
 
         casava_single, casava_paired = get_sequences(
-            test_temp_md, retries=0)
+            test_temp_md, email='some@where.com', retries=0)
         self.assertIsInstance(casava_single,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.validate_counts(casava_single, casava_paired, [3], [3, 3])
+
+    @patch('q2_fondue.sequences._run_fasterq_dump_for_all')
+    @patch('q2_fondue.sequences._get_run_ids_from_projects',
+           return_value=['SRR123456'])
+    @patch('tempfile.TemporaryDirectory')
+    def test_get_sequences_bioproject(self, mock_tmpdir, mock_get, mock_run):
+        acc_id = 'SRR123456'
+        proj_acc_id = 'PRJNA734376'
+        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
+        mock_tmpdir.return_value = test_temp_dir
+
+        test_temp_md = self.prepare_metadata(proj_acc_id)
+
+        _, _, = get_sequences(test_temp_md, email='some@where.com', retries=0)
+
+        mock_get.assert_called_with('some@where.com', 6, ['PRJNA734376'])
+        mock_run.assert_called_with(['SRR123456'], ANY, 6, 0)
