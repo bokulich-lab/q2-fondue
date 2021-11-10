@@ -118,7 +118,7 @@ def _get_run_meta(email, n_jobs, run_ids):
     # metadata will be fetched - in that case, keep running efetcher
     # until all runs are retrieved
     meta_df = [meta_df]
-    retries = 10
+    retries = 20
     while missing_ids and retries > 0:
         # TODO: add a logging statement here
         df, missing_ids = _execute_efetcher(email, n_jobs, missing_ids)
