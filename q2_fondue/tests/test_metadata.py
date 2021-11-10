@@ -205,7 +205,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             index=['AB', 'cd', 'Ef']
         )
         patch_ef.return_value = (exp_df, [])
-        obs_df = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+        obs_df = _get_run_meta(
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+        )
 
         assert_frame_equal(exp_df, obs_df)
         patch_es.assert_called_once_with(
@@ -214,7 +216,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'])
         patch_ef.assert_called_once_with(
-            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef']
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
         )
 
     @patch.object(esearcher, 'Esearcher')
@@ -227,7 +229,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_ef.side_effect = [(exp_df.iloc[:2, :], ['Ef']),
                                 (exp_df.iloc[2:, :], [])]
-        obs_df = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+        obs_df = _get_run_meta(
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+        )
 
         assert_frame_equal(exp_df, obs_df)
         patch_es.assert_called_once_with(
@@ -236,8 +240,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'])
         patch_ef.assert_has_calls(
-            [call('someone@somewhere.com', 1, ['AB', 'cd', 'Ef']),
-             call('someone@somewhere.com', 1, ['Ef'])], any_order=False
+            [call('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'),
+             call('someone@somewhere.com', 1, ['Ef'], 'INFO')], any_order=False
         )
         self.assertEqual(2, patch_ef.call_count)
 
@@ -253,7 +257,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
 
         with self.assertWarnsRegex(
                 Warning, 'could not be fetched: Ef. Please try fetching'):
-            _ = _get_run_meta('someone@somewhere.com', 1, ['AB', 'cd', 'Ef'])
+            _ = _get_run_meta(
+                'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+            )
 
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):
