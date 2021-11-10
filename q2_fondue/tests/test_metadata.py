@@ -206,7 +206,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_ef.return_value = (exp_df, [])
         obs_df = _get_run_meta(
-            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
+            'INFO', self.fake_logger
         )
 
         assert_frame_equal(exp_df, obs_df)
@@ -230,7 +231,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         patch_ef.side_effect = [(exp_df.iloc[:2, :], ['Ef']),
                                 (exp_df.iloc[2:, :], [])]
         obs_df = _get_run_meta(
-            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
+            'INFO', self.fake_logger
         )
 
         assert_frame_equal(exp_df, obs_df)
@@ -255,18 +257,23 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(21)]
 
-        with self.assertWarnsRegex(
-                Warning, 'could not be fetched: Ef. Please try fetching'):
+        with self.assertLogs('test_log', level='WARNING') as cm:
             _ = _get_run_meta(
-                'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO'
+                'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
+                'INFO', self.fake_logger
             )
+        self.assertEqual(
+            cm.output, ['WARNING:test_log:Metadata for the following run IDs '
+                        'could not be fetched: Ef. Please try fetching those '
+                        'independently.']
+        )
 
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:
             mock_conduit.return_value = self.fake_econduit
             _ = _get_project_meta(
-                'someone@somewhere.com', 1, ['AB', 'cd'], 'INFO'
+                'someone@somewhere.com', 1, ['AB', 'cd'], 'INFO', MagicMock()
             )
 
             exp_ids = ['SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
@@ -277,7 +284,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
             )
             patched_get.assert_called_once_with(
-                'someone@somewhere.com', 1, exp_ids, 'INFO'
+                'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
             )
 
     @patch('q2_fondue.metadata._get_run_meta')
@@ -287,7 +294,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
         patched_get_run.assert_called_once_with(
-            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345'], 'INFO'
+            'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345'],
+            'INFO', ANY
         )
         patched_get_project.assert_not_called()
 
@@ -298,7 +306,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
         patched_get_project.assert_called_once_with(
-            'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'INFO'
+            'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'INFO', ANY
         )
         patched_get_run.assert_not_called()
 

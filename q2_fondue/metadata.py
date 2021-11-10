@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 from typing import List, Tuple
-from warnings import warn
 
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
@@ -18,7 +17,8 @@ from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
     _validate_esearch_result, _determine_id_type
 )
-from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging)
+from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
+                                               set_up_logger)
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
@@ -60,7 +60,7 @@ def _execute_efetcher(email, n_jobs, run_ids, log_level):
     return meta_df, missing_ids
 
 
-def _get_run_meta(email, n_jobs, run_ids, log_level):
+def _get_run_meta(email, n_jobs, run_ids, log_level, logger):
     # validate the IDs
     esearcher = es.Esearcher(
         'esearcher', email, apikey=None,
@@ -78,7 +78,10 @@ def _get_run_meta(email, n_jobs, run_ids, log_level):
     meta_df = [meta_df]
     retries = 20
     while missing_ids and retries > 0:
-        # TODO: add a logging statement here
+        logger.info(
+            f'{len(missing_ids)} missing IDs were found - we will '
+            f'retry fetching those ({retries} retries left).'
+        )
         df, missing_ids = _execute_efetcher(
             email, n_jobs, missing_ids, log_level
         )
@@ -86,17 +89,18 @@ def _get_run_meta(email, n_jobs, run_ids, log_level):
         retries -= 1
 
     if retries == 0 and missing_ids:
-        # TODO: add a logging statement here
-        warn('Metadata for the following run IDs could not be fetched: '
-             f'{",".join(missing_ids)}. '
-             f'Please try fetching those independently.')
+        logger.warning(
+            'Metadata for the following run IDs could not be fetched: '
+            f'{",".join(missing_ids)}. '
+            f'Please try fetching those independently.'
+        )
 
     return pd.concat(meta_df, axis=0)
 
 
-def _get_project_meta(email, n_jobs, project_ids, log_level):
+def _get_project_meta(email, n_jobs, project_ids, log_level, logger):
     run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids, log_level)
-    return _get_run_meta(email, n_jobs, run_ids, log_level)
+    return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
 
 
 def get_metadata(
@@ -118,6 +122,8 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
+    logger = set_up_logger(log_level)
+
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
 
@@ -125,7 +131,9 @@ def get_metadata(
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':
-        return _get_run_meta(email, n_jobs, accession_ids, log_level)
+        return _get_run_meta(email, n_jobs, accession_ids, log_level, logger)
 
     elif id_type == 'bioproject':
-        return _get_project_meta(email, n_jobs, accession_ids, log_level)
+        return _get_project_meta(
+            email, n_jobs, accession_ids, log_level, logger
+        )

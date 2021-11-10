@@ -8,6 +8,7 @@
 
 import io
 import json
+import logging
 
 import pandas as pd
 from entrezpy.efetch.efetch_request import EfetchRequest
@@ -78,6 +79,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
                   'r') as ff:
             self.metadata_dict = json.load(ff)
         self.maxDiff = None
+        self.fake_logger = logging.getLogger('test_log')
 
     def xml_to_response(self, kind, suffix='', prefix='metadata'):
         path = self.get_data_path(f'{prefix}_response_{kind}{suffix}.xml')
