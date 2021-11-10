@@ -49,7 +49,8 @@ def _run_cmd_fasterq(
         if not (os.path.isfile(acc_fastq_single) |
                 os.path.isfile(acc_fastq_paired)):
             retries -= 1
-            logger.warning(f'Retrying {retries+1} times...')
+            logger.warning(f'Retrying to fetch sequences for run {acc} '
+                           f'({retries} retries left).')
         else:
             retries = -1
 
@@ -94,17 +95,17 @@ def _process_downloaded_sequences(output_dir):
         if filename.endswith('_1.fastq'):
             # paired-end _1
             acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq' % (acc)
+            new_name = '%s_00_L001_R1_001.fastq' % acc
             ls_paired.append(new_name)
         elif filename.endswith('_2.fastq'):
             # paired-end _2
             acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R2_001.fastq' % (acc)
+            new_name = '%s_00_L001_R2_001.fastq' % acc
             ls_paired.append(new_name)
         else:
             # single-reads
             acc = re.search(r'(.*)\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq' % (acc)
+            new_name = '%s_00_L001_R1_001.fastq' % acc
             ls_single.append(new_name)
 
         os.rename(os.path.join(output_dir, filename),
@@ -224,7 +225,7 @@ def get_sequences(
         only contain one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
     """
-    logger = set_up_logger(log_level)
+    logger = set_up_logger(log_level, logger_name=__name__)
 
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()

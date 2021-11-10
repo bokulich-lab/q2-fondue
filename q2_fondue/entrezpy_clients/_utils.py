@@ -74,7 +74,7 @@ def set_up_entrezpy_logging(entrezpy_obj, log_level):
         entrezpy_obj.request_pool.logger.setLevel(log_level)
 
 
-def set_up_logger(log_level, cls_obj=None) -> logging.Logger:
+def set_up_logger(log_level, cls_obj=None, logger_name=None) -> logging.Logger:
     """Sets up the module/class logger.
 
     Args:
@@ -89,7 +89,7 @@ def set_up_logger(log_level, cls_obj=None) -> logging.Logger:
             f'{cls_obj.__module__}'
         )
     else:
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger(logger_name)
     logger.setLevel(log_level)
     handler = set_up_logging_handler()
     logger.addHandler(handler)

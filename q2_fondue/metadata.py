@@ -123,7 +123,7 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
 
     """
-    logger = set_up_logger(log_level)
+    logger = set_up_logger(log_level, logger_name=__name__)
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
