@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import os
+import glob
 import re
 import gzip
 import warnings
@@ -69,7 +70,7 @@ def _run_fasterq_dump_for_all(
     for acc in sample_ids:
         result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
-        if len(os.listdir(tmpdirname)) == 0:
+        if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
             # raise error if all retries attempts failed
             raise ValueError('{} could not be downloaded with the '
                              'following fasterq-dump error '
