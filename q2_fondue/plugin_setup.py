@@ -78,7 +78,7 @@ plugin.methods.register_function(
         'Fetch sequence-related metadata based on run or BioProject ID '
         'using Entrez. All metadata will be collapsed into one table.'
     ),
-    citations=[]
+    citations=[citations['Buchmann2019']]
 )
 
 importlib.import_module('q2_fondue.types._transformer')
@@ -103,7 +103,7 @@ plugin.methods.register_function(
     },
     name='Fetch sequences based on run ID.',
     description='Fetch sequence data of all run IDs.',
-    citations=[]
+    citations=[citations['SraToolkit']]
 )
 
 plugin.pipelines.register_function(
@@ -126,4 +126,6 @@ plugin.pipelines.register_function(
     name='Fetch sequence-related metadata and sequences of all run or '
          'BioProject IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
-                'sequences of provided run or BioProject IDs.')
+                'sequences of provided run or BioProject IDs.',
+    citations=[citations['Buchmann2019'], citations['SraToolkit']]
+)
