@@ -12,13 +12,11 @@ import gzip
 import shutil
 import itertools
 import tempfile
-import subprocess
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
 from q2_fondue.sequences import (get_sequences,
-                                 _run_cmd_fasterq,
-                                 #  _run_fasterq_dump_for_all,
+                                 _run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
                                  _write2casava_dir_single,
@@ -84,48 +82,30 @@ class SequenceTests(TestPluginBase):
 class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('subprocess.run')
-    def test_run_cmd_fasterq(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
 
-        accID = 'testaccA'
+        ls_accIDs = ['testaccA']
         exp_comd = ["fasterq-dump",
                     "-O", test_temp_dir.name,
                     "-t", test_temp_dir.name,
                     "-e", "6",
-                    accID]
+                    ls_accIDs[0]]
 
-        _run_cmd_fasterq(
-            accID, test_temp_dir.name, threads=6, retries=0)
-        mock_subprocess.assert_called_once_with(exp_comd, check=True,
+        _run_fasterq_dump_for_all(
+            ls_accIDs, test_temp_dir.name, threads=6, general_retries=0)
+        mock_subprocess.assert_called_once_with(exp_comd, text=True,
                                                 capture_output=True)
 
     @patch('subprocess.run')
-    def test_run_cmd_fasterq_invalidID(self, mock_subprocess):
-        mock_subprocess.return_value.stderr = "err: invalid accession"
-
+    def test_run_fasterq_dump_for_all_error(self, mock_subprocess):
         test_temp_dir = MockTempDir()
-        accID = 'test_accERROR'
+        ls_accIDs = ['test_accERROR']
 
         with self.assertRaisesRegex(
-                ValueError, 'is invalid and could not be'):
-            _run_cmd_fasterq(
-                accID, test_temp_dir.name, threads=6, retries=0)
-
-    @patch('subprocess.run',
-           side_effect=subprocess.CalledProcessError(returncode=2,
-                                                     cmd="cmd",
-                                                     stderr="testing error"))
-    def test_run_cmd_fasterq_ProcessError(self, mock_subprocess):
-        test_temp_dir = MockTempDir()
-        accID = 'test_acc_other_difficulties'
-
-        with self.assertRaisesRegex(
-                ValueError, 'fasterq-dump error: testing error'):
-            _run_cmd_fasterq(
-                accID, test_temp_dir.name, threads=6, retries=0)
-
-    # todo: add test for retry procedure
-    # todo: add test_run_fasterq_dump_for_all
+                ValueError, 'could not be downloaded with'):
+            _run_fasterq_dump_for_all(
+                ls_accIDs, test_temp_dir.name, threads=6, general_retries=0)
 
     def test_process_downloaded_sequences(self):
         ls_fastq_files = ['testaccA.fastq',
