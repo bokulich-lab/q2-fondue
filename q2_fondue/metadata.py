@@ -9,20 +9,14 @@
 from typing import List, Tuple
 from warnings import warn
 
-import entrezpy.conduit as ec
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
 from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
-from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
-from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
-from q2_fondue.entrezpy_clients._utils import PREFIX
-
-
-class InvalidIDs(Exception):
-    pass
+from q2_fondue.utils import (_validate_esearch_result, _determine_id_type,
+                             _get_run_ids_from_projects)
 
 
 def _efetcher_inquire(
@@ -58,40 +52,6 @@ def _efetcher_inquire(
         metadata_response.result.metadata_to_df(),
         metadata_response.result.missing_uids
     )
-
-
-def _validate_esearch_result(
-        esearcher: es.Esearcher, run_ids: List[str]) -> bool:
-    """Validates provided accession IDs using ESearch.
-
-    Args:
-        esearcher (es.Esearcher): A valid instance of an Entrezpy Esearcher.
-        run_ids (List[str]): List of all the run IDs to be validated.
-
-    Returns:
-        bool: True if all the IDs are valid.
-
-    """
-    esearch_response = esearcher.inquire(
-        {
-            'db': 'sra',
-            'term': " OR ".join(run_ids),
-            'usehistory': False
-        }, analyzer=ESearchAnalyzer(run_ids)
-    )
-
-    return esearch_response.result.validate_result()
-
-
-def _determine_id_type(ids: list):
-    ids = [x[:3] for x in ids]
-    for kind in ('run', 'bioproject'):
-        if all([x in PREFIX[kind] for x in ids]):
-            return kind
-    raise InvalidIDs('The type of provided IDs is either not supported or '
-                     'IDs of mixed types were provided. Please provide IDs '
-                     'corresponding to either SRA runs (#SRR) or NCBI '
-                     'BioProject IDs (#PRJ).')
 
 
 def _execute_efetcher(email, n_jobs, run_ids):
@@ -135,34 +95,7 @@ def _get_run_meta(email, n_jobs, run_ids):
 
 
 def _get_project_meta(email, n_jobs, project_ids):
-    econduit = ec.Conduit(email=email, threads=n_jobs)
-
-    # TODO: create a separate function to set this all up everywhere
-    # handler = logging.StreamHandler(sys.stdout)
-    # econduit.logger.setLevel("DEBUG")
-    # econduit.logger.addHandler(handler)
-
-    samp_ids_pipeline = econduit.new_pipeline()
-
-    # search for project IDs
-    es = samp_ids_pipeline.add_search(
-        {'db': 'bioproject', 'term': " OR ".join(project_ids)},
-        analyzer=ESearchAnalyzer(project_ids)
-    )
-    # given bioproject, find linked SRA runs
-    el = samp_ids_pipeline.add_link(
-        {'db': 'sra'},
-        analyzer=ELinkAnalyzer(), dependency=es
-    )
-    # given SRA run IDs, fetch all metadata
-    samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
-        analyzer=EFetchAnalyzer(), dependency=el
-    )
-
-    a = econduit.run(samp_ids_pipeline)
-    run_ids = a.result.metadata_to_series().tolist()
-
+    run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids)
     return _get_run_meta(email, n_jobs, run_ids)
 
 

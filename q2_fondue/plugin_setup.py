@@ -88,6 +88,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'accession_ids': Metadata,
+        'email': Str,
         'retries': Int % Range(1, None),
         'threads': Int % Range(1, None)
     },
@@ -98,6 +99,7 @@ plugin.methods.register_function(
         'accession_ids': 'Path to file containing run IDs for '
                          'which the sequences should be fetched. Should '
                          'conform to QIIME Metadata format.',
+        'email': dict_parameter_descriptions['email'],
         'retries': dict_parameter_descriptions['retries'],
         'threads': dict_parameter_descriptions['threads']
     },
