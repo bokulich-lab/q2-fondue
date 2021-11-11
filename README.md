@@ -22,9 +22,6 @@ qiime dev refresh-cache
 
 The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
-#### DEV-only note:
-Until QIIME 2 2021.11 is officially released, replace `-c qiime2` in the command above with
-`-c https://packages.qiime2.org/qiime2/2021.11/tested` to fetch the latest dev version instead.
 
 ## Usage
 ### Fetching metadata
