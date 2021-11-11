@@ -3,14 +3,18 @@
 
 ## Installation
 
-Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine:
+Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine into an existing conda environment:
 
+* Create and activate a conda environment with the required dependencies:
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
   qiime2 q2cli q2-types "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict "tzlocal==2.1"
-conda activate fondue
 
+conda activate fondue
+```
+* Install q2-fondue and refresh the Qiime 2 CLI cache. 
+```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 
 qiime dev refresh-cache
