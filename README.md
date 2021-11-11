@@ -13,7 +13,7 @@ conda create -y -n fondue \
 
 conda activate fondue
 ```
-* Install q2-fondue and refresh the Qiime 2 CLI cache. 
+* Install q2-fondue and refresh the QIIME 2 CLI cache. 
 ```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 
@@ -77,7 +77,7 @@ qiime fondue get-all \
 where:
 - `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-email` is your email address (required by NCBI)
-- `--output-dir` directory where the downloaded metadata and sequences are stored as Qiime 2 artifacts
+- `--output-dir` directory where the downloaded metadata and sequences are stored as QIIME 2 artifacts
 
 ## License
 
