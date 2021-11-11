@@ -78,6 +78,6 @@ where:
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata and sequences are stored as Qiime 2 artifacts
 
-### License
+## License
 
 q2-fondue is released under a BSD-3-Clause license. See LICENSE for more details.
