@@ -20,7 +20,6 @@ requirements:
 
   run:
     - python {{ python }}
-    - tzlocal==2.1
     - xmltodict
     - entrezpy >=2.1.2
     - sra-tools >= 2.11.0
