@@ -32,10 +32,10 @@ def _run_cmd_fasterq(
 
     logger.debug(f'Downloading sequences for run: {acc}...')
 
-    acc_fastq_single = os.path.join(output_dir,
-                                    acc + '.fastq')
-    acc_fastq_paired = os.path.join(output_dir,
-                                    acc + '_1.fastq')
+    # acc_fastq_single = os.path.join(output_dir,
+    #                                 acc + '.fastq')
+    # acc_fastq_paired = os.path.join(output_dir,
+    #                                 acc + '_1.fastq')
     acc_sra_file = os.path.join(output_dir,
                                 acc + '.sra')
 
