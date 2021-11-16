@@ -8,7 +8,7 @@
 
 import unittest
 import pandas as pd
-from unittest.mock import (patch, ANY)
+from unittest.mock import (patch, call, ANY)
 from q2_fondue.tests.test_sequences import SequenceTests
 from qiime2.metadata import Metadata
 from qiime2.plugins import fondue
@@ -59,10 +59,13 @@ class TestGetAll(SequenceTests):
         mock_inquire.assert_called_once_with(ANY, [acc_id], 'INFO')
 
         # function call assertions for get_sequences within
-        mock_subprocess.assert_called_once_with(
-            ['fasterq-dump', '-O', ANY, '-t', ANY, '-e', '1', acc_id],
-            text=True, capture_output=True
-        )
+        # todo: rethink below quick fix
+        mock_subprocess.assert_has_calls([
+            call(['prefetch', '-O', ANY, acc_id],
+                 text=True, capture_output=True),
+            call(['prefetch', '-O', ANY, acc_id],
+                 text=True, capture_output=True)
+        ])
 
 
 if __name__ == "__main__":

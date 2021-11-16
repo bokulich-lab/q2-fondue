@@ -90,12 +90,10 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
-
+        # todo: rethink below quick fix
         ls_acc_ids = ['testaccA']
-        exp_comd = ['fasterq-dump',
+        exp_comd = ['prefetch',
                     '-O', test_temp_dir.name,
-                    '-t', test_temp_dir.name,
-                    '-e', '6',
                     ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(

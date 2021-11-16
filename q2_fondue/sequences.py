@@ -36,7 +36,12 @@ def _run_cmd_fasterq(
                                     acc + '.fastq')
     acc_fastq_paired = os.path.join(output_dir,
                                     acc + '_1.fastq')
+    acc_sra_file = os.path.join(output_dir,
+                                acc + '.sra')
 
+    cmd_prefetch = ["prefetch",
+                    "-O", output_dir,
+                    acc]
     cmd_fasterq = ["fasterq-dump",
                    "-O", output_dir,
                    "-t", output_dir,
@@ -44,15 +49,18 @@ def _run_cmd_fasterq(
                    acc]
 
     # try "retries" times to get sequence data
+    # todo: rethink result handling for prefetch vs fasterq-dump
     while retries >= 0:
-        result = subprocess.run(cmd_fasterq, text=True, capture_output=True)
+        result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
 
-        if not (os.path.isfile(acc_fastq_single) |
-                os.path.isfile(acc_fastq_paired)):
+        if not (os.path.isfile(acc_sra_file)):
             retries -= 1
             logger.warning(f'Retrying to fetch sequences for run {acc} '
                            f'({retries} retries left).')
         else:
+            result = subprocess.run(cmd_fasterq, text=True,
+                                    capture_output=True)
+
             retries = -1
 
     return result
