@@ -53,7 +53,7 @@ Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), a
 
 ## Using q2-fondue 
 After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, 
-we are super curious to explore the dataset this study was based. Luckily, with q2-fondue retrieving all 
+we are super curious to explore the dataset this study was based on. Luckily, with q2-fondue retrieving all 
 this data is a cakewalk!  
 
 ## Installation
@@ -67,7 +67,7 @@ First, activate your QIIME 2 environment and install relevant dependencies:
 conda activate qiime2-2021.8
 
 conda install -c conda-forge -c bioconda -c defaults \
-  "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
+  "entrezpy>=2.1.2" "sra-tools==2.11.0" xmltodict
 ```
 
 Then install q2-fondue:
@@ -160,7 +160,7 @@ qiime tools view metadata.qzv
 
 ### Using the sequencing data 
 Apart from avoiding the tedious search and manual downloading of these large piles of data, 
-one of the biggest advantage of using q2-fondue is the fact that the output is already a QIIME 2 
+one of the biggest advantages of using q2-fondue is the fact that the output is already a QIIME 2 
 artifact and we don't have to import it! 
 
 The retrieved single_reads.qza file can therefore instantly be summarized: 
