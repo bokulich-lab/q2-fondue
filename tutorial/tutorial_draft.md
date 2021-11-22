@@ -101,7 +101,7 @@ https://github.com/bokulich-lab/q2-fondue/tree/main/tutorial
 The *metadata_file.tsv* contains the BioProject accession number (PRJEB14186) and 
 *metadata_file_runs.tsv* selected Run accession numbers (ERR1428207-ERR1428236). 
 
-> *Tipp*: one can of course also pass several BioProject accession numbers at once by having them all in the same metadata file!
+> *Tip*: one can of course also pass several BioProject accession numbers at once by having them all in the same metadata file!
 
 ## Fetching sequences and corresponding metadata at once
 
