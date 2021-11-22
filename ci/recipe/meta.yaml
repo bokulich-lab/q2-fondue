@@ -20,10 +20,9 @@ requirements:
 
   run:
     - python {{ python }}
-    - tzlocal==2.1
     - xmltodict
     - entrezpy >=2.1.2
-    - sra-tools ==2.9.6
+    - sra-tools >= 2.11.0
     - q2-types {{ release }}.*
     - qiime2 {{ release }}.*
 
