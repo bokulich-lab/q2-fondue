@@ -2,17 +2,17 @@
 
 > q2-fondue (**F**unctions for reproducibly **O**btaining and **N**ormalizing **D**ata re-**U**sed from **E**lsewhere)
 
-A QIIME 2 plugin enabling the easy download of high throughput sequencing data and the corresponding metadata. 
+A QIIME 2 plugin enabling an easy download of high throughput sequencing data and the corresponding metadata. 
 
-With this easy to use plugin you have millions of deposited sequencing data at your fingertips! 
+With this easy-to-use plugin you have plenty of deposited sequencing data at your fingertips! 
 Want to set your own data in comparison to other published datasets or start off with a meta-analysis? 
-q2-fondue is here to help! 
+_q2-fondue_ is here to help! 
 
-This tutorial will give you an insight on working with q2-fondue and how the artifacts can further be used. 
+This tutorial will give you an insight into working with q2-fondue and how the artifacts can further be used. 
 
 ## Some Background
 There are numerous databases online, where researchers can deposit or retrieve high-throughput sequencing data. 
-However the three biggest and most important storage and sharing platforms certainly are the 
+However, the three biggest and most important storage and sharing platforms certainly are the 
 [**E**uropean **N**ucleotide **A**rchive](https://www.ebi.ac.uk/ena/browser/home) 
 (ENA, by the European Bioinformatics Institute (EMBL-EBI)), the [**S**equence **R**ead **A**rchive](https://www.ncbi.nlm.nih.gov/sra/) 
 (SRA, by the National Institutes of Health (NIH), a part of the U.S. Department of Health and Human Services) and the 
@@ -23,7 +23,7 @@ data submitted to any of these three organizations is immediately shared among t
 unrestricted access to deposited data from all three platforms.
 
 Despite the effort to consolidate these colossal amounts of data, it can still be hard to navigate 
-the variable nomenclature used by the different platforms and to actually fetch raw data from the diverse user interfaces. 
+through variable nomenclature used by the different platforms and to actually fetch raw data from the diverse user interfaces. 
 
 #### Overview to INSDCs accession number nomenclature:
 
@@ -35,7 +35,7 @@ the variable nomenclature used by the different platforms and to actually fetch 
 | Runs           | (E\|D\|S)RR[0-9]{6,}    | ERR123456  | 
 
 
-Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. The subordinate Runs, contain the actual sequencing data of individual samples. These are the two accession number types that can be used as input for q2-fondue. 
+Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. The subordinate _Runs_, contain the actual sequencing data of individual samples. BioProject and Run ID are the two accession number types that can be used as input for _q2-fondue_. 
 
 #### Database specific accession numbers:
 
@@ -52,7 +52,7 @@ Since the launch of BioProject IDs in 2011, this accession number is commonly re
 Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), an open-source microbial study management platform. While all data deposited on Qiita is automatically deposited into ENA-EBI, one can also use the QIIME 2 plugin [redbiome](https://forum.qiime2.org/t/querying-for-public-microbiome-data-in-qiita-using-redbiom/4653) to query and obtain data and metadata from Qiita. 
 
 ## Using q2-fondue 
-After reading about regionally distinct micobial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, 
+After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, 
 we are super curious to explore the dataset this study was based. Luckily, with q2-fondue retrieving all 
 this data is a cakewalk!  
 
@@ -60,15 +60,14 @@ this data is a cakewalk!
 q2-fondue will be installable as a conda package in the near future. 
 For now, we install it with pip into an existing QIIME 2 environment. 
 
-> _Note:_ the current q2-fondue version supports QIIME 2 **v2021.4** or higher - get the latest QIIME 2 release in the [Installation guide](https://docs.qiime2.org/2021.4/install/). 
+> _Note:_ the current q2-fondue version supports QIIME 2 **v2021.4** or higher - get the latest QIIME 2 release in the [Installation guide](docs.qiime2.org). 
 
-First activate your QIIME 2 environment and install relevant dependencies:
+First, activate your QIIME 2 environment and install relevant dependencies:
 ```shell
 conda activate qiime2-2021.8
 
 conda install -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" \
-  "sra-tools==2.9.6" xmltodict "tzlocal==2.1"
+  "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
 ```
 
 Then install q2-fondue:
@@ -90,30 +89,30 @@ mkdir qiime2-fondue-tutorial
 cd qiime2-fondue-tutorial
 ```
 
-To run q2-fondue we need a TSV file containing the accession numbers for the desired Runs or BioProjects. 
-This metadata file has to contain a header QIIME 2 can recognize! We can simply put e.g. *id* as the column name. 
+To run q2-fondue we need a TSV file containing the accession numbers of the desired Runs or BioProjects. 
+This metadata file has to contain a header QIIME 2 can recognize! We can for example put *id* as the column name. 
 To learn more about other options for identifiers used in QIIME 2 or learn about metadata in general, check out 
-the [QIIME 2 metadata documentation](https://docs.qiime2.org/2019.10/tutorials/metadata/).
+the [QIIME 2 metadata documentation](docs.qiime2.org).
 
-Get some example metadata file with acession numbers of Bokulich et al. (2016) here: 
+Get some example metadata file with accession numbers of Bokulich et al. (2016) here: 
 https://github.com/bokulich-lab/q2-fondue/tree/main/tutorial
 
-The *metadata_file.tsv* contains the BioProject accession number (PRJEB14186) and 
-*metadata_file_runs.tsv* selected Run accession numbers (ERR1428207-ERR1428236). 
+The *metadata_file.tsv* contains the BioProject accession number (PRJEB14186) and the
+*metadata_file_runs.tsv* the selected Run accession numbers (ERR1428207-ERR1428236). 
 
 > *Tip*: one can of course also pass several BioProject accession numbers at once by having them all in the same metadata file!
 
-## Fetching sequences and corresponding metadata at once
+## Fetching sequences and corresponding metadata together
 
-To download both, the raw sequencing data and associated metadata, 
+To download the raw sequencing data and associated metadata 
 of the entire project we simply pass the metadata_file_runs.tsv to `qiime fondue get-all` 
 and specify the output directory. 
 
-To not overload their servers, NCBI recommends to not post no more than 3 URL requests per second 
+To not overload their servers, NCBI recommends to avoid posting more than 3 URL requests per second 
 and to run requests for very large jobs on the weekend (find more info on this in their 
 [Usage Guidelines and Requirements](https://www.ncbi.nlm.nih.gov/books/NBK25497/)). 
-Therefore NCBI requires a **valid email address**, enabling them to get in touch in case an issue 
-with downloading too much data arises. 
+Therefore NCBI requires a **valid email address**, enabling them to get in touch in case of an issue 
+with downloading too much data. 
 
 ```shell
 qiime fondue get-all \
@@ -126,14 +125,14 @@ qiime fondue get-all \
 
 Now let's have a look at the output files! 
 
-In the `fondue-output` directory we find three files:
+In the `fondue-output` directory we can find three files:
 * *metadata.qza* of semantic type `SRAMetadata`
 * *paired_reads.qza* of semantic type `SampleData[PairedEndSequencesWithQuality]`
 * *single_reads.qza* of semantic type `SampleData[SequencesWithQuality]`
 
-It is important to know that q2-fondue always generates two files, for paired end and single end reads, 
-however of course only one of them contains the sequencing data we want. 
-How can we now find out which raw sequence file we should be using?
+It is important to know that q2-fondue always generates two files, one for paired end and one for single end reads, 
+however only one of them contains the sequencing data we want. 
+How can we now find out which raw sequence file we should be using? These are your options:
 
 ⇨ read the methods section of the original publication to see whether they used paired or single end sequencing.
 
@@ -147,10 +146,10 @@ In this case we will therefore continue with the *single_reads.qza*!
 
 ## What now? 
 ### Check out the metadata 
-While the metadata files we usually use in QIIME 2 commonly are in the TSV format, 
-the semantic type `SRAMetadata` q2-fondue is creating can be used in the same way.
+While the metadata files we use in QIIME 2 commonly are in the TSV format, 
+the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
 
-Let's have a look at the metadata by tabulating it and looking at the .qzv file.
+Let's have a look at the metadata by tabulating it and visualize the .qzv file.
 ```shell
 qiime metadata tabulate \
       --m-input-file metadata.qza \
@@ -160,8 +159,8 @@ qiime tools view metadata.qzv
 ```
 
 ### Using the sequencing data 
-Appart from sparing oneself the tedious search and manual downloading of these large piles of data, 
-one of the biggest advantages of using q2-fondue is the fact that the output is already a QIIME 2 
+Apart from avoiding the tedious search and manual downloading of these large piles of data, 
+one of the biggest advantage of using q2-fondue is the fact that the output is already a QIIME 2 
 artifact and we don't have to import it! 
 
 The retrieved single_reads.qza file can therefore instantly be summarized: 
@@ -196,9 +195,8 @@ qiime feature-table summarize \
 qiime tools view dada2_table.qzv
 ```
 
-Summarizing, we showed how the artifacts fetched through q2-fondue enable an easy entry 
-to the QIIME 2 analysis pipeline, which is further described in other tutorials 
-(e.g. [Parkinson’s Mouse Tutorial](https://docs.qiime2.org/2020.11/tutorials/pd-mice/)). 
+In summary, we showed how the artifacts fetched through q2-fondue enable an easy entry 
+to the QIIME 2 analysis pipeline, which is further described in other tutorials. 
 
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
@@ -227,14 +225,10 @@ qiime fondue get-sequences \
               --o-paired-reads output_dir_paired
 ```
 
-> _Note:_ This action only accepts individual Run IDs and **no** BioProject accession numbers!
-
-
-
 ## Extracting the metadata or sequences artifacts 
-All [QIIME 2 artifacts](https://docs.qiime2.org/2018.4/concepts/) fundamentally are zipped files, containing additional 
-information on the artifact's provenance, type and format. All of these information can be exposed using 
-`qiime tools peek` - however in case we want to have a to work with the retrieved data outside of QIIME 2, 
+All [QIIME 2 artifacts](docs.qiime2.org) fundamentally are zipped files, containing additional 
+information on the artifact's provenance, type and format. All this information can be exposed using 
+`qiime tools peek`. In case we want to work with the retrieved data outside of QIIME 2, 
 it is possible to extract the artifacts.
 
 #### Get a metadata TSV file 
