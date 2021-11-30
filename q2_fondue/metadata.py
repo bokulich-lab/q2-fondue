@@ -138,3 +138,19 @@ def get_metadata(
         return _get_project_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+
+
+def merge_metadata(metadata: pd.DataFrame) -> pd.DataFrame:
+    """Merges provided multiple metadata into a single metadata object.
+
+    Args:
+        metadata (pd.DataFrame): List of metadata DataFrames to be merged.
+
+    Returns:
+        metadata_merged (pd.DataFrame): Final metadata DataFrame.
+
+    """
+    print(f'Length: {len(metadata)}')
+    metadata_merged = pd.concat(metadata, axis=0).drop_duplicates()
+
+    return metadata_merged
