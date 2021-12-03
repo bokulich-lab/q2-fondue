@@ -10,6 +10,7 @@ import os
 import glob
 import re
 import gzip
+import time
 import warnings
 import itertools
 import tempfile
@@ -44,7 +45,6 @@ def _run_cmd_fasterq(
                    "-e", str(threads),
                    acc]
 
-    # todo: separate result handling for prefetch vs fasterq-dump
     result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
 
     if os.path.isfile(acc_sra_file):
@@ -63,9 +63,18 @@ def _run_fasterq_dump_for_all(
     logger.info(
         f'Downloading sequences for {len(sample_ids)} accession IDs...'
     )
+    init_count_acc = len(sample_ids)
+
     for acc in sample_ids:
-        # todo: add time buffer if len(sample_id) = initial length
-        # todo: add separate _run_prefetch(acc, tmpdirname, retries)
+        # adding time buffer if we are in the retry loop
+        index_current_acc = sample_ids.index(acc)
+        if (index_current_acc == init_count_acc):
+            logger.info(
+                f'Retrying to download following failed '
+                f'accession IDs in 2 min: {sample_ids[index_current_acc:]}'
+            )
+            time.sleep(120)
+
         result = _run_cmd_fasterq(
             acc, tmpdirname, threads, logger)
 
@@ -74,7 +83,6 @@ def _run_fasterq_dump_for_all(
 
             # raise error if all retries attempts failed for one acc
             if sample_ids.count(acc) >= (retries + 1):
-                # todo: add option for prefetch error fetching
                 raise ValueError('{} could not be downloaded with the '
                                  'following error '
                                  'returned: {}'
