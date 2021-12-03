@@ -20,7 +20,8 @@ from qiime2.metadata import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.metadata import (
-    _efetcher_inquire, _get_project_meta, get_metadata, _get_run_meta
+    _efetcher_inquire, _get_project_meta, get_metadata, _get_run_meta,
+    merge_metadata
 )
 from q2_fondue.utils import (_validate_esearch_result,
                              _determine_id_type)
@@ -64,6 +65,19 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         self.fake_econduit = FakeConduit(
             self.generate_ef_result(kind='runs', prefix='efetch'),
             self.xml_to_response('runs', prefix='efetch'))
+
+    def generate_meta_df(self, obs_suffices, exp_suffix):
+        meta_dfs = []
+        for s in obs_suffices:
+            meta_dfs.append(pd.read_csv(
+                self.get_data_path(f'sra-metadata-{s}.tsv'),
+                sep='\t', index_col=0
+            ))
+        exp_df = pd.read_csv(
+            self.get_data_path(f'sra-metadata-{exp_suffix}.tsv'),
+            sep='\t', index_col=0
+        )
+        return meta_dfs, exp_df
 
     def test_determine_id_type_project(self):
         ids = ['PRJNA123', 'PRJNA123']
@@ -309,6 +323,45 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'INFO', ANY
         )
         patched_get_run.assert_not_called()
+
+    def test_merge_metadata_1(self):
+        # Test merging metadata with no duplicated run IDs
+        meta, exp_df = self.generate_meta_df(range(1, 4), 'exp-1')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
+
+    def test_merge_metadata_2(self):
+        # Test merging metadata with duplicated run IDs
+        meta, exp_df = self.generate_meta_df([1, 1], '1')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
+
+    def test_merge_metadata_3(self):
+        # Test merging metadata with different sets of columns
+        meta, exp_df = self.generate_meta_df([1, 4], 'exp-2')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
+
+    def test_merge_metadata_4(self):
+        # Test merging metadata with some overlapping columns
+        meta, exp_df = self.generate_meta_df([5, 6], 'exp-3')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
+
+    def test_merge_metadata_5(self):
+        # Test merging metadata with some overlapping columns
+        # and some overlapping run IDs
+        meta, exp_df = self.generate_meta_df([5, 7], 'exp-4')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
+
+    def test_merge_metadata_6(self):
+        # Test merging metadata with some overlapping columns
+        # and some overlapping run IDs where duplicates have
+        # differing values
+        meta, exp_df = self.generate_meta_df([5, 8], 'exp-5')
+        obs_df = merge_metadata(meta)
+        assert_frame_equal(obs_df, exp_df)
 
 
 if __name__ == "__main__":

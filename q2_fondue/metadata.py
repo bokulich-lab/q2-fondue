@@ -140,7 +140,9 @@ def get_metadata(
         )
 
 
-def merge_metadata(metadata: pd.DataFrame) -> pd.DataFrame:
+def merge_metadata(
+        metadata: pd.DataFrame
+) -> pd.DataFrame:
     """Merges provided multiple metadata into a single metadata object.
 
     Args:
@@ -150,7 +152,14 @@ def merge_metadata(metadata: pd.DataFrame) -> pd.DataFrame:
         metadata_merged (pd.DataFrame): Final metadata DataFrame.
 
     """
-    print(f'Length: {len(metadata)}')
-    metadata_merged = pd.concat(metadata, axis=0).drop_duplicates()
+    logger = set_up_logger('INFO', logger_name=__name__)
+    logger.info(f'Merging {len(metadata)} metadata DataFrames.')
+
+    metadata_merged = pd.concat(metadata, axis=0, join='outer')
+    metadata_merged.drop_duplicates(inplace=True)
+
+    logger.info(
+        f'Merged metadata DataFrame has {metadata_merged.shape[0]} '
+        f'rows and {metadata_merged.shape[1]} columns.')
 
     return metadata_merged
