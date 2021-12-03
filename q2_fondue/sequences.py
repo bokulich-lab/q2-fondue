@@ -64,6 +64,7 @@ def _run_fasterq_dump_for_all(
     """
     Helper function that runs fasterq-dump for all ids in study-ids
     """
+    failed_ids = []
     logger.info(
         f'Downloading sequences for {len(sample_ids)} accession IDs...'
     )
@@ -72,13 +73,15 @@ def _run_fasterq_dump_for_all(
 
         if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
             # raise error if all retries attempts failed
-            raise ValueError('{} could not be downloaded with the '
-                             'following fasterq-dump error '
-                             'returned: {}'
-                             .format(acc, result.stderr))
+            logger.warning(
+                f'{acc} could not be downloaded with the following '
+                f'fasterq-dump error: {result.stderr}.'
+            )
+            failed_ids.append(acc)
         else:
             continue
     logger.info('Download finished.')
+    return failed_ids
 
 
 def _process_downloaded_sequences(output_dir):
@@ -241,7 +244,7 @@ def get_sequences(
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(
+        _ = _run_fasterq_dump_for_all(
             accession_ids, tmpdirname, n_jobs, retries, logger)
 
         # processing downloaded files
