@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import logging
-from unittest.mock import patch, ANY
+from unittest.mock import patch, call, ANY
 import os
 import gzip
 import shutil
@@ -89,19 +89,28 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
-        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
-        # todo: rethink below quick fix
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
         ls_acc_ids = ['testaccA']
-        exp_comd = ['prefetch',
-                    '-O', test_temp_dir.name,
-                    ls_acc_ids[0]]
+
+        exp_prefetch = ['prefetch',
+                        '-O', test_temp_dir.name,
+                        ls_acc_ids[0]]
+        exp_fasterq = ['fasterq-dump',
+                       '-O', test_temp_dir.name,
+                       "-t", test_temp_dir.name,
+                       "-e", str(6),
+                       ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, logger=self.logger
         )
-        mock_subprocess.assert_called_once_with(exp_comd, text=True,
-                                                capture_output=True)
+
+        mock_subprocess.assert_has_calls([call(exp_prefetch, text=True,
+                                               capture_output=True),
+                                          call(exp_fasterq, text=True,
+                                               capture_output=True)])
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error(self, mock_subprocess):

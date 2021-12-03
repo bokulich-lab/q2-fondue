@@ -25,17 +25,13 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
 def _run_cmd_fasterq(
-        acc: str, output_dir: str, threads: int, retries: int, logger):
+        acc: str, output_dir: str, threads: int, logger):
     """
-    Helper function running fasterq-dump `retries` times
+    Helper function running fasterq-dump
     """
 
     logger.debug(f'Downloading sequences for run: {acc}...')
 
-    # acc_fastq_single = os.path.join(output_dir,
-    #                                 acc + '.fastq')
-    # acc_fastq_paired = os.path.join(output_dir,
-    #                                 acc + '_1.fastq')
     acc_sra_file = os.path.join(output_dir,
                                 acc + '.sra')
 
@@ -48,20 +44,12 @@ def _run_cmd_fasterq(
                    "-e", str(threads),
                    acc]
 
-    # try "retries" times to get sequence data
-    # todo: rethink result handling for prefetch vs fasterq-dump
-    while retries >= 0:
-        result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
+    # todo: separate result handling for prefetch vs fasterq-dump
+    result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
 
-        if not (os.path.isfile(acc_sra_file)):
-            retries -= 1
-            logger.warning(f'Retrying to fetch sequences for run {acc} '
-                           f'({retries} retries left).')
-        else:
-            result = subprocess.run(cmd_fasterq, text=True,
-                                    capture_output=True)
-
-            retries = -1
+    if os.path.isfile(acc_sra_file):
+        result = subprocess.run(cmd_fasterq, text=True,
+                                capture_output=True)
 
     return result
 
@@ -70,22 +58,31 @@ def _run_fasterq_dump_for_all(
         sample_ids, tmpdirname, threads, retries, logger
 ):
     """
-    Helper function that runs fasterq-dump for all ids in study-ids
+    Helper function that runs prefetch & fasterq-dump for all ids in study-ids
     """
     logger.info(
         f'Downloading sequences for {len(sample_ids)} accession IDs...'
     )
     for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
+        # todo: add time buffer if len(sample_id) = initial length
+        # todo: add separate _run_prefetch(acc, tmpdirname, retries)
+        result = _run_cmd_fasterq(
+            acc, tmpdirname, threads, logger)
 
         if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
-            # raise error if all retries attempts failed
-            raise ValueError('{} could not be downloaded with the '
-                             'following fasterq-dump error '
-                             'returned: {}'
-                             .format(acc, result.stderr))
-        else:
-            continue
+            sample_ids.append(acc)
+
+            # raise error if all retries attempts failed for one acc
+            if sample_ids.count(acc) >= (retries + 1):
+                # todo: add option for prefetch error fetching
+                raise ValueError('{} could not be downloaded with the '
+                                 'following error '
+                                 'returned: {}'
+                                 .format(acc, result.stderr))
+
+            logger.warning(f'Will retry to fetch sequences for run {acc} '
+                           f'in a bit ({retries} retries left).')
+
     logger.info('Download finished.')
 
 
@@ -111,12 +108,13 @@ def _process_downloaded_sequences(output_dir):
             acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R2_001.fastq' % acc
             ls_paired.append(new_name)
-        else:
+        elif filename.endswith('.fastq'):
             # single-reads
             acc = re.search(r'(.*)\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq' % acc
             ls_single.append(new_name)
-
+        else:
+            continue
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
 
