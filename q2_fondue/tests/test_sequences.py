@@ -152,8 +152,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_exp_paired = ['testacc_00_L001_R1_001.fastq',
                          'testacc_00_L001_R2_001.fastq']
 
-        self.assertEqual(ls_act_single, ls_exp_single)
-        self.assertEqual(ls_act_paired, ls_exp_paired)
+        self.assertEqual(set(ls_act_single), set(ls_exp_single))
+        self.assertEqual(set(ls_act_paired), set(ls_exp_paired))
 
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
