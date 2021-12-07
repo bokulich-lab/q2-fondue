@@ -6,6 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import threading
 from typing import List, Tuple
 
 import entrezpy.efetch.efetcher as ef
@@ -15,11 +16,14 @@ from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type
+    _validate_esearch_result, _determine_id_type, handle_threaded_exception
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger)
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+
+
+threading.excepthook = handle_threaded_exception
 
 
 def _efetcher_inquire(

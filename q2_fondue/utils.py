@@ -5,12 +5,15 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+
+import os
+import signal
 from typing import List
 
 from entrezpy.esearch import esearcher as es
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
-from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs
+from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs, set_up_logger
 
 
 def _validate_esearch_result(
@@ -45,3 +48,22 @@ def _determine_id_type(ids: list):
                      'IDs of mixed types were provided. Please provide IDs '
                      'corresponding to either SRA runs (#SRR) or NCBI '
                      'BioProject IDs (#PRJ).')
+
+
+def handle_threaded_exception(args):
+    logger = set_up_logger('DEBUG', logger_name='ThreadedErrorsManager')
+    msg = 'Data fetching was interrupted by the following error: \n'
+
+    if 'gaierror is not JSON serializable' in str(args.exc_value):
+        msg += 'EntrezPy failed to connect to NCBI. Please check your ' \
+               'internet connection and try again. It may help to wait ' \
+               'a few minutes before retrying.'
+    else:
+        msg += 'Caught %s with value %s in thread %s', \
+               args.exc_type, args.exc_value, args.thread
+
+    logger.exception(msg)
+
+    # This will send a SIGINT to the main thread, which will gracefully
+    # kill the running Q2 action. No artifacts will be saved.
+    os.kill(os.getpid(), signal.SIGINT)
