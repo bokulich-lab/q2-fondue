@@ -50,3 +50,25 @@ class SRAMetadataFormat(model.TextFileFormat):
 SRAMetadataDirFmt = model.SingleFileDirectoryFormat(
     'SRAMetadataDirFmt', 'sra-metadata.tsv', SRAMetadataFormat
 )
+
+
+class SRAFailedIDsFormat(model.TextFileFormat):
+    """
+    This is a "fake" format only used to store a list of failed SRA IDs,
+    which can be converted to QIIME's metadata and input into any fondue
+    action.
+    """
+
+    def _validate_(self, level):
+        df = pd.read_csv(str(self), sep='\t')
+
+        if df.shape[1] > 1:
+            raise ValidationError(
+                'Failed IDs artifact should only contain a single column '
+                'with IDs of the runs that could not be fetched.'
+            )
+
+
+SRAFailedIDsDirFmt = model.SingleFileDirectoryFormat(
+    'SRAFailedIDsDirFmt', 'sra-failed-ids.tsv', SRAFailedIDsFormat
+)

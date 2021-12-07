@@ -14,11 +14,13 @@ from qiime2.plugin import (
 
 from q2_fondue import __version__
 from q2_fondue.metadata import get_metadata
-from q2_fondue.types._format import SRAMetadataFormat, SRAMetadataDirFmt
-from q2_fondue.types._type import SRAMetadata
+from q2_fondue.types._format import (SRAMetadataFormat, SRAMetadataDirFmt,
+                                     SRAFailedIDsFormat, SRAFailedIDsDirFmt)
+from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
 from q2_types.sample_data import SampleData
 from q2_types.per_sample_sequences import (
-    SequencesWithQuality, PairedEndSequencesWithQuality)
+    SequencesWithQuality, PairedEndSequencesWithQuality
+)
 from q2_fondue.sequences import get_sequences
 from q2_fondue.get_all import get_all
 
@@ -60,11 +62,6 @@ plugin = Plugin(
     short_description='Plugin for fetching sequences and metadata.',
 )
 
-plugin.register_formats(SRAMetadataFormat, SRAMetadataDirFmt)
-plugin.register_semantic_types(SRAMetadata)
-plugin.register_semantic_type_to_format(
-    SRAMetadata, artifact_format=SRAMetadataDirFmt)
-
 plugin.methods.register_function(
     function=get_metadata,
     inputs={},
@@ -80,8 +77,6 @@ plugin.methods.register_function(
     ),
     citations=[citations['Buchmann2019']]
 )
-
-importlib.import_module('q2_fondue.types._transformer')
 
 plugin.methods.register_function(
     function=get_sequences,
@@ -129,3 +124,17 @@ plugin.pipelines.register_function(
                 'sequences of provided run or BioProject IDs.',
     citations=[citations['Buchmann2019'], citations['SraToolkit']]
 )
+
+plugin.register_formats(
+    SRAMetadataFormat, SRAMetadataDirFmt,
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+)
+plugin.register_semantic_types(SRAMetadata, SRAFailedIDs)
+plugin.register_semantic_type_to_format(
+    SRAMetadata, artifact_format=SRAMetadataDirFmt
+)
+plugin.register_semantic_type_to_format(
+    SRAFailedIDs, artifact_format=SRAFailedIDsDirFmt
+)
+
+importlib.import_module('q2_fondue.types._transformer')
