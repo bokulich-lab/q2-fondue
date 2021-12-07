@@ -15,6 +15,7 @@ import itertools
 import tempfile
 import subprocess
 
+import pandas as pd
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
@@ -49,9 +50,9 @@ def _run_cmd_fasterq(
 
         if not (os.path.isfile(acc_fastq_single) |
                 os.path.isfile(acc_fastq_paired)):
-            retries -= 1
             logger.warning(f'Retrying to fetch sequences for run {acc} '
                            f'({retries} retries left).')
+            retries -= 1
         else:
             retries = -1
 
@@ -207,7 +208,8 @@ def get_sequences(
         accession_ids: Metadata, email: str, retries: int = 2,
         n_jobs: int = 1, log_level: str = 'INFO',
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
-      CasavaOneEightSingleLanePerSampleDirFmt):
+      CasavaOneEightSingleLanePerSampleDirFmt,
+      pd.Series):
     """
     Fetches single-read and paired-end sequences based on provided
     accession IDs.
@@ -244,7 +246,7 @@ def get_sequences(
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _ = _run_fasterq_dump_for_all(
+        failed_ids = _run_fasterq_dump_for_all(
             accession_ids, tmpdirname, n_jobs, retries, logger)
 
         # processing downloaded files
@@ -265,4 +267,4 @@ def get_sequences(
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
 
-    return casava_out_single, casava_out_paired
+    return casava_out_single, casava_out_paired, failed_ids

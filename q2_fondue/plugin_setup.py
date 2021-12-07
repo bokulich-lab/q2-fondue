@@ -45,7 +45,9 @@ output_descriptions = {
     'single_reads': 'Artifact containing single-read fastq.gz files '
                     'for all the requested IDs.',
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
-                    'for all the requested IDs.'
+                    'for all the requested IDs.',
+    'failed_runs': 'List of all run IDs for which fetching sequence '
+                   'data failed.'
 }
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -85,8 +87,11 @@ plugin.methods.register_function(
         **common_params,
         'retries': Int % Range(1, None)
     },
-    outputs=[('single_reads', SampleData[SequencesWithQuality]),
-             ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
+    outputs=[
+        ('single_reads', SampleData[SequencesWithQuality]),
+        ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
+        ('failed_runs', SRAFailedIDs)
+    ],
     input_descriptions={},
     parameter_descriptions={
         **common_param_descr,
@@ -94,7 +99,8 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
-        'paired_reads': output_descriptions['paired_reads']
+        'paired_reads': output_descriptions['paired_reads'],
+        'failed_runs': output_descriptions['failed_runs']
     },
     name='Fetch sequences based on run ID.',
     description='Fetch sequence data of all run IDs.',
@@ -108,10 +114,12 @@ plugin.pipelines.register_function(
         **common_params,
         'retries': Int % Range(1, None)
     },
-    outputs=[('metadata', SRAMetadata),
-             ('single_reads', SampleData[SequencesWithQuality]),
-             ('paired_reads', SampleData[PairedEndSequencesWithQuality])
-             ],
+    outputs=[
+        ('metadata', SRAMetadata),
+        ('single_reads', SampleData[SequencesWithQuality]),
+        ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
+        ('failed_runs', SRAFailedIDs)
+    ],
     input_descriptions={},
     parameter_descriptions={
         **common_param_descr,
