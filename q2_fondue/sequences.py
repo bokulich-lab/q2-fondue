@@ -80,7 +80,10 @@ def _run_fasterq_dump_for_all(
             failed_ids.append(acc)
         else:
             continue
-    logger.info('Download finished.')
+    logger.info(
+        'Download finished. %s out of %s runs failed to fetch.',
+        len(failed_ids), len(sample_ids)
+    )
     return failed_ids
 
 

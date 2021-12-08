@@ -100,12 +100,13 @@ class TestUtils4SequenceFetching(SequenceTests):
                     '-e', '6',
                     ls_acc_ids[0]]
 
-        _run_fasterq_dump_for_all(
+        failed_ids = _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, logger=self.fake_logger
         )
         mock_subprocess.assert_called_once_with(exp_comd, text=True,
                                                 capture_output=True)
+        self.assertEqual(len(failed_ids), 0)
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error(self, mock_subprocess):
@@ -115,12 +116,13 @@ class TestUtils4SequenceFetching(SequenceTests):
         mock_subprocess.return_value = MagicMock(stderr='some error')
 
         with self.assertLogs('test_log', level='WARNING') as cm:
-            _run_fasterq_dump_for_all(
+            failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
+            self.assertListEqual(failed_ids, ls_acc_ids)
             self.assertIn(
                 'WARNING:test_log:test_accERROR could not be downloaded '
                 'with the following fasterq-dump error: some error.',
@@ -135,12 +137,13 @@ class TestUtils4SequenceFetching(SequenceTests):
         mock_subprocess.return_value = MagicMock(stderr='some error')
 
         with self.assertLogs('test_log', level='WARNING') as cm:
-            _run_fasterq_dump_for_all(
+            failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 3)
+            self.assertListEqual(failed_ids, ['test_accERROR'])
             self.assertIn(
                 'WARNING:test_log:test_accERROR could not be downloaded '
                 'with the following fasterq-dump error: some error.',
