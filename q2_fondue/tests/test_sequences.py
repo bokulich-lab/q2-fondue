@@ -114,8 +114,9 @@ class TestUtils4SequenceFetching(SequenceTests):
                                           call(exp_fasterq, text=True,
                                                capture_output=True)])
 
+    @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all_error(self, mock_subprocess, mock_sleep):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
 
@@ -128,8 +129,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
 
+    @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess,
+                                                   mock_sleep):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA', 'test_accERROR']

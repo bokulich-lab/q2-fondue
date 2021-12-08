@@ -21,9 +21,10 @@ class TestGetAll(SequenceTests):
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
+    @patch('time.sleep')
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_all_single(self, mock_tmpdir, mock_subprocess,
+    def test_get_all_single(self, mock_tmpdir, mock_subprocess, mock_sleep,
                             mock_inquire, mock_efetcher,
                             mock_validation, mock_esearcher):
         """

@@ -76,8 +76,7 @@ def _run_fasterq_dump_for_all(
         if len(failed_ids.keys()) > 0:
             if retries > 0:
                 # log & add time buffer if we retry
-                # todo: change value below to 180
-                sleep_lag = (1/(retries+1))*3
+                sleep_lag = (1/(retries+1))*180
                 ls_failed_ids = list(failed_ids.keys())
                 logger.info(
                     f'Retrying to download following failed '
