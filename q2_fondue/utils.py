@@ -59,8 +59,8 @@ def handle_threaded_exception(args):
                'internet connection and try again. It may help to wait ' \
                'a few minutes before retrying.'
     else:
-        msg += 'Caught %s with value %s in thread %s', \
-               args.exc_type, args.exc_value, args.thread
+        msg += f'Caught {args.exc_type} with value "{args.exc_value}" ' \
+               f'in thread {args.thread}'
 
     logger.exception(msg)
 
