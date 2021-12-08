@@ -10,6 +10,7 @@ import os
 import glob
 import re
 import gzip
+import threading
 import warnings
 import itertools
 import tempfile
@@ -19,9 +20,11 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
 
-from q2_fondue.utils import (_determine_id_type)
+from q2_fondue.utils import (_determine_id_type, handle_threaded_exception)
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+
+threading.excepthook = handle_threaded_exception
 
 
 def _run_cmd_fasterq(
@@ -92,7 +95,7 @@ def _process_downloaded_sequences(output_dir):
     # file names to list
     ls_single, ls_paired = [], []
 
-    for filename in os.listdir(output_dir):
+    for filename in sorted(os.listdir(output_dir)):
         if filename.endswith('_1.fastq'):
             # paired-end _1
             acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
