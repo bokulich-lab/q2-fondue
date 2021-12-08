@@ -63,7 +63,7 @@ def _run_fasterq_dump_for_all(
         sample_ids, tmpdirname, threads, retries, logger
 ):
     """
-    Helper function that runs fasterq-dump for all ids in study-ids
+    Helper function that runs fasterq-dump for all ids in sample_ids
     """
     failed_ids = []
     logger.info(
@@ -73,7 +73,6 @@ def _run_fasterq_dump_for_all(
         result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
         if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
-            # raise error if all retries attempts failed
             logger.warning(
                 f'{acc} could not be downloaded with the following '
                 f'fasterq-dump error: {result.stderr}.'
@@ -267,4 +266,5 @@ def get_sequences(
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
 
-    return casava_out_single, casava_out_paired, failed_ids
+    return \
+        casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')
