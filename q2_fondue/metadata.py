@@ -29,7 +29,7 @@ def _efetcher_inquire(
 
     Args:
         efetcher (ef.Efetcher): A valid instance of an Entrezpy Efetcher.
-        run_ids (List[str]): List of all the sample IDs to be fetched.
+        run_ids (List[str]): List of all the run IDs to be fetched.
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
@@ -114,7 +114,8 @@ def get_metadata(
     will be informed on which IDs require checking.
 
     Args:
-        accession_ids (Metadata): List of all the sample IDs to be fetched.
+        accession_ids (Metadata): List of all the run/project IDs
+            to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
@@ -128,7 +129,7 @@ def get_metadata(
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
 
-    # figure out if we're dealing with sample or run ids
+    # figure out if we're dealing with project or run ids
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':

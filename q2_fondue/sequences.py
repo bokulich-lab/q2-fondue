@@ -60,16 +60,27 @@ def _run_cmd_fasterq(
 
 
 def _run_fasterq_dump_for_all(
-        sample_ids, tmpdirname, threads, retries, logger
-):
+        accession_ids, tmpdirname, threads, retries, logger
+) -> list:
     """
-    Helper function that runs fasterq-dump for all ids in sample_ids
+    Helper function that runs fasterq-dump for all ids in accession_ids
+
+    Args:
+        accession_ids (list): List of all run IDs to be fetched.
+        tmpdirname (str): Name of temporary directory to store the data.
+        threads (int, default=1): Number of threads to be used in parallel.
+        retries (int, default=2): Number of retries to fetch sequences.
+        logger (logging.Logger): An instance of a logger.
+
+    Returns:
+        failed_ids (list): List of failed run IDs.
+
     """
     failed_ids = []
     logger.info(
-        f'Downloading sequences for {len(sample_ids)} accession IDs...'
+        f'Downloading sequences for {len(accession_ids)} accession IDs...'
     )
-    for acc in sample_ids:
+    for acc in accession_ids:
         result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
         if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
@@ -82,7 +93,7 @@ def _run_fasterq_dump_for_all(
             continue
     logger.info(
         'Download finished. %s out of %s runs failed to fetch.',
-        len(failed_ids), len(sample_ids)
+        len(failed_ids), len(accession_ids)
     )
     return failed_ids
 
@@ -138,7 +149,8 @@ def _write_empty_casava(read_type, casava_out_path, logger):
     that are not available and saves empty casava file
     """
 
-    warn_msg = f'No {read_type}-read sequences available for these sample IDs.'
+    warn_msg = f'No {read_type}-read sequences available ' \
+               f'for these accession IDs.'
     warnings.warn(warn_msg)
     logger.warning(warn_msg)
 
@@ -221,7 +233,7 @@ def get_sequences(
     and can use multiple `threads`.
 
     Args:
-        accession_ids (Metadata): List of all sample IDs to be fetched.
+        accession_ids (Metadata): List of all run/project IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
         n_jobs (int, default=1): Number of threads to be used in parallel.
