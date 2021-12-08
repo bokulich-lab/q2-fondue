@@ -8,7 +8,7 @@
 
 import unittest
 import pandas as pd
-from unittest.mock import (patch, call, ANY)
+from unittest.mock import (patch, call, ANY, MagicMock)
 from q2_fondue.tests.test_sequences import SequenceTests
 from qiime2.metadata import Metadata
 from qiime2.plugins import fondue
@@ -44,6 +44,7 @@ class TestGetAll(SequenceTests):
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
             [f'{acc_id}.fastq', f'{acc_id}.sra'])
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         # run pipeline
         fondue.actions.get_all(test_md, 'fake@email.com', retries=1)

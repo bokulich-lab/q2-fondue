@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 import os
-import glob
 import re
 import gzip
 import time
@@ -63,33 +62,38 @@ def _run_fasterq_dump_for_all(
     logger.info(
         f'Downloading sequences for {len(sample_ids)} accession IDs...'
     )
-    init_count_acc = len(sample_ids)
 
-    for acc in sample_ids:
-        # adding time buffer if we are in the retry loop
-        index_current_acc = sample_ids.index(acc)
-        if (index_current_acc == init_count_acc):
-            logger.info(
-                f'Retrying to download following failed '
-                f'accession IDs in 2 min: {sample_ids[index_current_acc:]}'
-            )
-            time.sleep(120)
+    while (retries >= 0) and (len(sample_ids) > 0):
+        # init logging failed ids for this retry:
+        failed_ids = {}
 
-        result = _run_cmd_fasterq(
-            acc, tmpdirname, threads, logger)
+        for acc in sample_ids:
+            result = _run_cmd_fasterq(
+                acc, tmpdirname, threads, logger)
+            if result.stderr:
+                failed_ids[acc] = result.stderr
 
-        if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
-            sample_ids.append(acc)
+        if len(failed_ids.keys()) > 0:
+            if retries > 0:
+                # log & add time buffer if we retry
+                # todo: change value below to 180
+                sleep_lag = (1/(retries+1))*3
+                ls_failed_ids = list(failed_ids.keys())
+                logger.info(
+                    f'Retrying to download following failed '
+                    f'accession IDs in {sleep_lag/60} min: {ls_failed_ids}'
+                )
+                time.sleep(sleep_lag)
+            else:
+                value_error_text = ''
+                for key, value in failed_ids.items():
+                    value_error_text += f'{key} could not be downloaded '\
+                        f'with the following error returned: {value}\n'
 
-            # raise error if all retries attempts failed for one acc
-            if sample_ids.count(acc) >= (retries + 1):
-                raise ValueError('{} could not be downloaded with the '
-                                 'following error '
-                                 'returned: {}'
-                                 .format(acc, result.stderr))
+                raise ValueError(value_error_text)
 
-            logger.warning(f'Will retry to fetch sequences for run {acc} '
-                           f'in a bit ({retries} retries left).')
+        sample_ids = failed_ids.copy()
+        retries -= 1
 
     logger.info('Download finished.')
 

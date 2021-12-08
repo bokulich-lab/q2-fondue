@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 import logging
-from unittest.mock import patch, call, ANY
+from unittest.mock import patch, call, ANY, MagicMock
 import os
 import gzip
 import shutil
@@ -91,6 +91,8 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
+        mock_subprocess.return_value = MagicMock(stderr=None)
+
         ls_acc_ids = ['testaccA']
 
         exp_prefetch = ['prefetch',
@@ -128,8 +130,13 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess):
-        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
-        ls_acc_ids = ['test_accERROR', 'testaccA']
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
+        ls_acc_ids = ['testaccA', 'test_accERROR']
+        mock_subprocess.side_effect = [MagicMock(stderr=None),
+                                       MagicMock(stderr=None),
+                                       MagicMock(stderr=True),
+                                       MagicMock(stderr=True)]
 
         with self.assertRaisesRegex(
                 ValueError, 'could not be downloaded with'):
@@ -221,8 +228,9 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123456'
-        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
-        mock_tmpdir.return_value = test_temp_dir
+        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -239,9 +247,10 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123457'
-        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
-        mock_tmpdir.return_value = test_temp_dir
+        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
+                         acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -258,8 +267,10 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_n_paired(self, mock_tmpdir, mock_subprocess):
         ls_file_names = [
-            'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq']
+            'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq',
+            'SRR123456.sra', 'SRR123457.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata('testaccBC')
 
@@ -278,9 +289,8 @@ class TestSequenceFetching(SequenceTests):
     def test_get_sequences_bioproject(self, mock_tmpdir, mock_get, mock_run):
         acc_id = 'SRR123456'
         proj_acc_id = 'PRJNA734376'
-        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
-        mock_tmpdir.return_value = test_temp_dir
-
+        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata(proj_acc_id)
 
         _, _, = get_sequences(test_temp_md, email='some@where.com', retries=0)
