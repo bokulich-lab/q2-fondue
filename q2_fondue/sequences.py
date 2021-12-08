@@ -109,7 +109,7 @@ def _process_downloaded_sequences(output_dir):
     # file names to list
     ls_single, ls_paired = [], []
 
-    for filename in os.listdir(output_dir):
+    for filename in sorted(os.listdir(output_dir)):
         if filename.endswith('_1.fastq'):
             # paired-end _1
             acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
