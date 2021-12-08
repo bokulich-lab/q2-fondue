@@ -153,13 +153,14 @@ def merge_metadata(
 
     """
     logger = set_up_logger('INFO', logger_name=__name__)
-    logger.info(f'Merging {len(metadata)} metadata DataFrames.')
+    logger.info('Merging %s metadata DataFrames.', len(metadata))
 
     metadata_merged = pd.concat(metadata, axis=0, join='outer')
     metadata_merged.drop_duplicates(inplace=True)
 
     logger.info(
-        f'Merged metadata DataFrame has {metadata_merged.shape[0]} '
-        f'rows and {metadata_merged.shape[1]} columns.')
+        'Merged metadata DataFrame has %s rows and %s columns.',
+        metadata_merged.shape[0], metadata_merged.shape[1]
+    )
 
     return metadata_merged
