@@ -6,7 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import threading
+
+from q2_fondue.utils import handle_threaded_exception
 from qiime2 import Metadata
+
+
+threading.excepthook = handle_threaded_exception
 
 
 def get_all(ctx, accession_ids, email, n_jobs=1, retries=2, log_level='INFO'):
