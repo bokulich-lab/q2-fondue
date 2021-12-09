@@ -27,6 +27,10 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 threading.excepthook = handle_threaded_exception
 
 
+class DownloadError(Exception):
+    pass
+
+
 def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int, logger):
     """
@@ -93,7 +97,7 @@ def _run_fasterq_dump_for_all(
                     value_error_text += f'{key} could not be downloaded '\
                         f'with the following error returned: {value}\n'
 
-                raise ValueError(value_error_text)
+                raise DownloadError(value_error_text)
 
         sample_ids = failed_ids.copy()
         retries -= 1

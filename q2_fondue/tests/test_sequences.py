@@ -18,7 +18,7 @@ from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
-from q2_fondue.sequences import (get_sequences,
+from q2_fondue.sequences import (DownloadError, get_sequences,
                                  _run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
@@ -122,7 +122,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['test_accERROR']
 
         with self.assertRaisesRegex(
-                ValueError, 'could not be downloaded with'):
+                DownloadError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.logger
@@ -143,7 +143,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                                        MagicMock(stderr=True)]
 
         with self.assertRaisesRegex(
-                ValueError, 'could not be downloaded with'):
+                DownloadError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.logger
