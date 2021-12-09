@@ -82,8 +82,9 @@ def _run_fasterq_dump_for_all(
                 sleep_lag = (1/(retries+1))*180
                 ls_failed_ids = list(failed_ids.keys())
                 logger.info(
-                    f'Retrying to download following failed '
-                    f'accession IDs in {sleep_lag/60} min: {ls_failed_ids}'
+                    f'Retrying to download the following failed '
+                    f'accession IDs in {round(sleep_lag/60,1)} '
+                    f'min: {ls_failed_ids}'
                 )
                 time.sleep(sleep_lag)
             else:
