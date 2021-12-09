@@ -28,10 +28,6 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 threading.excepthook = handle_threaded_exception
 
 
-class DownloadError(Exception):
-    pass
-
-
 def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int, logger):
     """
@@ -80,41 +76,36 @@ def _run_fasterq_dump_for_all(
     logger.info(
         f'Downloading sequences for {len(accession_ids)} accession IDs...'
     )
+    accession_ids_init = accession_ids.copy()
     while (retries >= 0) and (len(accession_ids) > 0):
         # init logging failed ids for this retry:
         failed_ids = {}
 
-        for acc in accession_ids:
+        for acc in sorted(accession_ids):
             result = _run_cmd_fasterq(
                 acc, tmpdirname, threads, logger)
             if result.stderr:
                 failed_ids[acc] = result.stderr
 
-        if len(failed_ids.keys()) > 0:
-            if retries > 0:
-                # log & add time buffer if we retry
-                sleep_lag = (1/(retries+1))*180
-                ls_failed_ids = list(failed_ids.keys())
-                logger.info(
-                    f'Retrying to download the following failed '
-                    f'accession IDs in {round(sleep_lag/60,1)} '
-                    f'min: {ls_failed_ids}'
-                )
-                time.sleep(sleep_lag)
-            else:
-                value_error_text = ''
-                for key, value in failed_ids.items():
-                    value_error_text += f'{key} could not be downloaded '\
-                        f'with the following error returned: {value}\n'
-
-                raise DownloadError(value_error_text)
+        if len(failed_ids.keys()) > 0 and retries > 0:
+            # log & add time buffer if we retry
+            sleep_lag = (1/(retries+1))*180
+            ls_failed_ids = list(failed_ids.keys())
+            logger.info(
+                f'Retrying to download the following failed '
+                f'accession IDs in {round(sleep_lag/60,1)} '
+                f'min: {ls_failed_ids}'
+            )
+            time.sleep(sleep_lag)
 
         accession_ids = failed_ids.copy()
         retries -= 1
 
+    errors = [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
     logger.info(
-        'Download finished. %s out of %s runs failed to fetch.',
-        len(failed_ids.keys()), len(accession_ids)
+        'Download finished. %s out of %s runs failed to fetch. Below are the '
+        'error messages of the first 5 failed runs:\n%s',
+        len(failed_ids.keys()), len(accession_ids_init), '\n'.join(errors)
     )
     return list(failed_ids.keys())
 
@@ -252,7 +243,8 @@ def get_sequences(
 
     Function uses SRA-toolkit fasterq-dump to get single-read and paired-end
     sequences of accession IDs. It supports multiple tries (`retries`)
-    and can use multiple `threads`.
+    and can use multiple `threads`. If download fails, function will create
+    an artifact with a list of failed IDs.
 
     Args:
         accession_ids (Metadata): List of all run/project IDs to be fetched.
@@ -266,6 +258,8 @@ def get_sequences(
         respectively for provided accession IDs. If the provided accession IDs
         only contain one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
+
+        failed_ids (pd.Series): A list of run IDs that failed to download.
     """
     logger = set_up_logger(log_level, logger_name=__name__)
 

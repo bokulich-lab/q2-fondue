@@ -19,7 +19,7 @@ from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
-from q2_fondue.sequences import (DownloadError, get_sequences,
+from q2_fondue.sequences import (get_sequences,
                                  _run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
@@ -121,9 +121,9 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_run_fasterq_dump_for_all_error(self, mock_subprocess, mock_sleep):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
+        mock_subprocess.return_value = MagicMock(stderr='Some error')
 
-        with self.assertRaisesRegex(
-                DownloadError, 'could not be downloaded with'):
+        with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.fake_logger
@@ -131,6 +131,12 @@ class TestUtils4SequenceFetching(SequenceTests):
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertListEqual(failed_ids, ls_acc_ids)
+            self.assertIn(
+                'INFO:test_log:Download finished. 1 out of 1 runs failed to '
+                'fetch. Below are the error messages of the first 5 failed '
+                'runs:\nID=test_accERROR, Error=Some error',
+                cm.output
+            )
 
     @patch('time.sleep')
     @patch('subprocess.run')
@@ -138,39 +144,24 @@ class TestUtils4SequenceFetching(SequenceTests):
                                                    mock_sleep):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
-        ls_acc_ids = ['testaccA', 'test_accERROR']
+        ls_acc_ids = ['testaccA', 'testaccERROR']
         mock_subprocess.side_effect = [MagicMock(stderr=None),
                                        MagicMock(stderr=None),
-                                       MagicMock(stderr=True),
-                                       MagicMock(stderr=True)]
+                                       MagicMock(stderr='Error 1'),
+                                       MagicMock(stderr='Error 2')]
 
-        with self.assertRaisesRegex(
-                DownloadError, 'could not be downloaded with'):
+        with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.fake_logger
             )
             # check retry procedure:
-            self.assertEqual(mock_subprocess.call_count, 3)
-            self.assertListEqual(failed_ids, ['test_accERROR'])
-
-    @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_with_failed(self, mock_subprocess):
-        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
-        ls_acc_ids = ['test_accERROR', 'testaccA']
-
-        mock_subprocess.return_value = MagicMock(stderr='some error')
-
-        with self.assertLogs('test_log', level='WARNING') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=1, logger=self.fake_logger
-            )
-            self.assertEqual(mock_subprocess.call_count, 3)
-            self.assertListEqual(failed_ids, ['test_accERROR'])
+            self.assertEqual(mock_subprocess.call_count, 4)
+            self.assertListEqual(failed_ids, ['testaccERROR'])
             self.assertIn(
-                'WARNING:test_log:test_accERROR could not be downloaded '
-                'with the following fasterq-dump error: some error.',
+                'INFO:test_log:Download finished. 1 out of 2 runs failed to '
+                'fetch. Below are the error messages of the first 5 failed '
+                'runs:\nID=testaccERROR, Error=Error 2',
                 cm.output
             )
 
@@ -340,8 +331,11 @@ class TestSequenceFetching(SequenceTests):
     def test_get_sequences_with_failed(self, mock_tmpdir, mock_subprocess):
         ls_file_names = ['SRR123456.fastq']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
-
         test_temp_md = self.prepare_metadata('testaccBC')
+
+        mock_subprocess.side_effect = [
+            MagicMock(stderr=None), MagicMock(stderr='Some error')
+        ]
 
         casava_single, casava_paired, failed_ids = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
