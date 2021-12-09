@@ -324,44 +324,60 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patched_get_run.assert_not_called()
 
-    def test_merge_metadata_1(self):
+    def test_merge_metadata_3dfs_nodupl(self):
         # Test merging metadata with no duplicated run IDs
         meta, exp_df = self.generate_meta_df(range(1, 4), 'exp-1')
         obs_df = merge_metadata(meta)
         assert_frame_equal(obs_df, exp_df)
 
-    def test_merge_metadata_2(self):
+    def test_merge_metadata_2dfs_dupl_ids(self):
         # Test merging metadata with duplicated run IDs
         meta, exp_df = self.generate_meta_df([1, 1], '1')
-        obs_df = merge_metadata(meta)
-        assert_frame_equal(obs_df, exp_df)
+        with self.assertLogs('q2_fondue.metadata', level='INFO') as cm:
+            obs_df = merge_metadata(meta)
+            self.assertIn(
+                'INFO:q2_fondue.metadata:2 duplicate record(s) found in '
+                'the metadata were dropped.', cm.output
+            )
+            assert_frame_equal(obs_df, exp_df)
 
-    def test_merge_metadata_3(self):
+    def test_merge_metadata_2dfs_diff_cols(self):
         # Test merging metadata with different sets of columns
         meta, exp_df = self.generate_meta_df([1, 4], 'exp-2')
         obs_df = merge_metadata(meta)
         assert_frame_equal(obs_df, exp_df)
 
-    def test_merge_metadata_4(self):
+    def test_merge_metadata_2dfs_overlap_cols(self):
         # Test merging metadata with some overlapping columns
         meta, exp_df = self.generate_meta_df([5, 6], 'exp-3')
         obs_df = merge_metadata(meta)
         assert_frame_equal(obs_df, exp_df)
 
-    def test_merge_metadata_5(self):
+    def test_merge_metadata_2dfs_overlap_cols_rows(self):
         # Test merging metadata with some overlapping columns
         # and some overlapping run IDs
         meta, exp_df = self.generate_meta_df([5, 7], 'exp-4')
-        obs_df = merge_metadata(meta)
-        assert_frame_equal(obs_df, exp_df)
+        with self.assertLogs('q2_fondue.metadata', level='INFO') as cm:
+            obs_df = merge_metadata(meta)
+            self.assertIn(
+                'INFO:q2_fondue.metadata:1 duplicate record(s) found in '
+                'the metadata were dropped.', cm.output
+            )
+            assert_frame_equal(obs_df, exp_df)
 
-    def test_merge_metadata_6(self):
+    def test_merge_metadata_2dfs_overlap_cols_rows_keep_dupl(self):
         # Test merging metadata with some overlapping columns
         # and some overlapping run IDs where duplicates have
         # differing values
         meta, exp_df = self.generate_meta_df([5, 8], 'exp-5')
-        obs_df = merge_metadata(meta)
-        assert_frame_equal(obs_df, exp_df)
+        with self.assertLogs('q2_fondue.metadata', level='WARNING') as cm:
+            obs_df = merge_metadata(meta)
+            self.assertIn(
+                'WARNING:q2_fondue.metadata:Records with same IDs '
+                'but differing values were found in the metadata '
+                'and will not be removed.', cm.output
+            )
+            assert_frame_equal(obs_df, exp_df)
 
 
 if __name__ == "__main__":

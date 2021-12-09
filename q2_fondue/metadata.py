@@ -154,13 +154,25 @@ def merge_metadata(
 
     Returns:
         metadata_merged (pd.DataFrame): Final metadata DataFrame.
-
     """
     logger = set_up_logger('INFO', logger_name=__name__)
     logger.info('Merging %s metadata DataFrames.', len(metadata))
 
     metadata_merged = pd.concat(metadata, axis=0, join='outer')
+
+    records_count = metadata_merged.shape[0]
     metadata_merged.drop_duplicates(inplace=True)
+    if records_count != metadata_merged.shape[0]:
+        logger.info(
+            '%s duplicate record(s) found in the metadata '
+            'were dropped.', records_count - metadata_merged.shape[0]
+        )
+
+    if len(metadata_merged.index) != len(set(metadata_merged.index)):
+        logger.warning(
+            'Records with same IDs but differing values were found in '
+            'the metadata and will not be removed.'
+        )
 
     logger.info(
         'Merged metadata DataFrame has %s rows and %s columns.',

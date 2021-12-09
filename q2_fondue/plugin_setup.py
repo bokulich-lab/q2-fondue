@@ -137,7 +137,9 @@ plugin.methods.register_function(
     outputs=[('merged_metadata', SRAMetadata)],
     input_descriptions={'metadata': 'Metadata files to be merged together.'},
     parameter_descriptions={},
-    output_descriptions={'merged_metadata': 'Merged metadata containing all rows and columns (without duplicates).'},
+    output_descriptions={
+        'merged_metadata': 'Merged metadata containing all rows and columns '
+                           '(without duplicates).'},
     name='Merge several metadata files into a single metadata object.',
     description=(
         'Merge multiple sequence-related metadata from different q2-fondue '
