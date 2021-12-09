@@ -7,9 +7,9 @@
 # ----------------------------------------------------------------------------
 
 import os
-import glob
 import re
 import gzip
+import time
 import threading
 import warnings
 import itertools
@@ -27,36 +27,35 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 threading.excepthook = handle_threaded_exception
 
 
+class DownloadError(Exception):
+    pass
+
+
 def _run_cmd_fasterq(
-        acc: str, output_dir: str, threads: int, retries: int, logger):
+        acc: str, output_dir: str, threads: int, logger):
     """
-    Helper function running fasterq-dump `retries` times
+    Helper function running fasterq-dump
     """
 
     logger.debug(f'Downloading sequences for run: {acc}...')
 
-    acc_fastq_single = os.path.join(output_dir,
-                                    acc + '.fastq')
-    acc_fastq_paired = os.path.join(output_dir,
-                                    acc + '_1.fastq')
+    acc_sra_file = os.path.join(output_dir,
+                                acc + '.sra')
 
+    cmd_prefetch = ["prefetch",
+                    "-O", output_dir,
+                    acc]
     cmd_fasterq = ["fasterq-dump",
                    "-O", output_dir,
                    "-t", output_dir,
                    "-e", str(threads),
                    acc]
 
-    # try "retries" times to get sequence data
-    while retries >= 0:
-        result = subprocess.run(cmd_fasterq, text=True, capture_output=True)
+    result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
 
-        if not (os.path.isfile(acc_fastq_single) |
-                os.path.isfile(acc_fastq_paired)):
-            retries -= 1
-            logger.warning(f'Retrying to fetch sequences for run {acc} '
-                           f'({retries} retries left).')
-        else:
-            retries = -1
+    if os.path.isfile(acc_sra_file):
+        result = subprocess.run(cmd_fasterq, text=True,
+                                capture_output=True)
 
     return result
 
@@ -65,22 +64,44 @@ def _run_fasterq_dump_for_all(
         sample_ids, tmpdirname, threads, retries, logger
 ):
     """
-    Helper function that runs fasterq-dump for all ids in study-ids
+    Helper function that runs prefetch & fasterq-dump for all ids in study-ids
     """
     logger.info(
         f'Downloading sequences for {len(sample_ids)} accession IDs...'
     )
-    for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
 
-        if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
-            # raise error if all retries attempts failed
-            raise ValueError('{} could not be downloaded with the '
-                             'following fasterq-dump error '
-                             'returned: {}'
-                             .format(acc, result.stderr))
-        else:
-            continue
+    while (retries >= 0) and (len(sample_ids) > 0):
+        # init logging failed ids for this retry:
+        failed_ids = {}
+
+        for acc in sample_ids:
+            result = _run_cmd_fasterq(
+                acc, tmpdirname, threads, logger)
+            if result.stderr:
+                failed_ids[acc] = result.stderr
+
+        if len(failed_ids.keys()) > 0:
+            if retries > 0:
+                # log & add time buffer if we retry
+                sleep_lag = (1/(retries+1))*180
+                ls_failed_ids = list(failed_ids.keys())
+                logger.info(
+                    f'Retrying to download the following failed '
+                    f'accession IDs in {round(sleep_lag/60,1)} '
+                    f'min: {ls_failed_ids}'
+                )
+                time.sleep(sleep_lag)
+            else:
+                value_error_text = ''
+                for key, value in failed_ids.items():
+                    value_error_text += f'{key} could not be downloaded '\
+                        f'with the following error returned: {value}\n'
+
+                raise DownloadError(value_error_text)
+
+        sample_ids = failed_ids.copy()
+        retries -= 1
+
     logger.info('Download finished.')
 
 
@@ -106,12 +127,13 @@ def _process_downloaded_sequences(output_dir):
             acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R2_001.fastq' % acc
             ls_paired.append(new_name)
-        else:
+        elif filename.endswith('.fastq'):
             # single-reads
             acc = re.search(r'(.*)\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq' % acc
             ls_single.append(new_name)
-
+        else:
+            continue
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
 

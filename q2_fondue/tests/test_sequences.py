@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------------
 
 import logging
-from unittest.mock import patch, ANY
+from unittest.mock import patch, call, ANY, MagicMock
 import os
 import gzip
 import shutil
@@ -18,7 +18,7 @@ from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
-from q2_fondue.sequences import (get_sequences,
+from q2_fondue.sequences import (DownloadError, get_sequences,
                                  _run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
@@ -90,29 +90,39 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
-        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         ls_acc_ids = ['testaccA']
-        exp_comd = ['fasterq-dump',
-                    '-O', test_temp_dir.name,
-                    '-t', test_temp_dir.name,
-                    '-e', '6',
-                    ls_acc_ids[0]]
+
+        exp_prefetch = ['prefetch',
+                        '-O', test_temp_dir.name,
+                        ls_acc_ids[0]]
+        exp_fasterq = ['fasterq-dump',
+                       '-O', test_temp_dir.name,
+                       "-t", test_temp_dir.name,
+                       "-e", str(6),
+                       ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, logger=self.logger
         )
-        mock_subprocess.assert_called_once_with(exp_comd, text=True,
-                                                capture_output=True)
 
+        mock_subprocess.assert_has_calls([call(exp_prefetch, text=True,
+                                               capture_output=True),
+                                          call(exp_fasterq, text=True,
+                                               capture_output=True)])
+
+    @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all_error(self, mock_subprocess, mock_sleep):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
 
         with self.assertRaisesRegex(
-                ValueError, 'could not be downloaded with'):
+                DownloadError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.logger
@@ -120,13 +130,20 @@ class TestUtils4SequenceFetching(SequenceTests):
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
 
+    @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess):
-        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
-        ls_acc_ids = ['test_accERROR', 'testaccA']
+    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess,
+                                                   mock_sleep):
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
+        ls_acc_ids = ['testaccA', 'test_accERROR']
+        mock_subprocess.side_effect = [MagicMock(stderr=None),
+                                       MagicMock(stderr=None),
+                                       MagicMock(stderr=True),
+                                       MagicMock(stderr=True)]
 
         with self.assertRaisesRegex(
-                ValueError, 'could not be downloaded with'):
+                DownloadError, 'could not be downloaded with'):
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, logger=self.logger
@@ -146,8 +163,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_exp_paired = ['testacc_00_L001_R1_001.fastq',
                          'testacc_00_L001_R2_001.fastq']
 
-        self.assertEqual(ls_act_single, ls_exp_single)
-        self.assertEqual(ls_act_paired, ls_exp_paired)
+        self.assertEqual(set(ls_act_single), set(ls_exp_single))
+        self.assertEqual(set(ls_act_paired), set(ls_exp_paired))
 
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -215,8 +232,9 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123456'
-        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
-        mock_tmpdir.return_value = test_temp_dir
+        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -233,9 +251,10 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123457'
-        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_file_names)
-        mock_tmpdir.return_value = test_temp_dir
+        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
+                         acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -252,8 +271,10 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_n_paired(self, mock_tmpdir, mock_subprocess):
         ls_file_names = [
-            'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq']
+            'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq',
+            'SRR123456.sra', 'SRR123457.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata('testaccBC')
 
@@ -272,9 +293,8 @@ class TestSequenceFetching(SequenceTests):
     def test_get_sequences_bioproject(self, mock_tmpdir, mock_get, mock_run):
         acc_id = 'SRR123456'
         proj_acc_id = 'PRJNA734376'
-        test_temp_dir = self.move_files_2_tmp_dir([acc_id + '.fastq'])
-        mock_tmpdir.return_value = test_temp_dir
-
+        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata(proj_acc_id)
 
         _, _, = get_sequences(test_temp_md, email='some@where.com', retries=0)
