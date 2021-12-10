@@ -105,16 +105,19 @@ class TestUtils4SequenceFetching(SequenceTests):
                        "-t", test_temp_dir.name,
                        "-e", str(6),
                        ls_acc_ids[0]]
-
-        failed_ids = _run_fasterq_dump_for_all(
-            ls_acc_ids, test_temp_dir.name, threads=6,
-            retries=0, logger=self.fake_logger
-        )
-        mock_subprocess.assert_has_calls([
-            call(exp_prefetch, text=True, capture_output=True),
-            call(exp_fasterq, text=True, capture_output=True)
-        ])
-        self.assertEqual(len(failed_ids), 0)
+        with self.assertLogs('test_log', level='INFO') as cm:
+            failed_ids = _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=0, logger=self.fake_logger
+            )
+            mock_subprocess.assert_has_calls([
+                call(exp_prefetch, text=True, capture_output=True),
+                call(exp_fasterq, text=True, capture_output=True)
+            ])
+            self.assertEqual(len(failed_ids), 0)
+            self.assertIn(
+                'INFO:test_log:Download finished.', cm.output
+            )
 
     @patch('time.sleep')
     @patch('subprocess.run')

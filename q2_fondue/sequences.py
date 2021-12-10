@@ -101,12 +101,15 @@ def _run_fasterq_dump_for_all(
         accession_ids = failed_ids.copy()
         retries -= 1
 
-    errors = [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
-    logger.info(
-        'Download finished. %s out of %s runs failed to fetch. Below are the '
-        'error messages of the first 5 failed runs:\n%s',
-        len(failed_ids.keys()), len(accession_ids_init), '\n'.join(errors)
-    )
+    msg = 'Download finished.'
+    if failed_ids:
+        errors = '\n'.join(
+            [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
+        )
+        msg += f' {len(failed_ids.keys())} out of {len(accession_ids_init)} ' \
+               f'runs failed to fetch. Below are the error messages of the ' \
+               f"first 5 failed runs:\n{errors}"
+    logger.info(msg)
     return list(failed_ids.keys())
 
 
