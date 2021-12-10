@@ -64,10 +64,12 @@ where:
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 - `--o-failed-runs` is the output artifact containing run IDs that failed to download
 
-The resulting sequence artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
+The resulting sequence artifacts (`--o-single-reads` and `--o-paired-reads`) will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
 If one of the provided IDs only contains sequences of one type (e.g. single-read sequences) then the other artifact 
 (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`. Similarly, 
 if none of the requested sequences failed to download, the corresponding artifact will be empty.
+
+If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputed as an `--m-accession-ids-file` to a subsequent `get-sequence` command. 
 
 ### Fetching metadata and sequences
 
