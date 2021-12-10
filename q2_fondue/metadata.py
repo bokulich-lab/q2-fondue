@@ -143,3 +143,41 @@ def get_metadata(
         return _get_project_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+
+
+def merge_metadata(
+        metadata: pd.DataFrame
+) -> pd.DataFrame:
+    """Merges provided multiple metadata into a single metadata object.
+
+    Args:
+        metadata (pd.DataFrame): List of metadata DataFrames to be merged.
+
+    Returns:
+        metadata_merged (pd.DataFrame): Final metadata DataFrame.
+    """
+    logger = set_up_logger('INFO', logger_name=__name__)
+    logger.info('Merging %s metadata DataFrames.', len(metadata))
+
+    metadata_merged = pd.concat(metadata, axis=0, join='outer')
+
+    records_count = metadata_merged.shape[0]
+    metadata_merged.drop_duplicates(inplace=True)
+    if records_count != metadata_merged.shape[0]:
+        logger.info(
+            '%s duplicate record(s) found in the metadata '
+            'were dropped.', records_count - metadata_merged.shape[0]
+        )
+
+    if len(metadata_merged.index) != len(set(metadata_merged.index)):
+        logger.warning(
+            'Records with same IDs but differing values were found in '
+            'the metadata and will not be removed.'
+        )
+
+    logger.info(
+        'Merged metadata DataFrame has %s rows and %s columns.',
+        metadata_merged.shape[0], metadata_merged.shape[1]
+    )
+
+    return metadata_merged

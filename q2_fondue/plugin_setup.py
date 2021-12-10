@@ -9,11 +9,11 @@
 import importlib
 
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, Range, Metadata
+    Plugin, Citations, Choices, Str, Int, List, Range, Metadata
 )
 
 from q2_fondue import __version__
-from q2_fondue.metadata import get_metadata
+from q2_fondue.metadata import get_metadata, merge_metadata
 from q2_fondue.types._format import (SRAMetadataFormat, SRAMetadataDirFmt,
                                      SRAFailedIDsFormat, SRAFailedIDsDirFmt)
 from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
@@ -131,6 +131,24 @@ plugin.pipelines.register_function(
     description='Pipeline fetching all sequence-related metadata and raw '
                 'sequences of provided run or BioProject IDs.',
     citations=[citations['Buchmann2019'], citations['SraToolkit']]
+)
+
+plugin.methods.register_function(
+    function=merge_metadata,
+    inputs={'metadata': List[SRAMetadata]},
+    parameters={},
+    outputs=[('merged_metadata', SRAMetadata)],
+    input_descriptions={'metadata': 'Metadata files to be merged together.'},
+    parameter_descriptions={},
+    output_descriptions={
+        'merged_metadata': 'Merged metadata containing all rows and columns '
+                           '(without duplicates).'},
+    name='Merge several metadata files into a single metadata object.',
+    description=(
+        'Merge multiple sequence-related metadata from different q2-fondue '
+        'runs and/or projects into a single metadata file.'
+    ),
+    citations=[]
 )
 
 plugin.register_formats(
