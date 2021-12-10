@@ -27,8 +27,8 @@ def get_all(ctx, accession_ids, email, n_jobs=1, retries=2, log_level='INFO'):
     # fetch sequences - use metadata df to get run ids, regardless if
     # runs or projects were requested
     run_ids = df_metadata.view(Metadata)
-    seq_single, seq_paired, = get_sequences(
+    seq_single, seq_paired, failed_ids, = get_sequences(
         run_ids, email, retries, n_jobs, log_level
     )
 
-    return df_metadata, seq_single, seq_paired
+    return df_metadata, seq_single, seq_paired, failed_ids

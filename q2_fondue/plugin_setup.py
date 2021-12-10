@@ -14,11 +14,13 @@ from qiime2.plugin import (
 
 from q2_fondue import __version__
 from q2_fondue.metadata import get_metadata, merge_metadata
-from q2_fondue.types._format import SRAMetadataFormat, SRAMetadataDirFmt
-from q2_fondue.types._type import SRAMetadata
+from q2_fondue.types._format import (SRAMetadataFormat, SRAMetadataDirFmt,
+                                     SRAFailedIDsFormat, SRAFailedIDsDirFmt)
+from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
 from q2_types.sample_data import SampleData
 from q2_types.per_sample_sequences import (
-    SequencesWithQuality, PairedEndSequencesWithQuality)
+    SequencesWithQuality, PairedEndSequencesWithQuality
+)
 from q2_fondue.sequences import get_sequences
 from q2_fondue.get_all import get_all
 
@@ -43,7 +45,9 @@ output_descriptions = {
     'single_reads': 'Artifact containing single-read fastq.gz files '
                     'for all the requested IDs.',
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
-                    'for all the requested IDs.'
+                    'for all the requested IDs.',
+    'failed_runs': 'List of all run IDs for which fetching sequence '
+                   'data failed.'
 }
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -59,11 +63,6 @@ plugin = Plugin(
     ),
     short_description='Plugin for fetching sequences and metadata.',
 )
-
-plugin.register_formats(SRAMetadataFormat, SRAMetadataDirFmt)
-plugin.register_semantic_types(SRAMetadata)
-plugin.register_semantic_type_to_format(
-    SRAMetadata, artifact_format=SRAMetadataDirFmt)
 
 plugin.methods.register_function(
     function=get_metadata,
@@ -81,8 +80,6 @@ plugin.methods.register_function(
     citations=[citations['Buchmann2019']]
 )
 
-importlib.import_module('q2_fondue.types._transformer')
-
 plugin.methods.register_function(
     function=get_sequences,
     inputs={},
@@ -90,8 +87,11 @@ plugin.methods.register_function(
         **common_params,
         'retries': Int % Range(1, None)
     },
-    outputs=[('single_reads', SampleData[SequencesWithQuality]),
-             ('paired_reads', SampleData[PairedEndSequencesWithQuality])],
+    outputs=[
+        ('single_reads', SampleData[SequencesWithQuality]),
+        ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
+        ('failed_runs', SRAFailedIDs)
+    ],
     input_descriptions={},
     parameter_descriptions={
         **common_param_descr,
@@ -99,7 +99,8 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
-        'paired_reads': output_descriptions['paired_reads']
+        'paired_reads': output_descriptions['paired_reads'],
+        'failed_runs': output_descriptions['failed_runs']
     },
     name='Fetch sequences based on run ID.',
     description='Fetch sequence data of all run IDs.',
@@ -113,10 +114,12 @@ plugin.pipelines.register_function(
         **common_params,
         'retries': Int % Range(1, None)
     },
-    outputs=[('metadata', SRAMetadata),
-             ('single_reads', SampleData[SequencesWithQuality]),
-             ('paired_reads', SampleData[PairedEndSequencesWithQuality])
-             ],
+    outputs=[
+        ('metadata', SRAMetadata),
+        ('single_reads', SampleData[SequencesWithQuality]),
+        ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
+        ('failed_runs', SRAFailedIDs)
+    ],
     input_descriptions={},
     parameter_descriptions={
         **common_param_descr,
@@ -147,3 +150,17 @@ plugin.methods.register_function(
     ),
     citations=[]
 )
+
+plugin.register_formats(
+    SRAMetadataFormat, SRAMetadataDirFmt,
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+)
+plugin.register_semantic_types(SRAMetadata, SRAFailedIDs)
+plugin.register_semantic_type_to_format(
+    SRAMetadata, artifact_format=SRAMetadataDirFmt
+)
+plugin.register_semantic_type_to_format(
+    SRAFailedIDs, artifact_format=SRAFailedIDsDirFmt
+)
+
+importlib.import_module('q2_fondue.types._transformer')

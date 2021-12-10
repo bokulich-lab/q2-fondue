@@ -9,3 +9,4 @@
 from qiime2.core.type import SemanticType
 
 SRAMetadata = SemanticType('SRAMetadata')
+SRAFailedIDs = SemanticType('SRAFailedIDs')

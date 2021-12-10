@@ -42,7 +42,7 @@ where:
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
 
-The resulting artifact will contain a TSV file containing all the available metadata fields
+The resulting artifact will contain a TSV file with all the available metadata fields
 for all of the requested runs.
 
 ### Fetching sequences
@@ -53,7 +53,8 @@ qiime fondue get-sequences \
               --m-accession-ids-file metadata_file.tsv \
               --p-email your_email@somewhere.com \
               --o-single-reads output_dir_single \
-              --o-paired-reads output_dir_paired
+              --o-paired-reads output_dir_paired \
+              --o-failed-runs output_failed_ids
 ```
 
 where:
@@ -61,8 +62,14 @@ where:
 - `--p-email` is your email address (required by NCBI)
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
+- `--o-failed-runs` is the output artifact containing run IDs that failed to download
 
-The resulting artifact will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. If one of the provided IDs only contains sequences of one type (e.g. single-read sequences) then the other artifact (e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`.
+The resulting sequence artifacts (`--o-single-reads` and `--o-paired-reads`) will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
+If one of the provided IDs only contains sequences of one type (e.g. single-read sequences) then the other artifact 
+(e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`. Similarly, 
+if none of the requested sequences failed to download, the corresponding artifact will be empty.
+
+If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputed as an `--m-accession-ids-file` to a subsequent `get-sequence` command. 
 
 ### Fetching metadata and sequences
 
@@ -77,7 +84,7 @@ qiime fondue get-all \
 where:
 - `--m-accession-ids-file` is a TSV containing accession numbers for all of the runs
 - `--p-email` is your email address (required by NCBI)
-- `--output-dir` directory where the downloaded metadata and sequences are stored as QIIME 2 artifacts
+- `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 
 ## License
 
