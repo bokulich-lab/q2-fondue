@@ -20,6 +20,7 @@ import pandas as pd
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
+from tqdm import tqdm
 
 from q2_fondue.utils import (_determine_id_type, handle_threaded_exception)
 from q2_fondue.entrezpy_clients._utils import set_up_logger
@@ -33,9 +34,6 @@ def _run_cmd_fasterq(
     """
     Helper function running fasterq-dump
     """
-
-    logger.debug(f'Downloading sequences for run: {acc}...')
-
     acc_sra_file = os.path.join(output_dir,
                                 acc + '.sra')
 
@@ -77,11 +75,15 @@ def _run_fasterq_dump_for_all(
         f'Downloading sequences for {len(accession_ids)} accession IDs...'
     )
     accession_ids_init = accession_ids.copy()
+    init_retries = retries
     while (retries >= 0) and (len(accession_ids) > 0):
-        # init logging failed ids for this retry:
         failed_ids = {}
-
-        for acc in sorted(accession_ids):
+        pbar = tqdm(sorted(accession_ids))
+        for acc in pbar:
+            pbar.set_description(
+                f'Downloading sequences for run {acc} '
+                f'(attempt {-retries + init_retries + 1})'
+            )
             result = _run_cmd_fasterq(
                 acc, tmpdirname, threads, logger)
             if result.stderr:
