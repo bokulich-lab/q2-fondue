@@ -8,7 +8,7 @@ With this easy-to-use plugin you have plenty of deposited sequencing data at you
 Want to set your own data in comparison to other published datasets or start off with a meta-analysis? 
 _q2-fondue_ is here to help! 
 
-This tutorial will give you an insight into working with q2-fondue and how the artifacts can further be used. 
+This tutorial will give you an insight into working with q2-fondue and how the artifacts can be used further. 
 
 ## Some Background
 There are numerous databases online, where researchers can deposit or retrieve high-throughput sequencing data. 
@@ -129,8 +129,9 @@ In the `fondue-output` directory we can find three files:
 * *metadata.qza* of semantic type `SRAMetadata`
 * *paired_reads.qza* of semantic type `SampleData[PairedEndSequencesWithQuality]`
 * *single_reads.qza* of semantic type `SampleData[SequencesWithQuality]`
+* *failed_ids.qza* of semantic type `SRAFailedIDs`
 
-It is important to know that q2-fondue always generates two files, one for paired end and one for single end reads, 
+It is important to know that q2-fondue always generates two sequence artifacts, one for paired end and one for single end reads, 
 however only one of them contains the sequencing data we want. 
 How can we now find out which raw sequence file we should be using? These are your options:
 
@@ -140,16 +141,15 @@ How can we now find out which raw sequence file we should be using? These are yo
 
 ⇨ in the `fondue-output` directory type `ls -lah` to show the file size in kilo- (K) or megabyte (M), one of the files will contain only a few kilobyte while the other has several MB of juicy raw data! 
 
-⇨ when running `qiime fondue get-all`, add the `--verbose` flag to automatically get the `UserWarning: No paired-read sequences available for these sample IDs`.
+⇨ when running `qiime fondue get-all`, add the `--verbose` flag to automatically get the `UserWarning: No paired-read (or single-read) sequences available for these sample IDs`.
 
-In this case we will therefore continue with the *single_reads.qza*! 
+In this case we will continue our data exploration with the *single_reads.qza*! 
 
 ## What now? 
 ### Check out the metadata 
-While the metadata files we use in QIIME 2 commonly are in the TSV format, 
-the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
+Metadata files that are commonly used in QIIME 2 are in the TSV format. Conveniently, the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
 
-Let's have a look at the metadata by tabulating it and visualize the .qzv file.
+Let's have a look at the metadata by tabulating it and visualizing the .qzv file.
 ```shell
 qiime metadata tabulate \
       --m-input-file metadata.qza \
@@ -163,7 +163,7 @@ Apart from avoiding the tedious search and manual downloading of these large pil
 one of the biggest advantages of using q2-fondue is the fact that the output is already a QIIME 2 
 artifact and we don't have to import it! 
 
-The retrieved single_reads.qza file can therefore instantly be summarized: 
+The retrieved single_reads.qza file can therefore be summarized directly: 
 ```shell
 qiime demux summarize \
       --i-data single_reads.qza \
@@ -171,8 +171,8 @@ qiime demux summarize \
 
 qiime tools view single_reads.qzv
 ```
-Have a look at the overall quality in the Interactive Quality Plot, as well as sample and 
-feature count and we can move straight on to denoising with DADA2 or Deblur. 
+Have a look at the overall quality in the Interactive Quality Plot and inspect the sample and 
+feature counts. Then, we can move on to denoising with DADA2 or Deblur. 
 
 For example:
 ```shell
@@ -184,7 +184,7 @@ qiime dada2 denoise-single \
       --o-denoising-stats dada2_stats.qza
 ```
 
-As mentioned above, the *metadata.qza* file can directly be used in the following analyis! 
+As mentioned above, the *metadata.qza* file can be used directly in the following analyis! 
 
 ```shell
 qiime feature-table summarize \
@@ -201,8 +201,7 @@ to the QIIME 2 analysis pipeline, which is further described in other tutorials.
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
-Also for this action we can provide a TSV file with accession number of BioProject or 
-individual Runs. 
+Similarly to the `get-all` action, `get-metadata` also requires a TSV file with accession number of BioProject or individual Runs as input. 
 
 ```shell
 qiime fondue get-metadata \
@@ -211,7 +210,7 @@ qiime fondue get-metadata \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
-> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to sticking to 1. 
+> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and a high value is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to a value of 1. 
 
 
 
@@ -223,6 +222,7 @@ qiime fondue get-sequences \
               --m-accession-ids-file metadata_file.tsv \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired
+              --o-failed-ids output_failed_ids
 ```
 
 ## Extracting the metadata or sequences artifacts 
