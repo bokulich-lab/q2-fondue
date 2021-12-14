@@ -81,8 +81,8 @@ def _run_fasterq_dump_for_all(
         pbar = tqdm(sorted(accession_ids))
         for acc in pbar:
             pbar.set_description(
-                f'Downloading sequences for run {acc} '
-                f'(attempt {-retries + init_retries + 1})'
+                f'Attempt {-retries + init_retries + 1} out of '
+                f'{init_retries + 1} download progress'
             )
             result = _run_cmd_fasterq(
                 acc, tmpdirname, threads, logger)
