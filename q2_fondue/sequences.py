@@ -8,6 +8,7 @@
 
 import os
 import re
+import shutil
 import gzip
 import time
 import threading
@@ -88,6 +89,13 @@ def _run_fasterq_dump_for_all(
                 acc, tmpdirname, threads, logger)
             if result.stderr:
                 failed_ids[acc] = result.stderr
+
+            # check space availability
+            _, _, free_space = shutil.disk_usage(tmpdirname)
+            # current threshold of 2GB set for now - can be changed
+            if (free_space/1024**3) <= 2:
+                retries = -1
+                break
 
         if len(failed_ids.keys()) > 0 and retries > 0:
             # log & add time buffer if we retry
