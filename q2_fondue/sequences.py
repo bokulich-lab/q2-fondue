@@ -94,6 +94,13 @@ def _run_fasterq_dump_for_all(
             _, _, free_space = shutil.disk_usage(tmpdirname)
             # current threshold of 2GB set for now - can be changed
             if (free_space/1024**3) <= 2:
+                # save accessions that could not be downloaded
+                index_next_acc = list(pbar).index(acc)+1
+                failed_ids_keys = list(pbar)[index_next_acc:]
+                failed_ids_error = len(failed_ids_keys) * \
+                    ["Storage exhausted."]
+                failed_ids = dict(zip(failed_ids_keys, failed_ids_error))
+                # break retries
                 retries = -1
                 break
 

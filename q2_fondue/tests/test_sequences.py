@@ -174,11 +174,8 @@ class TestUtils4SequenceFetching(SequenceTests):
                                                   mock_disk_usage):
         # test checking that space availability break procedure works
         mock_disk_usage.return_value = (0, 0, 0.1)
-        # todo maybe check what actual returned error would be
-        mock_subprocess.side_effect = [
-            MagicMock(stderr='Space Error')]
         test_temp_dir = MockTempDir()
-        ls_acc_ids = ['testaccERROR']
+        ls_acc_ids = ['testaccA', 'testaccERROR']
 
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
@@ -188,9 +185,9 @@ class TestUtils4SequenceFetching(SequenceTests):
             self.assertEqual(mock_subprocess.call_count, 1)
             self.assertListEqual(failed_ids, ['testaccERROR'])
             self.assertIn(
-                'INFO:test_log:Download finished. 1 out of 1 runs failed to '
+                'INFO:test_log:Download finished. 1 out of 2 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
-                'runs:\nID=testaccERROR, Error=Space Error',
+                'runs:\nID=testaccERROR, Error=Storage exhausted.',
                 cm.output
             )
 
