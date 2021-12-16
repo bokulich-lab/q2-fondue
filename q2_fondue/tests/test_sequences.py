@@ -90,11 +90,10 @@ class SequenceTests(TestPluginBase):
 
 class TestUtils4SequenceFetching(SequenceTests):
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     def test_run_cmd_fasterq_sra_file(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
-        mock_subprocess.return_value = MagicMock(stderr=None)
 
         ls_acc_ids = ['testaccA']
 
@@ -116,11 +115,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True, capture_output=True)
         ])
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     def test_run_cmd_fasterq_sra_directory(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
         os.makedirs(f'{test_temp_dir.name}/testaccA')
-        mock_subprocess.return_value = MagicMock(stderr=None)
 
         ls_acc_ids = ['testaccA']
 
@@ -142,12 +140,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True, capture_output=True)
         ])
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     def test_run_fasterq_dump_for_all(self, mock_subprocess):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
-        mock_subprocess.return_value = MagicMock(stderr=None)
-
         ls_acc_ids = ['testaccA']
 
         exp_prefetch = ['prefetch',
@@ -173,11 +169,11 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
 
     @patch('time.sleep')
-    @patch('subprocess.run')
+    @patch('subprocess.run',
+           return_value=MagicMock(stderr='Some error', returncode=1))
     def test_run_fasterq_dump_for_all_error(self, mock_subprocess, mock_sleep):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
-        mock_subprocess.return_value = MagicMock(stderr='Some error')
 
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
@@ -201,10 +197,11 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA', 'testaccERROR']
-        mock_subprocess.side_effect = [MagicMock(stderr=None),
-                                       MagicMock(stderr=None),
-                                       MagicMock(stderr='Error 1'),
-                                       MagicMock(stderr='Error 2')]
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0), MagicMock(returncode=0),
+            MagicMock(returncode=1, stderr='Error 1'),
+            MagicMock(returncode=1, stderr='Error 2')
+        ]
 
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
@@ -300,13 +297,12 @@ class TestSequenceFetching(SequenceTests):
         _ = self.move_files_2_tmp_dir([acc_id_tsv])
         return Metadata.load(self.get_data_path(acc_id_tsv))
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123456'
         ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
-        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -321,14 +317,13 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
         acc_id = 'SRR123457'
         ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
                          acc_id + '.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
-        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata(acc_id)
 
@@ -343,14 +338,13 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
 
-    @patch('subprocess.run')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_single_n_paired(self, mock_tmpdir, mock_subprocess):
         ls_file_names = [
             'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq',
             'SRR123456.sra', 'SRR123457.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
-        mock_subprocess.return_value = MagicMock(stderr=None)
 
         test_temp_md = self.prepare_metadata('testaccBC')
 
@@ -390,7 +384,8 @@ class TestSequenceFetching(SequenceTests):
         test_temp_md = self.prepare_metadata('testaccBC')
 
         mock_subprocess.side_effect = [
-            MagicMock(stderr=None), MagicMock(stderr='Some error')
+            MagicMock(returncode=0),
+            MagicMock(returncode=1, stderr='Some error')
         ]
 
         casava_single, casava_paired, failed_ids = get_sequences(
