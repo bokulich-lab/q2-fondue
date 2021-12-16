@@ -16,6 +16,10 @@ from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs, set_up_logger
 
 
+class DownloadError(Exception):
+    pass
+
+
 def _validate_esearch_result(
         esearcher: es.Esearcher, run_ids: List[str]) -> bool:
     """Validates provided accession IDs using ESearch.

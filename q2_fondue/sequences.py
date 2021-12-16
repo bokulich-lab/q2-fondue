@@ -22,7 +22,8 @@ from q2_types.per_sample_sequences import \
 from qiime2 import Metadata
 from tqdm import tqdm
 
-from q2_fondue.utils import (_determine_id_type, handle_threaded_exception)
+from q2_fondue.utils import (_determine_id_type, handle_threaded_exception,
+                             DownloadError)
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
@@ -34,9 +35,6 @@ def _run_cmd_fasterq(
     """
     Helper function running fasterq-dump
     """
-    acc_sra_file = os.path.join(output_dir,
-                                acc + '.sra')
-
     cmd_prefetch = ["prefetch",
                     "-O", output_dir,
                     acc]
@@ -48,7 +46,8 @@ def _run_cmd_fasterq(
 
     result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
 
-    if os.path.isfile(acc_sra_file):
+    if os.path.isfile(os.path.join(output_dir, f'{acc}.sra')) or \
+            os.path.isdir(os.path.join(output_dir, acc)):
         result = subprocess.run(cmd_fasterq, text=True,
                                 capture_output=True)
     return result
@@ -287,6 +286,13 @@ def get_sequences(
         # processing downloaded files
         ls_single_files, ls_paired_files = _process_downloaded_sequences(
             tmpdirname)
+
+        # make sure either of the sequences were downloaded
+        if len(ls_single_files) == 0 and len(ls_paired_files) == 0:
+            raise DownloadError(
+                'Neither single- nor paired-end sequences could '
+                'be downloaded. Please check your accession IDs.'
+            )
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(ls_single_files) == 0:
