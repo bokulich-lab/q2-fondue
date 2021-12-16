@@ -24,6 +24,13 @@ qiime dev refresh-cache
 The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
 
+## Space requirements
+
+Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.
+
+To find out which temporary directory is used by Qiime 2, you can run `echo $TMPDIR` in your terminal. If this command returns an empty string, your current working directory equals the assigned temporary directory. To re-assign your temporary directory to a location of choice, run `export TMPDIR=Location/of/choice`. 
+
+
 ## Usage
 ### Fetching metadata
 
