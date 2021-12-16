@@ -101,6 +101,9 @@ def _run_fasterq_dump_for_all(
                     ["Storage exhausted."]
                 failed_ids = dict(zip(failed_ids_keys, failed_ids_error))
                 # break retries
+                logger.info(
+                    'Available storage was exhausted - there will be no '
+                    'more retries')
                 retries = -1
                 break
 
