@@ -96,23 +96,18 @@ class TestUtils4SequenceFetching(SequenceTests):
                                                    'testaccA.sra'])
 
         ls_acc_ids = ['testaccA']
-
-        exp_prefetch = ['prefetch',
-                        '-O', test_temp_dir.name,
-                        ls_acc_ids[0]]
-        exp_fasterq = ['fasterq-dump',
-                       '-O', test_temp_dir.name,
-                       "-t", test_temp_dir.name,
-                       "-e", str(6),
-                       ls_acc_ids[0]]
+        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, logger=self.fake_logger
         )
         mock_subprocess.assert_has_calls([
-            call(exp_prefetch, text=True, capture_output=True),
-            call(exp_fasterq, text=True, capture_output=True)
+            call(exp_prefetch, text=True,
+                 capture_output=True, cwd=test_temp_dir.name),
+            call(exp_fasterq, text=True,
+                 capture_output=True, cwd=test_temp_dir.name)
         ])
 
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
@@ -121,23 +116,18 @@ class TestUtils4SequenceFetching(SequenceTests):
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
         ls_acc_ids = ['testaccA']
-
-        exp_prefetch = ['prefetch',
-                        '-O', test_temp_dir.name,
-                        ls_acc_ids[0]]
-        exp_fasterq = ['fasterq-dump',
-                       '-O', test_temp_dir.name,
-                       "-t", test_temp_dir.name,
-                       "-e", str(6),
-                       ls_acc_ids[0]]
+        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, logger=self.fake_logger
         )
         mock_subprocess.assert_has_calls([
-            call(exp_prefetch, text=True, capture_output=True),
-            call(exp_fasterq, text=True, capture_output=True)
+            call(exp_prefetch, text=True,
+                 capture_output=True, cwd=test_temp_dir.name),
+            call(exp_fasterq, text=True,
+                 capture_output=True, cwd=test_temp_dir.name)
         ])
 
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
@@ -145,23 +135,19 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA']
+        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
-        exp_prefetch = ['prefetch',
-                        '-O', test_temp_dir.name,
-                        ls_acc_ids[0]]
-        exp_fasterq = ['fasterq-dump',
-                       '-O', test_temp_dir.name,
-                       "-t", test_temp_dir.name,
-                       "-e", str(6),
-                       ls_acc_ids[0]]
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=0, logger=self.fake_logger
             )
             mock_subprocess.assert_has_calls([
-                call(exp_prefetch, text=True, capture_output=True),
-                call(exp_fasterq, text=True, capture_output=True)
+                call(exp_prefetch, text=True,
+                     capture_output=True, cwd=test_temp_dir.name),
+                call(exp_fasterq, text=True,
+                     capture_output=True, cwd=test_temp_dir.name)
             ])
             self.assertEqual(len(failed_ids), 0)
             self.assertIn(
@@ -429,7 +415,8 @@ class TestSequenceFetching(SequenceTests):
         test_temp_md = self.prepare_metadata('testaccBC')
 
         mock_subprocess.side_effect = [
-            MagicMock(returncode=0),
+            MagicMock(returncode=0), MagicMock(returncode=0),
+            MagicMock(returncode=1, stderr='Some error'),
             MagicMock(returncode=1, stderr='Some error')
         ]
 

@@ -45,7 +45,7 @@ class TestGetAll(SequenceTests):
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
             [f'{acc_id}.fastq', f'{acc_id}.sra'])
-        mock_subprocess.return_value = MagicMock(stderr=None)
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         # run pipeline
         fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
@@ -62,11 +62,10 @@ class TestGetAll(SequenceTests):
 
         # function call assertions for get_sequences within
         mock_subprocess.assert_has_calls([
-            call(['prefetch', '-O', ANY, acc_id],
-                 text=True, capture_output=True),
-            call(['fasterq-dump', '-O', ANY,
-                  '-t', ANY, '-e', '1', acc_id],
-                 text=True, capture_output=True)
+            call(['prefetch', '-O', acc_id,  acc_id],
+                 text=True, capture_output=True, cwd=ANY),
+            call(['fasterq-dump', '-e', '1', acc_id],
+                 text=True, capture_output=True, cwd=ANY)
         ])
 
 

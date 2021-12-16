@@ -32,25 +32,19 @@ threading.excepthook = handle_threaded_exception
 
 
 def _run_cmd_fasterq(
-        acc: str, output_dir: str, threads: int, logger):
+        acc: str, output_dir: str, threads: int):
     """
     Helper function running fasterq-dump
     """
-    cmd_prefetch = ["prefetch",
-                    "-O", output_dir,
-                    acc]
-    cmd_fasterq = ["fasterq-dump",
-                   "-O", output_dir,
-                   "-t", output_dir,
-                   "-e", str(threads),
-                   acc]
+    cmd_prefetch = ['prefetch', '-O', acc, acc]
+    cmd_fasterq = ['fasterq-dump', '-e', str(threads), acc]
 
-    result = subprocess.run(cmd_prefetch, text=True, capture_output=True)
+    result = subprocess.run(
+        cmd_prefetch, text=True, capture_output=True, cwd=output_dir)
 
-    if os.path.isfile(os.path.join(output_dir, f'{acc}.sra')) or \
-            os.path.isdir(os.path.join(output_dir, acc)):
-        result = subprocess.run(cmd_fasterq, text=True,
-                                capture_output=True)
+    if result.returncode == 0:
+        result = subprocess.run(
+            cmd_fasterq, text=True, capture_output=True, cwd=output_dir)
     return result
 
 
@@ -85,7 +79,7 @@ def _run_fasterq_dump_for_all(
                 f'(attempt {-retries + init_retries + 1})'
             )
             result = _run_cmd_fasterq(
-                acc, tmpdirname, threads, logger)
+                acc, tmpdirname, threads)
             if result.returncode != 0:
                 failed_ids[acc] = result.stderr
 
@@ -97,7 +91,7 @@ def _run_fasterq_dump_for_all(
                 index_next_acc = list(pbar).index(acc)+1
                 failed_ids_keys = list(pbar)[index_next_acc:]
                 failed_ids_error = len(failed_ids_keys) * \
-                    ["Storage exhausted."]
+                    ['Storage exhausted.']
                 failed_ids = dict(zip(failed_ids_keys, failed_ids_error))
                 # break retries
                 logger.info(
