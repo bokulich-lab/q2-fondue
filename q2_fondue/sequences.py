@@ -85,7 +85,7 @@ def _run_fasterq_dump_for_all(
             )
             result = _run_cmd_fasterq(
                 acc, tmpdirname, threads, logger)
-            if result.stderr:
+            if result.returncode != 0:
                 failed_ids[acc] = result.stderr
 
         if len(failed_ids.keys()) > 0 and retries > 0:
