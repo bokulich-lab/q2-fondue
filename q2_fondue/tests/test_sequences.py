@@ -218,6 +218,51 @@ class TestUtils4SequenceFetching(SequenceTests):
                 cm.output
             )
 
+    @patch('shutil.disk_usage')
+    @patch('subprocess.run')
+    def test_run_fasterq_dump_for_all_space_error(self, mock_subprocess,
+                                                  mock_disk_usage):
+        # test checking that space availability break procedure works
+        mock_disk_usage.return_value = (0, 0, 10)
+        test_temp_dir = MockTempDir()
+        ls_acc_ids = ['testaccA', 'testaccERROR']
+
+        with self.assertLogs('test_log', level='INFO') as cm:
+            failed_ids = _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=2, logger=self.fake_logger
+            )
+            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertListEqual(failed_ids, ['testaccERROR'])
+            self.assertIn(
+                'INFO:test_log:Download finished. 1 out of 2 runs failed to '
+                'fetch. Below are the error messages of the first 5 failed '
+                'runs:\nID=testaccERROR, Error=Storage exhausted.',
+                cm.output
+            )
+
+    @patch('shutil.disk_usage')
+    @patch('subprocess.run')
+    def test_run_fasterq_dump_for_all_no_last_space_error(self,
+                                                          mock_subprocess,
+                                                          mock_disk_usage):
+        # test checking that space availability break procedure does not cause
+        # issues when triggered after last run ID
+        mock_disk_usage.return_value = (0, 0, 10)
+        test_temp_dir = MockTempDir()
+        ls_acc_ids = ['testaccA']
+
+        with self.assertLogs('test_log', level='INFO') as cm:
+            failed_ids = _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=2, logger=self.fake_logger
+            )
+            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertListEqual(failed_ids, [])
+            self.assertIn(
+                'INFO:test_log:Download finished.', cm.output
+            )
+
     def test_process_downloaded_sequences(self):
         ls_fastq_files = ['testaccA.fastq',
                           'testacc_1.fastq', 'testacc_2.fastq']
