@@ -85,7 +85,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         **common_params,
-        'retries': Int % Range(1, None)
+        'retries': Int % Range(0, None)
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -112,7 +112,7 @@ plugin.pipelines.register_function(
     inputs={},
     parameters={
         **common_params,
-        'retries': Int % Range(1, None)
+        'retries': Int % Range(0, None)
     },
     outputs=[
         ('metadata', SRAMetadata),

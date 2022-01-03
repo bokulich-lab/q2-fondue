@@ -209,7 +209,7 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_run_fasterq_dump_for_all_space_error(self, mock_subprocess,
                                                   mock_disk_usage):
         # test checking that space availability break procedure works
-        mock_disk_usage.return_value = (0, 0, 10)
+        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
@@ -234,7 +234,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                                                           mock_disk_usage):
         # test checking that space availability break procedure does not cause
         # issues when triggered after last run ID
-        mock_disk_usage.return_value = (0, 0, 10)
+        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['testaccA']
 

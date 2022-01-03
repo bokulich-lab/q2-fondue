@@ -70,6 +70,8 @@ def _run_fasterq_dump_for_all(
     )
     accession_ids_init = accession_ids.copy()
     init_retries = retries
+    _, _, init_free_space = shutil.disk_usage(tmpdirname)
+
     while (retries >= 0) and (len(accession_ids) > 0):
         failed_ids = {}
         pbar = tqdm(sorted(accession_ids))
@@ -85,8 +87,10 @@ def _run_fasterq_dump_for_all(
 
             # check space availability
             _, _, free_space = shutil.disk_usage(tmpdirname)
-            # current threshold of 2GB set for now - can be changed
-            if (free_space/1024**3) <= 2:
+            used_seq_space = init_free_space - free_space
+            # current space threshold: 35% of fetched seq space as evaluated
+            # from 6 random run and ProjectIDs
+            if free_space < (0.35 * used_seq_space):
                 # save runIDs that could not be downloaded w error msg
                 index_next_acc = list(pbar).index(acc)+1
                 failed_ids_keys = list(pbar)[index_next_acc:]
