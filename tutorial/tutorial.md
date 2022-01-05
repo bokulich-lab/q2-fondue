@@ -4,9 +4,13 @@
 
 A QIIME 2 plugin enabling an easy download of high throughput sequencing data and the corresponding metadata. 
 
-With this easy-to-use plugin you have plenty of deposited sequencing data at your fingertips! 
-Want to set your own data in comparison to other published datasets or start off with a meta-analysis? 
-_q2-fondue_ is here to help! 
+With this easy-to-use plugin you have plenty of deposited sequencing data at your fingertips! Want to set your own data in comparison to other published datasets or start off with a meta-analysis? _q2-fondue_ is here to help! :raised_hands:
+
+Why use _q2-fondue_? 
+* incorporated provenance tracking
+* direct integration with QIIME 2 sequence analysis pipeline
+* support for multiple user interfaces
+* no need to navigate online databases to retrieve data 
 
 This tutorial will give you an insight into working with q2-fondue and how the artifacts can further be used. 
 
@@ -52,12 +56,10 @@ Since the launch of BioProject IDs in 2011, this accession number is commonly re
 Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), an open-source microbial study management platform. While all data deposited on Qiita is automatically deposited into ENA-EBI, one can also use the QIIME 2 plugin [redbiome](https://forum.qiime2.org/t/querying-for-public-microbiome-data-in-qiita-using-redbiom/4653) to query and obtain data and metadata from Qiita. 
 
 ## Using q2-fondue 
-After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, 
-we are super curious to explore the dataset this study was based. Luckily, with q2-fondue retrieving all 
-this data is a cakewalk!  
+After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, we are super curious to explore the dataset this study was based on. Luckily, with _q2-fondue_ retrieving all this data is a cakewalk! :cake:
 
 ## Installation
-q2-fondue will be installable as a conda package in the near future. 
+_q2-fondue_ will be installable as a conda package in the near future. 
 For now, we install it with pip into an existing QIIME 2 environment. 
 
 > _Note:_ the current q2-fondue version supports QIIME 2 **v2021.4** or higher - get the latest QIIME 2 release in the [Installation guide](docs.qiime2.org). 
@@ -68,6 +70,10 @@ conda activate qiime2-2021.8
 
 conda install -c conda-forge -c bioconda -c defaults \
   "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
+```
+
+Then install _q2-fondue_:
+  "entrezpy>=2.1.2" "sra-tools==2.11.0" xmltodict
 ```
 
 Then install q2-fondue:
@@ -89,7 +95,7 @@ mkdir qiime2-fondue-tutorial
 cd qiime2-fondue-tutorial
 ```
 
-To run q2-fondue we need a TSV file containing the accession numbers of the desired Runs or BioProjects. 
+To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs or BioProjects. 
 This metadata file has to contain a header QIIME 2 can recognize! We can for example put *id* as the column name. 
 To learn more about other options for identifiers used in QIIME 2 or learn about metadata in general, check out 
 the [QIIME 2 metadata documentation](docs.qiime2.org).
@@ -114,24 +120,31 @@ and to run requests for very large jobs on the weekend (find more info on this i
 Therefore NCBI requires a **valid email address**, enabling them to get in touch in case of an issue 
 with downloading too much data. 
 
+> *Tip:* We recommend always adding the `--verbose` flag when running _q2-fondue_. Depending on the amount of data we are retrieving, the download might take some time and it's is easier to follow the process with the nice download progress bar, as well as to catch potential issues with internet connectivity. 
+
+
 ```shell
 qiime fondue get-all \
       --m-accession-ids-file metadata_file_runs.tsv \
       --p-email your_email@somewhere.com \
+      --p-retries 3 \
+      --verbose \
       --output-dir fondue-output
 ```
 
-> *Note*: Depending on the amount of data we are retrieving this might take some time! 
+> *Note*: The optional parameter `--p-retries` specifies the number of times _q2-fondue_ is retrying to fetch the sequencing data and is set to 3 by default. If you notice that some of the desired data is not properly downloaded you might increase this number or try refetching manually (see [Troubleshooting](#manually-refetching-missing-sequencing-data)). 
 
 Now let's have a look at the output files! 
 
-In the `fondue-output` directory we can find three files:
-* *metadata.qza* of semantic type `SRAMetadata`
-* *paired_reads.qza* of semantic type `SampleData[PairedEndSequencesWithQuality]`
+In the `fondue-output` directory we can find four files:
+* *metadata.qza* of semantic type `SRAMetadata`, containing the metadata
+* *paired_reads.qza* of semantic type `SampleData[PairedEndSequencesWithQuality]` 
 * *single_reads.qza* of semantic type `SampleData[SequencesWithQuality]`
+* *failed_runs.qza* of semantic type `SRAFailedIDs`, containing the IDs of samples that failed to download (see [Troubleshooting](#manually-refetching-missing-sequencing-data))
 
-It is important to know that q2-fondue always generates two files, one for paired end and one for single end reads, 
-however only one of them contains the sequencing data we want. 
+It is important to know that _q2-fondue_ always generates **two** files, one for paired end and one for single end reads, 
+however most of the time only one of them contains the sequencing data we want (unless we are fetching sequencing data from various BioProjects at the same time).
+
 How can we now find out which raw sequence file we should be using? These are your options:
 
 ⇨ read the methods section of the original publication to see whether they used paired or single end sequencing.
@@ -142,9 +155,42 @@ How can we now find out which raw sequence file we should be using? These are yo
 
 ⇨ when running `qiime fondue get-all`, add the `--verbose` flag to automatically get the `UserWarning: No paired-read sequences available for these sample IDs`.
 
-In this case we will therefore continue with the *single_reads.qza*! 
+In this case we will therefore [continue](#what-now) with the *single_reads.qza*! :fire:
+
+## Other q2-fondue functionalities
+### Fetching **only** metadata
+We might just want to gain more insight into the metadata of a specific study. 
+Also for this action we can provide a TSV file with accession number of BioProject or 
+individual Runs. 
+
+```shell
+qiime fondue get-metadata \
+      --m-accession-ids-file metadata_file.tsv \
+      --p-n-jobs 1 \
+      --p-email your_email@somewhere.com \
+      --o-metadata output_metadata.qza
+```
+> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to sticking to 1.
+
+
+### Fetching **only** sequencing data
+
+In contrast, to only get the raw sequences associated with a number of runs, execute this command:
+```shell
+qiime fondue get-sequences \
+      --m-accession-ids-file metadata_file.tsv \
+      --verbose \
+      --o-single-reads output_dir_single \
+      --o-paired-reads output_dir_paired
+```
+
+> *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).  
+
 
 ## What now? 
+
+Here we show how the artifacts fetched through q2-fondue enable an easy entry to the QIIME 2 analysis pipeline, which is also further described in other tutorials. :sparkles:
+
 ### Check out the metadata 
 While the metadata files we use in QIIME 2 commonly are in the TSV format, 
 the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
@@ -160,10 +206,10 @@ qiime tools view metadata.qzv
 
 ### Using the sequencing data 
 Apart from avoiding the tedious search and manual downloading of these large piles of data, 
-one of the biggest advantage of using q2-fondue is the fact that the output is already a QIIME 2 
+one of the biggest advantages of using q2-fondue is the fact that the output is already a QIIME 2 
 artifact and we don't have to import it! 
 
-The retrieved single_reads.qza file can therefore instantly be summarized: 
+The retrieved single_reads.qza file can therefore be summarized directly: 
 ```shell
 qiime demux summarize \
       --i-data single_reads.qza \
@@ -171,8 +217,8 @@ qiime demux summarize \
 
 qiime tools view single_reads.qzv
 ```
-Have a look at the overall quality in the Interactive Quality Plot, as well as sample and 
-feature count and we can move straight on to denoising with DADA2 or Deblur. 
+Have a look at the overall quality in the Interactive Quality Plot and inspect the sample and 
+feature counts. Then, we can move on to denoising with DADA2 or Deblur. 
 
 For example:
 ```shell
@@ -184,7 +230,7 @@ qiime dada2 denoise-single \
       --o-denoising-stats dada2_stats.qza
 ```
 
-As mentioned above, the *metadata.qza* file can directly be used in the following analyis! 
+As mentioned above, the *metadata.qza* file can be used directly in the following analyis! :muscle:
 
 ```shell
 qiime feature-table summarize \
@@ -201,8 +247,7 @@ to the QIIME 2 analysis pipeline, which is further described in other tutorials.
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
-Also for this action we can provide a TSV file with accession number of BioProject or 
-individual Runs. 
+Similarly to the `get-all` action, `get-metadata` also requires a TSV file with accession number of BioProject or individual Runs as input. 
 
 ```shell
 qiime fondue get-metadata \
@@ -211,7 +256,7 @@ qiime fondue get-metadata \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
-> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to sticking to 1. 
+> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and a high value is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to a value of 1. 
 
 
 
@@ -223,6 +268,7 @@ qiime fondue get-sequences \
               --m-accession-ids-file metadata_file.tsv \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired
+              --o-failed-ids output_failed_ids
 ```
 
 ## Extracting the metadata or sequences artifacts 
@@ -246,13 +292,21 @@ qiime tools extract \
       --input-path single_reads.qza \
       --output-path single_reads
 ```
-Similarly, when extracting the sequencing data, we find the individual *fastq.gz* files of each Run as well as a
-*metadata.yml* and a *MANIFEST* file in the *data* directory. 
+Similarly, when extracting the sequencing data, we find the individual *fastq.gz* files of each Run as well as a *metadata.yml* and a *MANIFEST* file in the *data* directory. 
 
+## Troubleshooting 
+### Manually refetching missing sequencing data
+Occasionally sequencing data is not completely downloaded due to for example some server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download. 
+
+```shell
+qiime fondue get-sequences \
+      --m-accession-ids-file output_failed_ids.qza \
+      --o-single-reads refetched_single \
+      --o-paired-reads refetched_paired
+```
 
 ## References 
 
 [1] Clark K, Pruitt K, Tatusova T, et al. **BioProject**. 2013 Apr 28 [Updated 2013 Nov 11]. In: The NCBI Handbook [Internet]. 2nd edition. Bethesda (MD): National Center for Biotechnology Information (US); 2013-. Available from: https://www.ncbi.nlm.nih.gov/books/NBK169438/?report=classic
-
 
 [2] Bokulich N., et al. **Associations among Wine Grape Microbiome, Metabolome, and Fermentation Behavior Suggest Microbial Contribution to Regional Wine Characteristics**. 2016 Jun 14. In: ASM Journals / mBio / Vol. 7, No. 3. DOI: https://doi.org/10.1128/mBio.00631-16 
