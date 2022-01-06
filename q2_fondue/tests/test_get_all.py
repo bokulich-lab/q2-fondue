@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2016-2021, QIIME 2 development team.
+# Copyright (c) 2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -8,7 +8,7 @@
 
 import unittest
 import pandas as pd
-from unittest.mock import (patch, ANY)
+from unittest.mock import (patch, call, ANY, MagicMock)
 from q2_fondue.tests.test_sequences import SequenceTests
 from qiime2.metadata import Metadata
 from qiime2.plugins import fondue
@@ -21,9 +21,10 @@ class TestGetAll(SequenceTests):
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
+    @patch('time.sleep')
     @patch('subprocess.run')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_all_single(self, mock_tmpdir, mock_subprocess,
+    def test_get_all_single(self, mock_tmpdir, mock_subprocess, mock_sleep,
                             mock_inquire, mock_efetcher,
                             mock_validation, mock_esearcher):
         """
@@ -43,7 +44,8 @@ class TestGetAll(SequenceTests):
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
-            [f'{acc_id}.fastq'])
+            [f'{acc_id}.fastq', f'{acc_id}.sra'])
+        mock_subprocess.return_value = MagicMock(returncode=0)
 
         # run pipeline
         fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
@@ -59,10 +61,12 @@ class TestGetAll(SequenceTests):
         mock_inquire.assert_called_once_with(ANY, [acc_id], 'INFO')
 
         # function call assertions for get_sequences within
-        mock_subprocess.assert_called_once_with(
-            ['fasterq-dump', '-O', ANY, '-t', ANY, '-e', '1', acc_id],
-            text=True, capture_output=True
-        )
+        mock_subprocess.assert_has_calls([
+            call(['prefetch', '-O', acc_id,  acc_id],
+                 text=True, capture_output=True, cwd=ANY),
+            call(['fasterq-dump', '-e', '1', acc_id],
+                 text=True, capture_output=True, cwd=ANY)
+        ])
 
 
 if __name__ == "__main__":

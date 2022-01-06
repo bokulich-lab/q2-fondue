@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -9,3 +9,4 @@
 from qiime2.core.type import SemanticType
 
 SRAMetadata = SemanticType('SRAMetadata')
+SRAFailedIDs = SemanticType('SRAFailedIDs')

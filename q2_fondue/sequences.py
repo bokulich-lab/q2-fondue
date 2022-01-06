@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -7,78 +7,127 @@
 # ----------------------------------------------------------------------------
 
 import os
-import glob
 import re
+import shutil
 import gzip
+import time
+import threading
 import warnings
 import itertools
 import tempfile
 import subprocess
 
+import pandas as pd
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from qiime2 import Metadata
+from tqdm import tqdm
 
-from q2_fondue.utils import (_determine_id_type)
+from q2_fondue.utils import (_determine_id_type, handle_threaded_exception,
+                             DownloadError)
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
+threading.excepthook = handle_threaded_exception
+
 
 def _run_cmd_fasterq(
-        acc: str, output_dir: str, threads: int, retries: int, logger):
+        acc: str, output_dir: str, threads: int):
     """
-    Helper function running fasterq-dump `retries` times
+    Helper function running fasterq-dump
     """
+    cmd_prefetch = ['prefetch', '-O', acc, acc]
+    cmd_fasterq = ['fasterq-dump', '-e', str(threads), acc]
 
-    logger.debug(f'Downloading sequences for run: {acc}...')
+    result = subprocess.run(
+        cmd_prefetch, text=True, capture_output=True, cwd=output_dir)
 
-    acc_fastq_single = os.path.join(output_dir,
-                                    acc + '.fastq')
-    acc_fastq_paired = os.path.join(output_dir,
-                                    acc + '_1.fastq')
-
-    cmd_fasterq = ["fasterq-dump",
-                   "-O", output_dir,
-                   "-t", output_dir,
-                   "-e", str(threads),
-                   acc]
-
-    # try "retries" times to get sequence data
-    while retries >= 0:
-        result = subprocess.run(cmd_fasterq, text=True, capture_output=True)
-
-        if not (os.path.isfile(acc_fastq_single) |
-                os.path.isfile(acc_fastq_paired)):
-            retries -= 1
-            logger.warning(f'Retrying to fetch sequences for run {acc} '
-                           f'({retries} retries left).')
-        else:
-            retries = -1
-
+    if result.returncode == 0:
+        result = subprocess.run(
+            cmd_fasterq, text=True, capture_output=True, cwd=output_dir)
     return result
 
 
 def _run_fasterq_dump_for_all(
-        sample_ids, tmpdirname, threads, retries, logger
-):
+        accession_ids, tmpdirname, threads, retries, logger
+) -> list:
     """
-    Helper function that runs fasterq-dump for all ids in study-ids
+    Helper function that runs prefetch & fasterq-dump
+        for all ids in accession_ids
+
+    Args:
+        accession_ids (list): List of all run IDs to be fetched.
+        tmpdirname (str): Name of temporary directory to store the data.
+        threads (int, default=1): Number of threads to be used in parallel.
+        retries (int, default=2): Number of retries to fetch sequences.
+        logger (logging.Logger): An instance of a logger.
+
+    Returns:
+        failed_ids (list): List of failed run IDs.
     """
     logger.info(
-        f'Downloading sequences for {len(sample_ids)} accession IDs...'
+        f'Downloading sequences for {len(accession_ids)} accession IDs...'
     )
-    for acc in sample_ids:
-        result = _run_cmd_fasterq(acc, tmpdirname, threads, retries, logger)
+    accession_ids_init = accession_ids.copy()
+    init_retries = retries
+    _, _, init_free_space = shutil.disk_usage(tmpdirname)
 
-        if len(glob.glob(f"{tmpdirname}/{acc}*.fastq")) == 0:
-            # raise error if all retries attempts failed
-            raise ValueError('{} could not be downloaded with the '
-                             'following fasterq-dump error '
-                             'returned: {}'
-                             .format(acc, result.stderr))
-        else:
-            continue
-    logger.info('Download finished.')
+    while (retries >= 0) and (len(accession_ids) > 0):
+        failed_ids = {}
+        pbar = tqdm(sorted(accession_ids))
+        for acc in pbar:
+            pbar.set_description(
+                f'Downloading sequences for run {acc} '
+                f'(attempt {-retries + init_retries + 1})'
+            )
+            result = _run_cmd_fasterq(
+                acc, tmpdirname, threads)
+            if result.returncode != 0:
+                failed_ids[acc] = result.stderr
+
+            # check space availability
+            _, _, free_space = shutil.disk_usage(tmpdirname)
+            used_seq_space = init_free_space - free_space
+            # current space threshold: 35% of fetched seq space as evaluated
+            # from 6 random run and ProjectIDs
+            if free_space < (0.35 * used_seq_space):
+                # save runIDs that could not be downloaded w error msg
+                index_next_acc = list(pbar).index(acc)+1
+                failed_ids_keys = list(pbar)[index_next_acc:]
+                failed_ids_error = len(failed_ids_keys) * \
+                    ['Storage exhausted.']
+                failed_ids = dict(zip(failed_ids_keys, failed_ids_error))
+                # break retries
+                logger.info(
+                    'Available storage was exhausted - there will be no '
+                    'more retries')
+                retries = -1
+                break
+
+        if len(failed_ids.keys()) > 0 and retries > 0:
+            # log & add time buffer if we retry
+            sleep_lag = (1/(retries+1))*180
+            ls_failed_ids = list(failed_ids.keys())
+            logger.info(
+                f'Retrying to download the following failed '
+                f'accession IDs in {round(sleep_lag/60,1)} '
+                f'min: {ls_failed_ids}'
+            )
+            time.sleep(sleep_lag)
+
+        accession_ids = failed_ids.copy()
+        retries -= 1
+
+    msg = 'Download finished.'
+    if failed_ids:
+        errors = '\n'.join(
+            [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
+        )
+        msg += f' {len(failed_ids.keys())} out of {len(accession_ids_init)} ' \
+               f'runs failed to fetch. Below are the error messages of the ' \
+               f"first 5 failed runs:\n{errors}"
+    logger.info(msg)
+    return list(failed_ids.keys())
 
 
 def _process_downloaded_sequences(output_dir):
@@ -92,7 +141,7 @@ def _process_downloaded_sequences(output_dir):
     # file names to list
     ls_single, ls_paired = [], []
 
-    for filename in os.listdir(output_dir):
+    for filename in sorted(os.listdir(output_dir)):
         if filename.endswith('_1.fastq'):
             # paired-end _1
             acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
@@ -103,12 +152,13 @@ def _process_downloaded_sequences(output_dir):
             acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R2_001.fastq' % acc
             ls_paired.append(new_name)
-        else:
+        elif filename.endswith('.fastq'):
             # single-reads
             acc = re.search(r'(.*)\.fastq$', filename).group(1)
             new_name = '%s_00_L001_R1_001.fastq' % acc
             ls_single.append(new_name)
-
+        else:
+            continue
         os.rename(os.path.join(output_dir, filename),
                   os.path.join(output_dir, new_name))
 
@@ -132,7 +182,8 @@ def _write_empty_casava(read_type, casava_out_path, logger):
     that are not available and saves empty casava file
     """
 
-    warn_msg = f'No {read_type}-read sequences available for these sample IDs.'
+    warn_msg = f'No {read_type}-read sequences available ' \
+               f'for these accession IDs.'
     warnings.warn(warn_msg)
     logger.warning(warn_msg)
 
@@ -204,17 +255,19 @@ def get_sequences(
         accession_ids: Metadata, email: str, retries: int = 2,
         n_jobs: int = 1, log_level: str = 'INFO',
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
-      CasavaOneEightSingleLanePerSampleDirFmt):
+      CasavaOneEightSingleLanePerSampleDirFmt,
+      pd.Series):
     """
     Fetches single-read and paired-end sequences based on provided
     accession IDs.
 
     Function uses SRA-toolkit fasterq-dump to get single-read and paired-end
     sequences of accession IDs. It supports multiple tries (`retries`)
-    and can use multiple `threads`.
+    and can use multiple `threads`. If download fails, function will create
+    an artifact with a list of failed IDs.
 
     Args:
-        accession_ids (Metadata): List of all sample IDs to be fetched.
+        accession_ids (Metadata): List of all run/project IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
         n_jobs (int, default=1): Number of threads to be used in parallel.
@@ -225,6 +278,8 @@ def get_sequences(
         respectively for provided accession IDs. If the provided accession IDs
         only contain one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
+
+        failed_ids (pd.Series): A list of run IDs that failed to download.
     """
     logger = set_up_logger(log_level, logger_name=__name__)
 
@@ -241,12 +296,19 @@ def get_sequences(
 
     with tempfile.TemporaryDirectory() as tmpdirname:
         # run fasterq-dump for all accessions
-        _run_fasterq_dump_for_all(
+        failed_ids = _run_fasterq_dump_for_all(
             accession_ids, tmpdirname, n_jobs, retries, logger)
 
         # processing downloaded files
         ls_single_files, ls_paired_files = _process_downloaded_sequences(
             tmpdirname)
+
+        # make sure either of the sequences were downloaded
+        if len(ls_single_files) == 0 and len(ls_paired_files) == 0:
+            raise DownloadError(
+                'Neither single- nor paired-end sequences could '
+                'be downloaded. Please check your accession IDs.'
+            )
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(ls_single_files) == 0:
@@ -262,4 +324,5 @@ def get_sequences(
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
 
-    return casava_out_single, casava_out_paired
+    return \
+        casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')

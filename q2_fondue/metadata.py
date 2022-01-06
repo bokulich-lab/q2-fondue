@@ -1,11 +1,12 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import threading
 from typing import List, Tuple
 
 import entrezpy.efetch.efetcher as ef
@@ -15,11 +16,14 @@ from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type
+    _validate_esearch_result, _determine_id_type, handle_threaded_exception
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger)
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+
+
+threading.excepthook = handle_threaded_exception
 
 
 def _efetcher_inquire(
@@ -29,7 +33,7 @@ def _efetcher_inquire(
 
     Args:
         efetcher (ef.Efetcher): A valid instance of an Entrezpy Efetcher.
-        run_ids (List[str]): List of all the sample IDs to be fetched.
+        run_ids (List[str]): List of all the run IDs to be fetched.
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
@@ -114,7 +118,8 @@ def get_metadata(
     will be informed on which IDs require checking.
 
     Args:
-        accession_ids (Metadata): List of all the sample IDs to be fetched.
+        accession_ids (Metadata): List of all the run/project IDs
+            to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
@@ -128,7 +133,7 @@ def get_metadata(
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
 
-    # figure out if we're dealing with sample or run ids
+    # figure out if we're dealing with project or run ids
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':
@@ -138,3 +143,41 @@ def get_metadata(
         return _get_project_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+
+
+def merge_metadata(
+        metadata: pd.DataFrame
+) -> pd.DataFrame:
+    """Merges provided multiple metadata into a single metadata object.
+
+    Args:
+        metadata (pd.DataFrame): List of metadata DataFrames to be merged.
+
+    Returns:
+        metadata_merged (pd.DataFrame): Final metadata DataFrame.
+    """
+    logger = set_up_logger('INFO', logger_name=__name__)
+    logger.info('Merging %s metadata DataFrames.', len(metadata))
+
+    metadata_merged = pd.concat(metadata, axis=0, join='outer')
+
+    records_count = metadata_merged.shape[0]
+    metadata_merged.drop_duplicates(inplace=True)
+    if records_count != metadata_merged.shape[0]:
+        logger.info(
+            '%s duplicate record(s) found in the metadata '
+            'were dropped.', records_count - metadata_merged.shape[0]
+        )
+
+    if len(metadata_merged.index) != len(set(metadata_merged.index)):
+        logger.warning(
+            'Records with same IDs but differing values were found in '
+            'the metadata and will not be removed.'
+        )
+
+    logger.info(
+        'Merged metadata DataFrame has %s rows and %s columns.',
+        metadata_merged.shape[0], metadata_merged.shape[1]
+    )
+
+    return metadata_merged

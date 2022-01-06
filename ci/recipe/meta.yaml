@@ -21,6 +21,7 @@ requirements:
   run:
     - python {{ python }}
     - xmltodict
+    - tqdm >= 4.62.3
     - entrezpy >=2.1.2
     - sra-tools >= 2.11.0
     - q2-types {{ release }}.*

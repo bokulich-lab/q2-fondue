@@ -1,13 +1,19 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2021, QIIME 2 development team.
+# Copyright (c) 2022, QIIME 2 development team.
 #
 # Distributed under the terms of the Modified BSD License.
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from ._format import SRAMetadataFormat, SRAMetadataDirFmt
-from ._type import SRAMetadata
+from ._format import (
+    SRAMetadataFormat, SRAMetadataDirFmt,
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+)
+from ._type import SRAMetadata, SRAFailedIDs
 
 
-__all__ = ['SRAMetadataFormat', 'SRAMetadataDirFmt', 'SRAMetadata']
+__all__ = [
+    'SRAMetadataFormat', 'SRAMetadataDirFmt', 'SRAMetadata',
+    'SRAFailedIDsFormat', 'SRAFailedIDsDirFmt', 'SRAFailedIDs'
+]
