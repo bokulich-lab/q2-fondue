@@ -69,7 +69,7 @@ First, activate your QIIME 2 environment and install relevant dependencies:
 conda activate qiime2-2021.8
 
 conda install -c conda-forge -c bioconda -c defaults \
-  "entrezpy>=2.1.2" "sra-tools==2.9.6" xmltodict
+ "entrezpy>=2.1.2" "sra-tools==2.11.0" xmltodict
 ```
 
 Then install _q2-fondue_:
