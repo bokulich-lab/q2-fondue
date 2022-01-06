@@ -73,10 +73,6 @@ conda install -c conda-forge -c bioconda -c defaults \
 ```
 
 Then install _q2-fondue_:
-  "entrezpy>=2.1.2" "sra-tools==2.11.0" xmltodict
-```
-
-Then install q2-fondue:
 ```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 ```
