@@ -33,9 +33,7 @@ threading.excepthook = handle_threaded_exception
 
 def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int):
-    """
-    Helper function running fasterq-dump
-    """
+    """Runs fasterq-dump command on a single accession."""
     cmd_prefetch = ['prefetch', '-O', acc, acc]
     cmd_fasterq = ['fasterq-dump', '-e', str(threads), acc]
 
@@ -48,12 +46,20 @@ def _run_cmd_fasterq(
     return result
 
 
+def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
+    """Finds remaining ids and appends storage exhaustion error message."""
+    index_next_acc = list(progress_bar).index(acc_id) + 1
+    remaining_ids = list(progress_bar)[index_next_acc:]
+    remaining_ids = dict(zip(
+        remaining_ids, len(remaining_ids) * ['Storage exhausted.']
+    ))
+    return remaining_ids
+
+
 def _run_fasterq_dump_for_all(
         accession_ids, tmpdirname, threads, retries, logger
 ) -> list:
-    """
-    Helper function that runs prefetch & fasterq-dump
-        for all ids in accession_ids
+    """Runs prefetch & fasterq-dump for all ids in accession_ids.
 
     Args:
         accession_ids (list): List of all run IDs to be fetched.
@@ -84,6 +90,7 @@ def _run_fasterq_dump_for_all(
                 acc, tmpdirname, threads)
             if result.returncode != 0:
                 failed_ids[acc] = result.stderr
+            pbar.postfix = f'{len(failed_ids)} failed'
 
             # check space availability
             _, _, free_space = shutil.disk_usage(tmpdirname)
@@ -91,14 +98,9 @@ def _run_fasterq_dump_for_all(
             # current space threshold: 35% of fetched seq space as evaluated
             # from 6 random run and ProjectIDs
             if free_space < (0.35 * used_seq_space):
-                # save runIDs that could not be downloaded w error msg
-                index_next_acc = list(pbar).index(acc)+1
-                failed_ids_keys = list(pbar)[index_next_acc:]
-                failed_ids_error = len(failed_ids_keys) * \
-                    ['Storage exhausted.']
-                failed_ids = dict(zip(failed_ids_keys, failed_ids_error))
-                # break retries
-                logger.info(
+                failed_ids.update(
+                    _get_remaining_ids_with_storage_error(acc, pbar))
+                logger.warning(
                     'Available storage was exhausted - there will be no '
                     'more retries.')
                 retries = -1
@@ -109,9 +111,8 @@ def _run_fasterq_dump_for_all(
             sleep_lag = (1/(retries+1))*180
             ls_failed_ids = list(failed_ids.keys())
             logger.info(
-                f'Retrying to download the following failed '
-                f'accession IDs in {round(sleep_lag/60,1)} '
-                f'min: {ls_failed_ids}'
+                f'Retrying to download the following failed accession IDs in '
+                f'{round(sleep_lag/60,1)} min: {ls_failed_ids}'
             )
             time.sleep(sleep_lag)
 
@@ -131,10 +132,10 @@ def _run_fasterq_dump_for_all(
 
 
 def _process_downloaded_sequences(output_dir):
-    """
-    Helper function that renames single-read and
-    paired-end sequences according to casava file format
-    and outputs list of single-read and paired-end sequence
+    """Processes downloaded sequences and returns a list of processed files.
+
+    Renames single-read and paired-end sequences according to casava file
+    format and outputs list of single-read and paired-end sequence
     filenames.
     """
     # rename all files to casava format & save single and paired
@@ -177,11 +178,11 @@ def _read_fastq_seqs(filepath):
 
 
 def _write_empty_casava(read_type, casava_out_path, logger):
-    """
-    Helper function that warns about `read_type` sequences
-    that are not available and saves empty casava file
-    """
+    """Writes empty casava file to output directory.
 
+    Warns about `read_type` sequences that are not available
+    and saves empty casava file.
+    """
     warn_msg = f'No {read_type}-read sequences available ' \
                f'for these accession IDs.'
     warn(warn_msg)
@@ -202,10 +203,10 @@ def _write_empty_casava(read_type, casava_out_path, logger):
 
 def _write2casava_dir_single(
         tmpdirname, casava_result_path, ls_files_2_consider):
-    """
-    Helper function that writes downloaded sequence files
-    from tmpdirname to casava_result_path following single
-    read sequence rules
+    """Writes single-read files to casava directory.
+
+    Downloaded sequence files will be copied from tmpdirname to
+    casava_result_path following single read sequence rules.
     """
     # Edited from original in: q2_demux._subsample.subsample_single
     for filename in os.listdir(tmpdirname):
@@ -221,10 +222,10 @@ def _write2casava_dir_single(
 
 def _write2casava_dir_paired(
         tmpdirname, casava_result_path, ls_files_2_consider):
-    """
-    Helper function that writes downloaded sequence files
-    from tmpdirname to casava_result_path following paired-end
-    sequence rules
+    """Writes paired-end files to casava directory.
+
+    Downloaded sequence files will be copied from tmpdirname to
+    casava_result_path following paired-end sequence rules.
     """
     # Edited from original in: q2_demux._subsample.subsample_paired
     # ensure correct order of file names:

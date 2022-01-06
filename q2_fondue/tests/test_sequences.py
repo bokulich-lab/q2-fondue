@@ -179,8 +179,9 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess,
-                                                   mock_sleep):
+    def test_run_fasterq_dump_for_all_error_twoids(
+            self, mock_subprocess, mock_sleep
+    ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA', 'testaccERROR']
@@ -205,12 +206,12 @@ class TestUtils4SequenceFetching(SequenceTests):
                 cm.output
             )
 
-    @patch('shutil.disk_usage')
-    @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_space_error(self, mock_subprocess,
-                                                  mock_disk_usage):
+    @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
+    @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    def test_run_fasterq_dump_for_all_space_error(
+            self, mock_subprocess, mock_disk_usage
+    ):
         # test checking that space availability break procedure works
-        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
@@ -219,7 +220,8 @@ class TestUtils4SequenceFetching(SequenceTests):
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, logger=self.fake_logger
             )
-            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertEqual(mock_subprocess.call_count, 2)
+            self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertListEqual(failed_ids, ['testaccERROR'])
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
@@ -228,14 +230,13 @@ class TestUtils4SequenceFetching(SequenceTests):
                 cm.output
             )
 
-    @patch('shutil.disk_usage')
-    @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_no_last_space_error(self,
-                                                          mock_subprocess,
-                                                          mock_disk_usage):
+    @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
+    @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    def test_run_fasterq_dump_for_all_no_last_space_error(
+            self, mock_subprocess, mock_disk_usage
+    ):
         # test checking that space availability break procedure does not cause
         # issues when triggered after last run ID
-        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['testaccA']
 
@@ -244,10 +245,47 @@ class TestUtils4SequenceFetching(SequenceTests):
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, logger=self.fake_logger
             )
-            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertEqual(mock_subprocess.call_count, 2)
+            self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertListEqual(failed_ids, [])
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
+            )
+
+    @patch('shutil.disk_usage')
+    @patch('time.sleep')
+    @patch('subprocess.run')
+    def test_run_fasterq_dump_for_all_error_and_storage_exhausted(
+            self, mock_subprocess, mock_sleep, mock_disk_usage
+    ):
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
+        ls_acc_ids = ['testaccA', 'testaccERROR', 'testaccF', 'testaccNOSPACE']
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0), MagicMock(returncode=0),
+            MagicMock(returncode=1, stderr='Error 1'),
+            MagicMock(returncode=0), MagicMock(returncode=0)
+        ]
+        mock_disk_usage.side_effect = [
+            (0, 0, 10), (0, 0, 10), (0, 0, 10), (0, 0, 2)
+        ]
+
+        with self.assertLogs('test_log', level='INFO') as cm:
+            failed_ids = _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=1, logger=self.fake_logger
+            )
+            # check retry procedure:
+            self.assertEqual(mock_subprocess.call_count, 5)
+            self.assertListEqual(
+                failed_ids, ['testaccERROR', 'testaccNOSPACE']
+            )
+            self.assertIn(
+                'INFO:test_log:Download finished. 2 out of 4 runs failed to '
+                'fetch. Below are the error messages of the first 5 failed '
+                'runs:\nID=testaccERROR, Error=Error 1'
+                '\nID=testaccNOSPACE, Error=Storage exhausted.',
+                cm.output
             )
 
     def test_process_downloaded_sequences(self):
