@@ -25,7 +25,7 @@ from q2_fondue.sequences import (get_sequences,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
                                  _write2casava_dir_single,
-                                 _write2casava_dir_paired, merge_seqs)
+                                 _write2casava_dir_paired, combine_samples)
 from q2_fondue.utils import DownloadError
 
 
@@ -455,12 +455,12 @@ class TestSequenceMerging(SequenceTests):
             CasavaOneEightSingleLanePerSampleDirFmt
         ).view(CasavaOneEightSingleLanePerSampleDirFmt)
 
-    def test_merge_seqs_single(self):
+    def test_combine_samples_single(self):
         seqs = [
             self.load_seq_artifact('single', 1),
             self.load_seq_artifact('single', 2)
         ]
-        obs_seqs = merge_seqs(seqs=seqs)
+        obs_seqs = combine_samples(seqs=seqs)
         exp_ids = pd.Index(
             ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
         )
@@ -470,12 +470,12 @@ class TestSequenceMerging(SequenceTests):
         pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
         self.assertFalse(all(obs_seqs.manifest.reverse))
 
-    def test_merge_seqs_paired(self):
+    def test_combine_samples_paired(self):
         seqs = [
             self.load_seq_artifact('paired', 1),
             self.load_seq_artifact('paired', 2)
         ]
-        obs_seqs = merge_seqs(seqs=seqs)
+        obs_seqs = combine_samples(seqs=seqs)
         exp_ids = pd.Index(
             ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
         )
@@ -485,13 +485,22 @@ class TestSequenceMerging(SequenceTests):
         pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
         self.assertTrue(all(obs_seqs.manifest.reverse))
 
-    def test_merge_seqs_single_duplicated(self):
+    def test_combine_samples_single_duplicated_error(self):
+        seqs = [self.load_seq_artifact('single', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_samples(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_single_duplicated_warning(self):
         seqs = [self.load_seq_artifact('single', 1)] * 2
 
         with self.assertWarnsRegex(
-                Warning, 'Duplicate sequence files.*SEQID1, SEQID2.'
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
         ):
-            obs_seqs = merge_seqs(seqs=seqs)
+            obs_seqs = combine_samples(seqs=seqs, on_duplicates='warn')
             exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
 
             self.assertIsInstance(
@@ -500,13 +509,22 @@ class TestSequenceMerging(SequenceTests):
             pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
             self.assertFalse(all(obs_seqs.manifest.reverse))
 
-    def test_merge_seqs_paired_duplicated(self):
+    def test_combine_samples_paired_duplicated_error(self):
+        seqs = [self.load_seq_artifact('paired', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_samples(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_paired_duplicated_warning(self):
         seqs = [self.load_seq_artifact('paired', 1)] * 2
 
         with self.assertWarnsRegex(
-                Warning, 'Duplicate sequence files.*SEQID1, SEQID2.'
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
         ):
-            obs_seqs = merge_seqs(seqs=seqs)
+            obs_seqs = combine_samples(seqs=seqs, on_duplicates='warn')
             exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
 
             self.assertIsInstance(

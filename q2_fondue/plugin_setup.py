@@ -20,7 +20,7 @@ from qiime2.plugin import (
 from q2_fondue import __version__
 from q2_fondue.get_all import get_all
 from q2_fondue.metadata import get_metadata, merge_metadata
-from q2_fondue.sequences import get_sequences, merge_seqs
+from q2_fondue.sequences import get_sequences, combine_samples
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
     SRAFailedIDsFormat, SRAFailedIDsDirFmt
@@ -156,19 +156,25 @@ plugin.methods.register_function(
 
 T = TypeMatch([SequencesWithQuality, PairedEndSequencesWithQuality])
 plugin.methods.register_function(
-    function=merge_seqs,
+    function=combine_samples,
     inputs={'seqs': List[SampleData[T]]},
-    parameters={},
-    outputs=[('merged_seqs', SampleData[T])],
+    parameters={'on_duplicates': Str % Choices(['error', 'warn'])},
+    outputs=[('combined_seqs', SampleData[T])],
     input_descriptions={
-        'seqs': 'Sequence artifacts to be merged together.'
+        'seqs': 'Sequence artifacts to be combined together.'
     },
-    parameter_descriptions={},
+    parameter_descriptions={
+        'on_duplicates': 'Preferred behaviour when duplicated sequence IDs '
+                         'are encountered: "warn" displays a warning and '
+                         'continues to combining deduplicated samples while '
+                         '"error" raises an error and aborts further '
+                         'execution.'
+    },
     output_descriptions={
-        'merged_seqs': 'Sequences merged from all input artifacts.',
+        'combined_seqs': 'Sequences combined from all input artifacts.',
     },
-    name='Merge sequences from multiple artifacts.',
-    description='Merge paired- or single-end sequences from multiple '
+    name='Combine sequences from multiple artifacts.',
+    description='Combine paired- or single-end sequences from multiple '
                 'artifacts, for example obtained by re-fetching failed '
                 'downloads.',
     citations=[]

@@ -100,7 +100,7 @@ def _run_fasterq_dump_for_all(
                 # break retries
                 logger.info(
                     'Available storage was exhausted - there will be no '
-                    'more retries')
+                    'more retries.')
                 retries = -1
                 break
 
@@ -328,19 +328,24 @@ def get_sequences(
         casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')
 
 
-def merge_seqs(
-        seqs: CasavaOneEightSingleLanePerSampleDirFmt
+def combine_samples(
+        seqs: CasavaOneEightSingleLanePerSampleDirFmt,
+        on_duplicates: str = 'error',
 ) -> CasavaOneEightSingleLanePerSampleDirFmt:
     """Merges paired- or single-end sequences from multiple artifacts into one.
 
     Args:
         seqs (CasavaOneEightSingleLanePerSampleDirFmt): A list of paired-
             or single-end sequences.
+        on_duplicates (str, default='error'): If 'warn', function will warn
+            about duplicated sequence IDs found in the input artifacts and
+            proceed to merging inputs. If 'error', a ValueError will be raised.
 
     Returns:
         A directory containing sequences from all artifacts.
     """
     casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
+    error_on_duplicates = True if on_duplicates == 'error' else False
 
     all_files = pd.concat(
         objs=[seq_artifact.manifest for seq_artifact in seqs], axis=0
@@ -349,12 +354,13 @@ def merge_seqs(
     # check for duplicates
     duplicated = all_files.index.duplicated(keep='first')
     if any(duplicated):
-        warn(
-            'Duplicate sequence files were found for the  '
-            'following IDs - duplicates will be dropped: '
-            f'{", ".join(all_files[duplicated].index)}.'
-        )
-        all_files = all_files[~duplicated]
+        msg = 'Duplicate sequence files were found for the ' \
+              'following IDs{}: %s.' % ", ".join(all_files[duplicated].index)
+        if error_on_duplicates:
+            raise ValueError(msg.format(''))
+        else:
+            warn(msg.format('- duplicates will be dropped'))
+            all_files = all_files[~duplicated]
 
     all_files.forward.apply(lambda x: shutil.move(x, casava_out.path))
     if all(all_files.reverse):
