@@ -359,7 +359,7 @@ def combine_samples(
         if error_on_duplicates:
             raise ValueError(msg.format(''))
         else:
-            warn(msg.format('- duplicates will be dropped'))
+            warn(msg.format(' - duplicates will be dropped'))
             all_files = all_files[~duplicated]
 
     all_files.forward.apply(lambda x: shutil.move(x, casava_out.path))
