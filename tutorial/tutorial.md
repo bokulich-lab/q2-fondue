@@ -166,7 +166,7 @@ qiime fondue get-metadata \
       --p-email your_email@somewhere.com \
       --o-metadata output_metadata.qza
 ```
-> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to sticking to 1.
+> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to 1.
 
 
 ### Fetching **only** sequencing data
@@ -191,7 +191,7 @@ Here we show how the artifacts fetched through q2-fondue enable an easy entry to
 While the metadata files we use in QIIME 2 commonly are in the TSV format, 
 the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
 
-Let's have a look at the metadata by tabulating it and visualize the .qzv file.
+Let's have a look at the metadata by tabulating it and visualizing the .qzv file.
 ```shell
 qiime metadata tabulate \
       --m-input-file metadata.qza \
@@ -292,7 +292,7 @@ Similarly, when extracting the sequencing data, we find the individual *fastq.gz
 
 ## Troubleshooting 
 ### Manually refetching missing sequencing data
-Occasionally sequencing data is not completely downloaded due to for example some server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download. 
+Occasionally sequencing data is not completely downloaded due to, for example, server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download. 
 
 ```shell
 qiime fondue get-sequences \
