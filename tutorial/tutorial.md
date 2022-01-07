@@ -138,7 +138,7 @@ In the `fondue-output` directory we can find four files:
 * *single_reads.qza* of semantic type `SampleData[SequencesWithQuality]`
 * *failed_runs.qza* of semantic type `SRAFailedIDs`, containing the IDs of samples that failed to download (see [Troubleshooting](#manually-refetching-missing-sequencing-data))
 
-It is important to know that _q2-fondue_ always generates **two** files, one for paired end and one for single end reads, 
+It is important to know that _q2-fondue_ always generates **two** files of semantic type `SampleData`, one for paired end and one for single end reads, 
 however most of the time only one of them contains the sequencing data we want (unless we are fetching sequencing data from various BioProjects at the same time).
 
 How can we now find out which raw sequence file we should be using? These are your options:
