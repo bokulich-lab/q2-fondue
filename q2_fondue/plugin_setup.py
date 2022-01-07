@@ -8,21 +8,24 @@
 
 import importlib
 
+from q2_types.per_sample_sequences import (
+    SequencesWithQuality, PairedEndSequencesWithQuality
+)
+from q2_types.sample_data import SampleData
+from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
     Plugin, Citations, Choices, Str, Int, List, Range, Metadata
 )
 
 from q2_fondue import __version__
-from q2_fondue.metadata import get_metadata, merge_metadata
-from q2_fondue.types._format import (SRAMetadataFormat, SRAMetadataDirFmt,
-                                     SRAFailedIDsFormat, SRAFailedIDsDirFmt)
-from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
-from q2_types.sample_data import SampleData
-from q2_types.per_sample_sequences import (
-    SequencesWithQuality, PairedEndSequencesWithQuality
-)
-from q2_fondue.sequences import get_sequences
 from q2_fondue.get_all import get_all
+from q2_fondue.metadata import get_metadata, merge_metadata
+from q2_fondue.sequences import get_sequences, merge_seqs
+from q2_fondue.types._format import (
+    SRAMetadataFormat, SRAMetadataDirFmt,
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+)
+from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
 
 common_param_descr = {
     'accession_ids': 'Path to file containing run or BioProject IDs for '
@@ -148,6 +151,26 @@ plugin.methods.register_function(
         'Merge multiple sequence-related metadata from different q2-fondue '
         'runs and/or projects into a single metadata file.'
     ),
+    citations=[]
+)
+
+T = TypeMatch([SequencesWithQuality, PairedEndSequencesWithQuality])
+plugin.methods.register_function(
+    function=merge_seqs,
+    inputs={'seqs': List[SampleData[T]]},
+    parameters={},
+    outputs=[('merged_seqs', SampleData[T])],
+    input_descriptions={
+        'seqs': 'Sequence artifacts to be merged together.'
+    },
+    parameter_descriptions={},
+    output_descriptions={
+        'merged_seqs': 'Sequences merged from all input artifacts.',
+    },
+    name='Merge sequences from multiple artifacts.',
+    description='Merge paired- or single-end sequences from multiple '
+                'artifacts, for example obtained by re-fetching failed '
+                'downloads.',
     citations=[]
 )
 
