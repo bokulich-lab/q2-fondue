@@ -15,6 +15,7 @@ import itertools
 import tempfile
 
 import pandas as pd
+from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
@@ -24,7 +25,7 @@ from q2_fondue.sequences import (get_sequences,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
                                  _write2casava_dir_single,
-                                 _write2casava_dir_paired)
+                                 _write2casava_dir_paired, combine_seqs)
 from q2_fondue.utils import DownloadError
 
 
@@ -442,3 +443,111 @@ class TestSequenceFetching(SequenceTests):
         ):
             get_sequences(test_temp_md, email='some@where.com', retries=0)
             mock_fasterq.assert_called_with([acc_id], ANY, 1, 0, ANY)
+
+
+class TestSequenceCombining(SequenceTests):
+
+    def load_seq_artifact(self, type='single', suffix=1):
+        t = '' if type == 'single' else 'PairedEnd'
+        return Artifact.import_data(
+            f'SampleData[{t}SequencesWithQuality]',
+            self.get_data_path(f'{type}{suffix}'),
+            CasavaOneEightSingleLanePerSampleDirFmt
+        ).view(CasavaOneEightSingleLanePerSampleDirFmt)
+
+    def test_combine_samples_single(self):
+        seqs = [
+            self.load_seq_artifact('single', 1),
+            self.load_seq_artifact('single', 2)
+        ]
+        obs_seqs = combine_seqs(seqs=seqs)
+        exp_ids = pd.Index(
+            ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
+        )
+        self.assertIsInstance(
+            obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+        )
+        pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+        self.assertFalse(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired(self):
+        seqs = [
+            self.load_seq_artifact('paired', 1),
+            self.load_seq_artifact('paired', 2)
+        ]
+        obs_seqs = combine_seqs(seqs=seqs)
+        exp_ids = pd.Index(
+            ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
+        )
+        self.assertIsInstance(
+            obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+        )
+        pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+        self.assertTrue(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_single_duplicated_error(self):
+        seqs = [self.load_seq_artifact('single', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_seqs(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_single_duplicated_warning(self):
+        seqs = [self.load_seq_artifact('single', 1)] * 2
+
+        with self.assertWarnsRegex(
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertFalse(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired_duplicated_error(self):
+        seqs = [self.load_seq_artifact('paired', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_seqs(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_paired_duplicated_warning(self):
+        seqs = [self.load_seq_artifact('paired', 1)] * 2
+
+        with self.assertWarnsRegex(
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertTrue(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired_with_empty_warning(self):
+        seqs = [
+            self.load_seq_artifact('paired', 1),
+            self.load_seq_artifact('empty', '')
+        ]
+
+        with self.assertWarnsRegex(
+                Warning,
+                '1 empty sequence files were found and excluded.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertTrue(all(obs_seqs.manifest.reverse))

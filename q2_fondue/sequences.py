@@ -6,16 +6,16 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import gzip
+import itertools
 import os
 import re
 import shutil
-import gzip
-import time
-import threading
-import warnings
-import itertools
-import tempfile
 import subprocess
+import tempfile
+import threading
+import time
+from warnings import warn
 
 import pandas as pd
 from q2_types.per_sample_sequences import \
@@ -23,10 +23,10 @@ from q2_types.per_sample_sequences import \
 from qiime2 import Metadata
 from tqdm import tqdm
 
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.utils import (_determine_id_type, handle_threaded_exception,
                              DownloadError)
-from q2_fondue.entrezpy_clients._utils import set_up_logger
-from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 threading.excepthook = handle_threaded_exception
 
@@ -100,7 +100,7 @@ def _run_fasterq_dump_for_all(
                 # break retries
                 logger.info(
                     'Available storage was exhausted - there will be no '
-                    'more retries')
+                    'more retries.')
                 retries = -1
                 break
 
@@ -184,7 +184,7 @@ def _write_empty_casava(read_type, casava_out_path, logger):
 
     warn_msg = f'No {read_type}-read sequences available ' \
                f'for these accession IDs.'
-    warnings.warn(warn_msg)
+    warn(warn_msg)
     logger.warning(warn_msg)
 
     if read_type == 'single':
@@ -326,3 +326,52 @@ def get_sequences(
 
     return \
         casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')
+
+
+def combine_seqs(
+        seqs: CasavaOneEightSingleLanePerSampleDirFmt,
+        on_duplicates: str = 'error',
+) -> CasavaOneEightSingleLanePerSampleDirFmt:
+    """Combines paired- or single-end sequences from multiple artifacts.
+
+    Args:
+        seqs (CasavaOneEightSingleLanePerSampleDirFmt): A list of paired-
+            or single-end sequences.
+        on_duplicates (str, default='error'): If 'warn', function will warn
+            about duplicated sequence IDs found in the input artifacts and
+            proceed to combining inputs. If 'error', a ValueError will
+            be raised.
+
+    Returns:
+        A directory containing sequences from all artifacts.
+    """
+    casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
+    error_on_duplicates = True if on_duplicates == 'error' else False
+
+    all_files = pd.concat(
+        objs=[seq_artifact.manifest for seq_artifact in seqs], axis=0
+    )
+
+    # exclude empty sequence files, in case any
+    org_count = all_files.shape[0]
+    all_files = all_files[~all_files.index.isin({'xxx'})]
+    excluded_count = org_count - all_files.shape[0]
+    if excluded_count:
+        warn(f'{excluded_count} empty sequence files were found and excluded.')
+
+    # check for duplicates
+    duplicated = all_files.index.duplicated(keep='first')
+    if any(duplicated):
+        msg = 'Duplicate sequence files were found for the ' \
+              'following IDs{}: %s.' % ", ".join(all_files[duplicated].index)
+        if error_on_duplicates:
+            raise ValueError(msg.format(''))
+        else:
+            warn(msg.format(' - duplicates will be dropped'))
+            all_files = all_files[~duplicated]
+
+    all_files.forward.apply(lambda x: shutil.move(x, casava_out.path))
+    if all(all_files.reverse):
+        all_files.reverse.apply(lambda x: shutil.move(x, casava_out.path))
+
+    return casava_out
