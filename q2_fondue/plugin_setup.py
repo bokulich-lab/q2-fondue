@@ -20,7 +20,7 @@ from qiime2.plugin import (
 from q2_fondue import __version__
 from q2_fondue.get_all import get_all
 from q2_fondue.metadata import get_metadata, merge_metadata
-from q2_fondue.sequences import get_sequences, combine_samples
+from q2_fondue.sequences import get_sequences, combine_seqs
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
     SRAFailedIDsFormat, SRAFailedIDsDirFmt
@@ -156,7 +156,7 @@ plugin.methods.register_function(
 
 T = TypeMatch([SequencesWithQuality, PairedEndSequencesWithQuality])
 plugin.methods.register_function(
-    function=combine_samples,
+    function=combine_seqs,
     inputs={'seqs': List[SampleData[T]]},
     parameters={'on_duplicates': Str % Choices(['error', 'warn'])},
     outputs=[('combined_seqs', SampleData[T])],

@@ -33,13 +33,13 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 ### Available actions
 q2-fondue provides a couple of actions to fetch and manipulate SRA data. Below you will find a list of available actions and their short descriptions.
 
-| Action            | Description                                                              |
-|-------------------|--------------------------------------------------------------------------|
-| `get-sequences`   | Fetch sequences by run or BioProject IDs from the SRA repository.        |
-| `get-metadata`    | Fetch metadata by run or BioProject IDs from the SRA repository.         |
-| `get-all`         | Fetch sequences and metadata by run or BioProject IDs from the SRA repo. |
-| `merge-metadata`  | Merge several metadata files into a single metadata object.              |
-| `combine-samples` | Combine sequences from multiple artifacts into a single artifact.        |
+| Action           | Description                                                              |
+|------------------|--------------------------------------------------------------------------|
+| `get-sequences`  | Fetch sequences by run or BioProject IDs from the SRA repository.        |
+| `get-metadata`   | Fetch metadata by run or BioProject IDs from the SRA repository.         |
+| `get-all`        | Fetch sequences and metadata by run or BioProject IDs from the SRA repo. |
+| `merge-metadata` | Merge several metadata files into a single metadata object.              |
+| `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
 
 
 ### Fetching metadata

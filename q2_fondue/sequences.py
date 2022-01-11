@@ -328,18 +328,19 @@ def get_sequences(
         casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')
 
 
-def combine_samples(
+def combine_seqs(
         seqs: CasavaOneEightSingleLanePerSampleDirFmt,
         on_duplicates: str = 'error',
 ) -> CasavaOneEightSingleLanePerSampleDirFmt:
-    """Merges paired- or single-end sequences from multiple artifacts into one.
+    """Combines paired- or single-end sequences from multiple artifacts.
 
     Args:
         seqs (CasavaOneEightSingleLanePerSampleDirFmt): A list of paired-
             or single-end sequences.
         on_duplicates (str, default='error'): If 'warn', function will warn
             about duplicated sequence IDs found in the input artifacts and
-            proceed to merging inputs. If 'error', a ValueError will be raised.
+            proceed to combining inputs. If 'error', a ValueError will
+            be raised.
 
     Returns:
         A directory containing sequences from all artifacts.
@@ -350,6 +351,13 @@ def combine_samples(
     all_files = pd.concat(
         objs=[seq_artifact.manifest for seq_artifact in seqs], axis=0
     )
+
+    # exclude empty sequence files, in case any
+    org_count = all_files.shape[0]
+    all_files = all_files[~all_files.index.isin({'xxx'})]
+    excluded_count = org_count - all_files.shape[0]
+    if excluded_count:
+        warn(f'{excluded_count} empty sequence files were found and excluded.')
 
     # check for duplicates
     duplicated = all_files.index.duplicated(keep='first')
