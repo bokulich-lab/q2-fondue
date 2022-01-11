@@ -1,8 +1,10 @@
 # q2-fondue 
 ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
 
+ <p align="left"><img src="logo.png" height="150" /></p>
+
 ## Installation
-Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment:
+Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
 * Create and activate a conda environment with the required dependencies:
 ```shell
@@ -20,8 +22,19 @@ pip install git+https://github.com/bokulich-lab/q2-fondue.git
 qiime dev refresh-cache
 ```
 
-The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
-
+* Correctly configure the wrapped SRA Toolkit functions from NCBI:
+  - by setting the location of the user-repository to an empty folder (below indicated with `<your cache location>`):
+  ```shell
+  vdb-config -s "/repository/user/main/public/root=<your cache location>"
+  ```
+  - by indicating that prefetches should be stored in the user repository:
+  ```shell
+  vdb-config --prefetch-to-user-repo
+  ```
+  - by adding a proxy (if needed):
+  ```shell
+  vdb-config --proxy <your proxy URL> --proxy-disable no
+  ```
 
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.
