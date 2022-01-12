@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Lab.
+# Copyright (c) 2022, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
