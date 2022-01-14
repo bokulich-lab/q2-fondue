@@ -49,6 +49,56 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
             self.metadata_dict)
         self.assertEqual(self.library_meta, obs_lib)
 
+    def test_efetch_get_pool_meta(self):
+        run = {
+            'Bases': {'@count': 123}, 'Statistics': {'@nspots': 12},
+            '@total_bases': 345, '@total_spots': 567
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'@bases': 123, '@spots': 12}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_bases(self):
+        run = {
+            'Bases': {}, 'Statistics': {'@nspots': 12},
+            '@total_bases': 345, '@total_spots': 567
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'@bases': 345, '@spots': 12}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_total_bases(self):
+        run = {
+            'Bases': {}, 'Statistics': {'@nspots': 12},
+            '@total_spots': 567
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'@bases': 0, '@spots': 12}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_nspots(self):
+        run = {
+            'Bases': {'@count': 123}, 'Statistics': {},
+            '@total_bases': 345, '@total_spots': 567
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'@bases': 123, '@spots': 567}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_total_spots(self):
+        run = {
+            'Bases': {'@count': 123}, 'Statistics': {},
+            '@total_bases': 345,
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'@bases': 123, '@spots': 0}
+        self.assertDictEqual(exp_meta, obs_meta)
+
     def test_efetch_create_experiment(self):
         study_id, sample_id,  = 'ERP120343', 'ERS4372624'
         exp_std, exp_samp, exp_exp, _ = self.generate_sra_metadata()
