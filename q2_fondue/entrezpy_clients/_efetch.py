@@ -16,9 +16,10 @@ from entrezpy.base.result import EutilsResult
 from xmltodict import parse as parsexml
 
 from q2_fondue.entrezpy_clients._utils import (rename_columns, set_up_logger)
-from q2_fondue.entrezpy_clients._sra_meta import (LibraryMetadata, SRARun,
-                                                  SRAExperiment, SRASample,
-                                                  SRAStudy)
+from q2_fondue.entrezpy_clients._sra_meta import (
+    LibraryMetadata, SRARun, SRAExperiment, SRASample, SRAStudy,
+    META_REQUIRED_COLUMNS
+)
 
 
 class EFetchResult(EutilsResult):
@@ -75,13 +76,11 @@ class EFetchResult(EutilsResult):
         # clean up column names
         df = rename_columns(df)
 
+        # remove potential column duplicates
+        df = df.groupby(level=0, axis=1).first()
+
         # reorder columns in a more sensible fashion
-        cols = [
-            'Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
-            'Sample Accession', 'Organism', 'Library Source', 'Library Layout',
-            'Library Selection', 'Instrument', 'Platform', 'Bases', 'Spots',
-            'Avg Spot Len', 'Bytes', 'Public'
-        ]
+        cols = META_REQUIRED_COLUMNS.copy()
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
