@@ -305,9 +305,9 @@ class EFetchResult(EutilsResult):
             self.runs[run_id] = SRARun(
                 id=run_id,
                 public=is_public,
-                bytes=int(run.get('@size')),
-                bases=int(pool_meta.get('@bases')),
-                spots=int(pool_meta.get('@spots')),
+                bytes=int(pool_meta.get('size')),
+                bases=int(pool_meta.get('bases')),
+                spots=int(pool_meta.get('spots')),
                 experiment_id=exp_id,
                 custom_meta=custom_meta
             )
@@ -319,9 +319,10 @@ class EFetchResult(EutilsResult):
     def _get_pool_meta_from_run(run: dict) -> dict:
         """Extracts base and spot count from run metadata."""
         bases, stats = run.get('Bases'), run.get('Statistics')
+        size = run.get('@size', 0)
         bases = bases.get('@count', run.get('@total_bases', 0))
         spots = stats.get('@nspots', run.get('@total_spots', 0))
-        return {'@bases': bases, '@spots': spots}
+        return {'bases': bases, 'spots': spots, 'size': size}
 
     def _process_single_id(
             self, attributes: dict, desired_id: str) -> List[str]:
