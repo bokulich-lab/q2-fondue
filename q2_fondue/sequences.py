@@ -43,6 +43,13 @@ def _run_cmd_fasterq(
     if result.returncode == 0:
         result = subprocess.run(
             cmd_fasterq, text=True, capture_output=True, cwd=output_dir)
+        # clean up prefetch files on success
+        if result.returncode == 0:
+            sra_path = os.path.join(output_dir, acc)
+            if os.path.isdir(sra_path):
+                shutil.rmtree(sra_path)
+            elif os.path.isfile(f'{sra_path}.sra'):
+                os.remove(f'{sra_path}.sra')
     return result
 
 

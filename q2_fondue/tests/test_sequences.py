@@ -91,8 +91,9 @@ class SequenceTests(TestPluginBase):
 
 class TestUtils4SequenceFetching(SequenceTests):
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_file(self, mock_subprocess):
+    def test_run_cmd_fasterq_sra_file(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
 
@@ -110,9 +111,13 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True,
                  capture_output=True, cwd=test_temp_dir.name)
         ])
+        mock_rm.assert_called_with(
+            os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+        )
 
+    @patch('shutil.rmtree')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_directory(self, mock_subprocess):
+    def test_run_cmd_fasterq_sra_directory(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
@@ -130,9 +135,13 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True,
                  capture_output=True, cwd=test_temp_dir.name)
         ])
+        mock_rm.assert_called_with(
+            os.path.join(test_temp_dir.name, ls_acc_ids[0])
+        )
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_fasterq_dump_for_all(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA']
@@ -150,6 +159,9 @@ class TestUtils4SequenceFetching(SequenceTests):
                 call(exp_fasterq, text=True,
                      capture_output=True, cwd=test_temp_dir.name)
             ])
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+            )
             self.assertEqual(len(failed_ids), 0)
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
@@ -177,10 +189,11 @@ class TestUtils4SequenceFetching(SequenceTests):
                 cm.output
             )
 
+    @patch('os.remove')
     @patch('time.sleep')
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error_twoids(
-            self, mock_subprocess, mock_sleep
+            self, mock_subprocess, mock_sleep, mock_rm
     ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
@@ -205,14 +218,19 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'runs:\nID=testaccERROR, Error=Error 2',
                 cm.output
             )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+            )
 
+    @patch('shutil.rmtree')
     @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
     @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
     def test_run_fasterq_dump_for_all_space_error(
-            self, mock_subprocess, mock_disk_usage
+            self, mock_subprocess, mock_disk_usage, mock_rm
     ):
         # test checking that space availability break procedure works
         test_temp_dir = MockTempDir()
+        os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
         with self.assertLogs('test_log', level='INFO') as cm:
@@ -229,15 +247,20 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'runs:\nID=testaccERROR, Error=Storage exhausted.',
                 cm.output
             )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0])
+            )
 
+    @patch('shutil.rmtree')
     @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
     @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
     def test_run_fasterq_dump_for_all_no_last_space_error(
-            self, mock_subprocess, mock_disk_usage
+            self, mock_subprocess, mock_disk_usage, mock_rm
     ):
         # test checking that space availability break procedure does not cause
         # issues when triggered after last run ID
         test_temp_dir = MockTempDir()
+        os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA']
 
         with self.assertLogs('test_log', level='INFO') as cm:
@@ -251,15 +274,23 @@ class TestUtils4SequenceFetching(SequenceTests):
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
             )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0])
+            )
 
+    @patch('shutil.rmtree')
+    @patch('os.remove')
     @patch('shutil.disk_usage')
     @patch('time.sleep')
     @patch('subprocess.run')
     def test_run_fasterq_dump_for_all_error_and_storage_exhausted(
-            self, mock_subprocess, mock_sleep, mock_disk_usage
+            self, mock_subprocess, mock_sleep, mock_disk_usage,
+            mock_rm, mock_rmtree
     ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
+        os.makedirs(f'{test_temp_dir.name}/testaccF')
+
         ls_acc_ids = ['testaccA', 'testaccERROR', 'testaccF', 'testaccNOSPACE']
         mock_subprocess.side_effect = [
             MagicMock(returncode=0), MagicMock(returncode=0),
@@ -286,6 +317,12 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'runs:\nID=testaccERROR, Error=Error 1'
                 '\nID=testaccNOSPACE, Error=Storage exhausted.',
                 cm.output
+            )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, 'testaccA.sra')
+            )
+            mock_rmtree.assert_called_with(
+                os.path.join(test_temp_dir.name, 'testaccF')
             )
 
     def test_process_downloaded_sequences(self):
@@ -387,9 +424,12 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
+    def test_get_sequences_paired_only(
+            self, mock_tmpdir, mock_subprocess, mock_rm
+    ):
         acc_id = 'SRR123457'
         ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
                          acc_id + '.sra']
@@ -407,6 +447,9 @@ class TestSequenceFetching(SequenceTests):
             self.validate_counts(casava_single, casava_paired, [0], [3, 3])
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
+            mock_rm.assert_called_with(
+                os.path.join(mock_tmpdir.return_value.name, acc_id + '.sra')
+            )
 
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
