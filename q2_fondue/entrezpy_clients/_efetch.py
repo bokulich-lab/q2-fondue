@@ -318,10 +318,18 @@ class EFetchResult(EutilsResult):
     @staticmethod
     def _get_pool_meta_from_run(run: dict) -> dict:
         """Extracts base and spot count from run metadata."""
-        bases, stats = run.get('Bases'), run.get('Statistics')
+        bases = run.get('@total_bases')
+        spots = run.get('@total_spots')
         size = run.get('@size', 0)
-        bases = bases.get('@count', run.get('@total_bases', 0))
-        spots = stats.get('@nspots', run.get('@total_spots', 0))
+
+        if not bases:
+            bases = run.get('Bases')
+            bases = bases.get('@count', 0) if bases else 0
+
+        if not spots:
+            stats = run.get('Statistics')
+            spots = stats.get('@nspots', 0) if stats else 0
+
         return {'bases': bases, 'spots': spots, 'size': size}
 
     def _process_single_id(
