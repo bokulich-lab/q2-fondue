@@ -6,12 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import unittest
-
 import pandas as pd
+import unittest
 from pandas._testing import assert_frame_equal, assert_series_equal
+from unittest.mock import MagicMock
 
 from q2_fondue.entrezpy_clients._efetch import EFetchResult
+from q2_fondue.entrezpy_clients._sra_meta import META_REQUIRED_COLUMNS
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
@@ -188,6 +189,32 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
 
         obs = self.efetch_result_single.metadata_to_df().sort_index(axis=1)
         exp = self.generate_expected_df().sort_index(axis=1)
+        assert_frame_equal(exp, obs)
+
+    def test_efetch_to_df_duplicated_columns(self):
+        cols = [
+            'avg_spot_len', 'bases', 'bioproject_id', 'biosample_id',
+            'bytes', 'experiment_id', 'instrument', 'library_layout',
+            'library_selection', 'library_source', 'organism', 'platform',
+            'public', 'sample_accession', 'spots', 'study_id'
+        ]
+        dfs = [
+            pd.DataFrame({'isolate': ['a', 'b'],
+                          **{col: [1, 2] for col in cols}}, index=['A', 'B']),
+            pd.DataFrame({'Isolate': ['c', 'd'],
+                          **{col: [3, 4] for col in cols}}, index=['C', 'D'])
+        ]
+
+        self.efetch_result_single.studies = {
+            'STUDY1': MagicMock(generate_meta=MagicMock(return_value=dfs[0])),
+            'STUDY2': MagicMock(generate_meta=MagicMock(return_value=dfs[1]))
+        }
+
+        obs = self.efetch_result_single.metadata_to_df()
+        exp = pd.DataFrame(
+            {**{col: [1, 2, 3, 4] for col in META_REQUIRED_COLUMNS},
+             'Isolate': ['a', 'b', 'c', 'd']},
+            index=pd.Index(['A', 'B', 'C', 'D'], name='ID'))
         assert_frame_equal(exp, obs)
 
     def test_efetch_extract_run_ids(self):
