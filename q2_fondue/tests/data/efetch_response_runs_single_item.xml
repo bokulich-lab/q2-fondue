@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary v1 20041029//EN"
+        "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20041029/esummary-v1.dtd">
+<eSummaryResult>
+
+    <DocSum>
+        <Id>4</Id>
+        <Item Name="ExpXml" Type="String">&lt;Summary&gt;&lt;Title&gt;454
+            sequencing of Human HapMap individual NA18505 genomic paired-end
+            library&lt;/Title&gt;&lt;Platform instrument_model="454 GS FLX"&gt;LS454&lt;/Platform&gt;&lt;Statistics
+            total_runs="10" total_spots="4703662" total_bases="1306798474"
+            total_size="3205056622" load_done="true"
+            static_data_available="true" cluster_name="public"/&gt;&lt;/Summary&gt;&lt;Submitter
+            acc="SRA000197" center_name="454MSC" contact_name="Chris OSullivan"
+            lab_name=""/&gt;&lt;Experiment acc="SRX000003" ver="10"
+            status="public" name="454 sequencing of Human HapMap individual
+            NA18505 genomic paired-end library"/&gt;&lt;Study acc="SRP000001"
+            name="Paired-end mapping reveals extensive structural variation in
+            the human genome"/&gt;&lt;Organism taxid="9606"
+            ScientificName="Homo sapiens"/&gt;&lt;Sample acc="SRS000100"
+            name=""/&gt;&lt;Instrument LS454="454 GS FLX"/&gt;&lt;Library_descriptor&gt;&lt;LIBRARY_NAME
+            xmlns=""&gt;SID2699&lt;/LIBRARY_NAME&gt;&lt;LIBRARY_STRATEGY
+            xmlns=""&gt;WGS&lt;/LIBRARY_STRATEGY&gt;&lt;LIBRARY_SOURCE xmlns=""&gt;GENOMIC&lt;/LIBRARY_SOURCE&gt;&lt;LIBRARY_SELECTION
+            xmlns=""&gt;RANDOM&lt;/LIBRARY_SELECTION&gt;&lt;LIBRARY_LAYOUT
+            xmlns=""&gt; &lt;PAIRED NOMINAL_LENGTH="3000"/&gt; &lt;/LIBRARY_LAYOUT&gt;&lt;/Library_descriptor&gt;&lt;Bioproject&gt;PRJNA33627&lt;/Bioproject&gt;&lt;Biosample&gt;SAMN00001583&lt;/Biosample&gt;
+        </Item>
+        <Item Name="Runs" Type="String">&lt;Run acc="SRR000007"
+            total_spots="633196" total_bases="175275395" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000018"
+            total_spots="626624" total_bases="174403220" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000020"
+            total_spots="374556" total_bases="103411232" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000038"
+            total_spots="529820" total_bases="148389031" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000043"
+            total_spots="608946" total_bases="168985392" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000046"
+            total_spots="79047" total_bases="21258857" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000048"
+            total_spots="640737" total_bases="177619279" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000050"
+            total_spots="547349" total_bases="153260655" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000057"
+            total_spots="76744" total_bases="21203932" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;&lt;Run acc="SRR000058"
+            total_spots="586643" total_bases="162991481" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;
+        </Item>
+        <Item Name="ExtLinks" Type="String"></Item>
+        <Item Name="CreateDate" Type="String">2008/04/04</Item>
+        <Item Name="UpdateDate" Type="String">2015/04/09</Item>
+    </DocSum>
+
+</eSummaryResult>

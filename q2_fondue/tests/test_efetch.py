@@ -296,6 +296,18 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         }
         self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
 
+    def test_efetch_extract_run_ids_single_element(self):
+        response = self.xml_to_response(
+            'runs', prefix='efetch', suffix='_single_item'
+        )
+        self.efetch_result_single.extract_run_ids(response)
+        exp_ids = {
+            0: ['SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+                'SRR000057', 'SRR000058']
+        }
+        self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
+
     def test_efetch_metadata_to_series(self):
         self.efetch_result_single.extract_run_ids(
             self.xml_to_response('runs', prefix='efetch'))

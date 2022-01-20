@@ -98,6 +98,7 @@ class EFetchResult(EutilsResult):
         response = json.loads(json.dumps(parsexml(response.read())))
         result = response['eSummaryResult'].get('DocSum')
         if result:
+            result = [result] if not isinstance(result, list) else result
             for i, content in enumerate(result):
                 content = content.get('Item')
                 for item in content:
