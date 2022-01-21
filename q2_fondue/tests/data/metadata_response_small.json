@@ -43,7 +43,19 @@
       "ILLUMINA": {
         "INSTRUMENT_MODEL": "Illumina MiSeq"
       }
-    }
+    },
+    "EXPERIMENT_ATTRIBUTES": {
+        "EXPERIMENT_ATTRIBUTE": [
+          {
+            "TAG": "Temperature",
+            "VALUE": "12"
+          },
+          {
+            "TAG": "Depth",
+            "VALUE": "500"
+          }
+        ]
+      }
   },
   "SUBMISSION": {
     "@accession": "ERA2402167",
