@@ -428,7 +428,8 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_frame_equal(
                 failed_ids, pd.DataFrame(
                     [], index=pd.Index([], name='ID'),
-                    columns=['Error message'])
+                    columns=['Error message']
+                ), check_dtype=False
             )
 
     @patch('os.remove')
@@ -455,7 +456,8 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_frame_equal(
                 failed_ids, pd.DataFrame(
                     [], index=pd.Index([], name='ID'),
-                    columns=['Error message'])
+                    columns=['Error message']
+                ), check_dtype=False
             )
             mock_rm.assert_called_with(
                 os.path.join(mock_tmpdir.return_value.name, acc_id + '.sra')
@@ -480,8 +482,9 @@ class TestSequenceFetching(SequenceTests):
         self.validate_counts(casava_single, casava_paired, [3], [3, 3])
         pd.testing.assert_frame_equal(
             failed_ids, pd.DataFrame(
-                [], index=pd.Index([], name='ID'), columns=['Error message']
-            )
+                [], index=pd.Index([], name='ID'),
+                columns=['Error message']
+            ), check_dtype=False
         )
 
     @patch('q2_fondue.sequences._run_fasterq_dump_for_all', return_value={})
