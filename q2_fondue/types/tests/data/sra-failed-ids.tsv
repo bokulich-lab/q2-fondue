@@ -1,5 +1,5 @@
-ID
-SRR000020
-SRR000021
-ERR0000020
-ERR0000021
+ID	Error message
+SRR000020	ID is ambiguous.
+SRR000021	ID is invalid.
+ERR0000020	ID is ambiguous.
+ERR0000021	ID is invalid.

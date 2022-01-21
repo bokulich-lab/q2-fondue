@@ -49,8 +49,7 @@ output_descriptions = {
                     'for all the requested IDs.',
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
                     'for all the requested IDs.',
-    'failed_runs': 'List of all run IDs for which fetching sequence '
-                   'data failed.'
+    'failed_runs': 'List of all run IDs for which fetching {} failed.'
 }
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -71,10 +70,13 @@ plugin.methods.register_function(
     function=get_metadata,
     inputs={},
     parameters=common_params,
-    outputs=[('metadata', SRAMetadata)],
+    outputs=[('metadata', SRAMetadata), ('failed_runs', SRAFailedIDs)],
     input_descriptions={},
     parameter_descriptions=common_param_descr,
-    output_descriptions={'metadata': output_descriptions['metadata']},
+    output_descriptions={
+        'metadata': output_descriptions['metadata'],
+        'failed_runs': output_descriptions['failed_runs'].format('metadata')
+    },
     name='Fetch sequence-related metadata based on run or BioProject ID.',
     description=(
         'Fetch sequence-related metadata based on run or BioProject ID '
@@ -103,7 +105,7 @@ plugin.methods.register_function(
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
         'paired_reads': output_descriptions['paired_reads'],
-        'failed_runs': output_descriptions['failed_runs']
+        'failed_runs': output_descriptions['failed_runs'].format('sequences')
     },
     name='Fetch sequences based on run ID.',
     description='Fetch sequence data of all run IDs.',
@@ -128,7 +130,13 @@ plugin.pipelines.register_function(
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).'
     },
-    output_descriptions=output_descriptions,
+    output_descriptions={
+        'metadata': output_descriptions['metadata'],
+        'single_reads': output_descriptions['single_reads'],
+        'paired_reads': output_descriptions['paired_reads'],
+        'failed_runs': output_descriptions['failed_runs'].format(
+            'sequences and/or metadata ')
+    },
     name='Fetch sequence-related metadata and sequences of all run or '
          'BioProject IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
@@ -145,7 +153,8 @@ plugin.methods.register_function(
     parameter_descriptions={},
     output_descriptions={
         'merged_metadata': 'Merged metadata containing all rows and columns '
-                           '(without duplicates).'},
+                           '(without duplicates).'
+    },
     name='Merge several metadata files into a single metadata object.',
     description=(
         'Merge multiple sequence-related metadata from different q2-fondue '
