@@ -35,7 +35,7 @@ class TestGetAll(SequenceTests):
         test_md = Metadata.load(self.get_data_path(f'{acc_id}_md.tsv'))
 
         # define mocked return values for get_metadata mocks
-        mock_validation.return_value = True
+        mock_validation.return_value = {}
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
         mock_inquire.return_value = (

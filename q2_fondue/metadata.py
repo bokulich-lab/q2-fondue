@@ -74,7 +74,7 @@ def _get_run_meta(
     )
     set_up_entrezpy_logging(esearcher, log_level)
     invalid_ids = _validate_esearch_result(esearcher, run_ids, log_level)
-    valid_ids = list(set(run_ids) - set(invalid_ids.keys()))
+    valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
 
     if not valid_ids:
         logger.error('No valid run IDs were found.')
