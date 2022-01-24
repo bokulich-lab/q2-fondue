@@ -8,11 +8,11 @@ With this easy-to-use plugin you have plenty of deposited sequencing data at you
 
 Why use _q2-fondue_? 
 * incorporated provenance tracking
-* direct integration with QIIME 2 sequence analysis pipeline
+* direct integration with QIIME 2 sequence analysis pipeline - see [Overview of QIIME 2 Plugin Workflows](https://docs.qiime2.org)
 * support for multiple user interfaces
 * no need to navigate online databases to retrieve data 
 
-This tutorial will give you an insight into working with q2-fondue and how the artifacts can further be used. 
+This tutorial will give you an insight into working with q2-fondue and how its output artifacts can further be used. 
 
 ## Some Background
 There are numerous databases online, where researchers can deposit or retrieve high-throughput sequencing data. 
@@ -66,10 +66,10 @@ For now, we install it with pip into an existing QIIME 2 environment.
 
 First, activate your QIIME 2 environment and install relevant dependencies:
 ```shell
-conda activate qiime2-2021.8
+conda activate qiime2
 
 conda install -c conda-forge -c bioconda -c defaults \
- "entrezpy>=2.1.2" "sra-tools==2.11.0" xmltodict
+ "entrezpy>=2.1.2" "sra-tools==2.11.0" "tqdm>=4.62.3" xmltodict
 ```
 
 Then install _q2-fondue_:
@@ -116,7 +116,7 @@ and to run requests for very large jobs on the weekend (find more info on this i
 Therefore NCBI requires a **valid email address**, enabling them to get in touch in case of an issue 
 with downloading too much data. 
 
-> *Tip:* We recommend always adding the `--verbose` flag when running _q2-fondue_. Depending on the amount of data we are retrieving, the download might take some time and it's is easier to follow the process with the nice download progress bar, as well as to catch potential issues with internet connectivity. 
+> *Tip:* We recommend always adding the `--verbose` flag when running _q2-fondue_. Depending on the amount of data we are retrieving, the download might take some time and it is easier to follow the process with the integrated download progress bar. Additionally, running with `--verbose` facilitates catching potential issues with internet connectivity. 
 
 
 ```shell
@@ -128,7 +128,7 @@ qiime fondue get-all \
       --output-dir fondue-output
 ```
 
-> *Note*: The optional parameter `--p-retries` specifies the number of times _q2-fondue_ is retrying to fetch the sequencing data and is set to 3 by default. If you notice that some of the desired data is not properly downloaded you might increase this number or try refetching manually (see [Troubleshooting](#manually-refetching-missing-sequencing-data)). 
+> *Note*: The optional parameter `--p-retries` specifies the number of times _q2-fondue_ is retrying to fetch the sequencing data and is set to 2 by default. If you notice that some of the desired data is not properly downloaded you might increase this number or try refetching manually (see [Troubleshooting](#manually-refetching-missing-sequencing-data)). 
 
 Now let's have a look at the output files! 
 
@@ -185,7 +185,7 @@ qiime fondue get-sequences \
 
 ## What now? 
 
-Here we show how the artifacts fetched through q2-fondue enable an easy entry to the QIIME 2 analysis pipeline, which is also further described in other tutorials. :sparkles:
+Here we show how the artifacts fetched through q2-fondue enable an easy entry to the QIIME 2 analysis pipeline, which is also further described in [other QIIME 2 tutorials](https://docs.qiime2.org). :sparkles:
 
 ### Check out the metadata 
 While the metadata files we use in QIIME 2 commonly are in the TSV format, 
@@ -292,7 +292,7 @@ Similarly, when extracting the sequencing data, we find the individual *fastq.gz
 
 ## Troubleshooting 
 ### Manually refetching missing sequencing data
-Occasionally sequencing data is not completely downloaded due to, for example, server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download. 
+Occasionally sequencing data is not completely downloaded due to, for example, server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download the missing sequencing data. 
 
 ```shell
 qiime fondue get-sequences \
