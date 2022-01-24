@@ -5,7 +5,6 @@ PYTHON ?= python
 all: ;
 
 lint:
-	q2lint
 	flake8
 
 test: all

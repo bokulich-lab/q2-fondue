@@ -1,17 +1,18 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import unittest
-
 import pandas as pd
+import unittest
 from pandas._testing import assert_frame_equal, assert_series_equal
+from unittest.mock import MagicMock
 
 from q2_fondue.entrezpy_clients._efetch import EFetchResult
+from q2_fondue.entrezpy_clients._sra_meta import META_REQUIRED_COLUMNS
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
@@ -47,6 +48,73 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         obs_lib = self.efetch_result_single._extract_library_info(
             self.metadata_dict)
         self.assertEqual(self.library_meta, obs_lib)
+
+    def test_efetch_get_pool_meta(self):
+        run = {
+            'Bases': {'@count': 345}, 'Statistics': {'@nspots': 12},
+            '@total_bases': 345, '@total_spots': 12, '@size': 456
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 345, 'spots': 12, 'size': 456}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_total_bases(self):
+        run = {
+            'Bases': {'@count': 345}, 'Statistics': {'@nspots': 12},
+            '@total_spots': 12, '@size': 456
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 345, 'spots': 12, 'size': 456}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_bases(self):
+        run = {
+            'Statistics': {'@nspots': 12},
+            '@total_spots': 12, '@size': 456
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 0, 'spots': 12, 'size': 456}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_total_spots(self):
+        run = {
+            'Bases': {'@count': 345}, 'Statistics': {'@nspots': 12},
+            '@total_bases': 345, '@size': 456
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 345, 'spots': 12, 'size': 456}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_stats(self):
+        run = {
+            'Bases': {'@count': 345},
+            '@total_bases': 345, '@size': 456
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 345, 'spots': 0, 'size': 456}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_size(self):
+        run = {
+            'Bases': {'@count': 345}, 'Statistics': {'@nspots': 12},
+            '@total_bases': 345, '@total_spots': 12
+        }
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 345, 'spots': 12, 'size': 0}
+        self.assertDictEqual(exp_meta, obs_meta)
+
+    def test_efetch_get_pool_meta_missing_all(self):
+        run = {}
+
+        obs_meta = self.efetch_result_single._get_pool_meta_from_run(run)
+        exp_meta = {'bases': 0, 'spots': 0, 'size': 0}
+        self.assertDictEqual(exp_meta, obs_meta)
 
     def test_efetch_create_experiment(self):
         study_id, sample_id,  = 'ERP120343', 'ERS4372624'
@@ -190,6 +258,32 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         exp = self.generate_expected_df().sort_index(axis=1)
         assert_frame_equal(exp, obs)
 
+    def test_efetch_to_df_duplicated_columns(self):
+        cols = [
+            'avg_spot_len', 'bases', 'bioproject_id', 'biosample_id',
+            'bytes', 'experiment_id', 'instrument', 'library_layout',
+            'library_selection', 'library_source', 'organism', 'platform',
+            'public', 'sample_accession', 'spots', 'study_id'
+        ]
+        dfs = [
+            pd.DataFrame({'isolate': ['a', 'b'],
+                          **{col: [1, 2] for col in cols}}, index=['A', 'B']),
+            pd.DataFrame({'Isolate': ['c', 'd'],
+                          **{col: [3, 4] for col in cols}}, index=['C', 'D'])
+        ]
+
+        self.efetch_result_single.studies = {
+            'STUDY1': MagicMock(generate_meta=MagicMock(return_value=dfs[0])),
+            'STUDY2': MagicMock(generate_meta=MagicMock(return_value=dfs[1]))
+        }
+
+        obs = self.efetch_result_single.metadata_to_df()
+        exp = pd.DataFrame(
+            {**{col: [1, 2, 3, 4] for col in META_REQUIRED_COLUMNS},
+             'Isolate': ['a', 'b', 'c', 'd']},
+            index=pd.Index(['A', 'B', 'C', 'D'], name='ID'))
+        assert_frame_equal(exp, obs)
+
     def test_efetch_extract_run_ids(self):
         self.efetch_result_single.extract_run_ids(
             self.xml_to_response('runs', prefix='efetch'))
@@ -199,6 +293,18 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
                 'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
                 'SRR000057', 'SRR000058'],
             2: ['SRR13961759']
+        }
+        self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
+
+    def test_efetch_extract_run_ids_single_element(self):
+        response = self.xml_to_response(
+            'runs', prefix='efetch', suffix='_single_item'
+        )
+        self.efetch_result_single.extract_run_ids(response)
+        exp_ids = {
+            0: ['SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+                'SRR000057', 'SRR000058']
         }
         self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
 

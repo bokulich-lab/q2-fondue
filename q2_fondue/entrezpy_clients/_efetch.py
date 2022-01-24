@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -16,9 +16,10 @@ from entrezpy.base.result import EutilsResult
 from xmltodict import parse as parsexml
 
 from q2_fondue.entrezpy_clients._utils import (rename_columns, set_up_logger)
-from q2_fondue.entrezpy_clients._sra_meta import (LibraryMetadata, SRARun,
-                                                  SRAExperiment, SRASample,
-                                                  SRAStudy)
+from q2_fondue.entrezpy_clients._sra_meta import (
+    LibraryMetadata, SRARun, SRAExperiment, SRASample, SRAStudy,
+    META_REQUIRED_COLUMNS
+)
 
 
 class EFetchResult(EutilsResult):
@@ -75,13 +76,11 @@ class EFetchResult(EutilsResult):
         # clean up column names
         df = rename_columns(df)
 
+        # remove potential column duplicates
+        df = df.groupby(level=0, axis=1).first()
+
         # reorder columns in a more sensible fashion
-        cols = [
-            'Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
-            'Sample Accession', 'Organism', 'Library Source', 'Library Layout',
-            'Library Selection', 'Instrument', 'Platform', 'Bases', 'Spots',
-            'Avg Spot Len', 'Bytes', 'Public'
-        ]
+        cols = META_REQUIRED_COLUMNS.copy()
         cols.extend([c for c in df.columns if c not in cols])
 
         return df[cols]
@@ -99,6 +98,7 @@ class EFetchResult(EutilsResult):
         response = json.loads(json.dumps(parsexml(response.read())))
         result = response['eSummaryResult'].get('DocSum')
         if result:
+            result = [result] if not isinstance(result, list) else result
             for i, content in enumerate(result):
                 content = content.get('Item')
                 for item in content:
@@ -306,9 +306,9 @@ class EFetchResult(EutilsResult):
             self.runs[run_id] = SRARun(
                 id=run_id,
                 public=is_public,
-                bytes=int(run.get('@size')),
-                bases=int(pool_meta.get('@bases')),
-                spots=int(pool_meta.get('@spots')),
+                bytes=int(pool_meta.get('size')),
+                bases=int(pool_meta.get('bases')),
+                spots=int(pool_meta.get('spots')),
                 experiment_id=exp_id,
                 custom_meta=custom_meta
             )
@@ -318,12 +318,20 @@ class EFetchResult(EutilsResult):
 
     @staticmethod
     def _get_pool_meta_from_run(run: dict) -> dict:
-        bases, stats = run.get('Bases'), run.get('Statistics')
-        pool_meta = {
-            '@bases': bases.get('@count') if bases else 0,
-            '@spots': stats.get('@nspots') if stats else 0
-        }
-        return pool_meta
+        """Extracts base and spot count from run metadata."""
+        bases = run.get('@total_bases')
+        spots = run.get('@total_spots')
+        size = run.get('@size', 0)
+
+        if not bases:
+            bases = run.get('Bases')
+            bases = bases.get('@count', 0) if bases else 0
+
+        if not spots:
+            stats = run.get('Statistics')
+            spots = stats.get('@nspots', 0) if stats else 0
+
+        return {'bases': bases, 'spots': spots, 'size': size}
 
     def _process_single_id(
             self, attributes: dict, desired_id: str) -> List[str]:

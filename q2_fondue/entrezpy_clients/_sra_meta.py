@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -13,6 +13,14 @@ from typing import Union, List
 import pandas as pd
 
 from q2_fondue.entrezpy_clients._utils import get_attrs
+
+
+META_REQUIRED_COLUMNS = [
+    'Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
+    'Sample Accession', 'Organism', 'Library Source', 'Library Layout',
+    'Library Selection', 'Instrument', 'Platform', 'Bases', 'Spots',
+    'Avg Spot Len', 'Bytes', 'Public'
+]
 
 
 @dataclass

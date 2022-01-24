@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, QIIME 2 development team.
+# Copyright (c) 2022, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -15,6 +15,7 @@ import itertools
 import tempfile
 
 import pandas as pd
+from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from q2_types.per_sample_sequences import (
@@ -24,7 +25,7 @@ from q2_fondue.sequences import (get_sequences,
                                  _process_downloaded_sequences,
                                  _write_empty_casava,
                                  _write2casava_dir_single,
-                                 _write2casava_dir_paired)
+                                 _write2casava_dir_paired, combine_seqs)
 from q2_fondue.utils import DownloadError
 
 
@@ -90,8 +91,9 @@ class SequenceTests(TestPluginBase):
 
 class TestUtils4SequenceFetching(SequenceTests):
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_file(self, mock_subprocess):
+    def test_run_cmd_fasterq_sra_file(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
 
@@ -109,9 +111,13 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True,
                  capture_output=True, cwd=test_temp_dir.name)
         ])
+        mock_rm.assert_called_with(
+            os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+        )
 
+    @patch('shutil.rmtree')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_directory(self, mock_subprocess):
+    def test_run_cmd_fasterq_sra_directory(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
@@ -129,9 +135,13 @@ class TestUtils4SequenceFetching(SequenceTests):
             call(exp_fasterq, text=True,
                  capture_output=True, cwd=test_temp_dir.name)
         ])
+        mock_rm.assert_called_with(
+            os.path.join(test_temp_dir.name, ls_acc_ids[0])
+        )
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_fasterq_dump_for_all(self, mock_subprocess):
+    def test_run_fasterq_dump_for_all(self, mock_subprocess, mock_rm):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA']
@@ -149,6 +159,9 @@ class TestUtils4SequenceFetching(SequenceTests):
                 call(exp_fasterq, text=True,
                      capture_output=True, cwd=test_temp_dir.name)
             ])
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+            )
             self.assertEqual(len(failed_ids), 0)
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
@@ -176,10 +189,12 @@ class TestUtils4SequenceFetching(SequenceTests):
                 cm.output
             )
 
+    @patch('os.remove')
     @patch('time.sleep')
     @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_error_twoids(self, mock_subprocess,
-                                                   mock_sleep):
+    def test_run_fasterq_dump_for_all_error_twoids(
+            self, mock_subprocess, mock_sleep, mock_rm
+    ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA', 'testaccERROR']
@@ -203,14 +218,19 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'runs:\nID=testaccERROR, Error=Error 2',
                 cm.output
             )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+            )
 
-    @patch('shutil.disk_usage')
-    @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_space_error(self, mock_subprocess,
-                                                  mock_disk_usage):
+    @patch('shutil.rmtree')
+    @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
+    @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    def test_run_fasterq_dump_for_all_space_error(
+            self, mock_subprocess, mock_disk_usage, mock_rm
+    ):
         # test checking that space availability break procedure works
-        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
+        os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
         with self.assertLogs('test_log', level='INFO') as cm:
@@ -218,7 +238,8 @@ class TestUtils4SequenceFetching(SequenceTests):
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, logger=self.fake_logger
             )
-            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertEqual(mock_subprocess.call_count, 2)
+            self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertListEqual(failed_ids, ['testaccERROR'])
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
@@ -226,16 +247,20 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'runs:\nID=testaccERROR, Error=Storage exhausted.',
                 cm.output
             )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0])
+            )
 
-    @patch('shutil.disk_usage')
-    @patch('subprocess.run')
-    def test_run_fasterq_dump_for_all_no_last_space_error(self,
-                                                          mock_subprocess,
-                                                          mock_disk_usage):
+    @patch('shutil.rmtree')
+    @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
+    @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    def test_run_fasterq_dump_for_all_no_last_space_error(
+            self, mock_subprocess, mock_disk_usage, mock_rm
+    ):
         # test checking that space availability break procedure does not cause
         # issues when triggered after last run ID
-        mock_disk_usage.side_effect = [(0, 0, 10), (0, 0, 2)]
         test_temp_dir = MockTempDir()
+        os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA']
 
         with self.assertLogs('test_log', level='INFO') as cm:
@@ -243,10 +268,61 @@ class TestUtils4SequenceFetching(SequenceTests):
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, logger=self.fake_logger
             )
-            self.assertEqual(mock_subprocess.call_count, 1)
+            self.assertEqual(mock_subprocess.call_count, 2)
+            self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertListEqual(failed_ids, [])
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
+            )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, ls_acc_ids[0])
+            )
+
+    @patch('shutil.rmtree')
+    @patch('os.remove')
+    @patch('shutil.disk_usage')
+    @patch('time.sleep')
+    @patch('subprocess.run')
+    def test_run_fasterq_dump_for_all_error_and_storage_exhausted(
+            self, mock_subprocess, mock_sleep, mock_disk_usage,
+            mock_rm, mock_rmtree
+    ):
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
+                                                   'testaccA.sra'])
+        os.makedirs(f'{test_temp_dir.name}/testaccF')
+
+        ls_acc_ids = ['testaccA', 'testaccERROR', 'testaccF', 'testaccNOSPACE']
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0), MagicMock(returncode=0),
+            MagicMock(returncode=1, stderr='Error 1'),
+            MagicMock(returncode=0), MagicMock(returncode=0)
+        ]
+        mock_disk_usage.side_effect = [
+            (0, 0, 10), (0, 0, 10), (0, 0, 10), (0, 0, 2)
+        ]
+
+        with self.assertLogs('test_log', level='INFO') as cm:
+            failed_ids = _run_fasterq_dump_for_all(
+                ls_acc_ids, test_temp_dir.name, threads=6,
+                retries=1, logger=self.fake_logger
+            )
+            # check retry procedure:
+            self.assertEqual(mock_subprocess.call_count, 5)
+            self.assertListEqual(
+                failed_ids, ['testaccERROR', 'testaccNOSPACE']
+            )
+            self.assertIn(
+                'INFO:test_log:Download finished. 2 out of 4 runs failed to '
+                'fetch. Below are the error messages of the first 5 failed '
+                'runs:\nID=testaccERROR, Error=Error 1'
+                '\nID=testaccNOSPACE, Error=Storage exhausted.',
+                cm.output
+            )
+            mock_rm.assert_called_with(
+                os.path.join(test_temp_dir.name, 'testaccA.sra')
+            )
+            mock_rmtree.assert_called_with(
+                os.path.join(test_temp_dir.name, 'testaccF')
             )
 
     def test_process_downloaded_sequences(self):
@@ -348,9 +424,12 @@ class TestSequenceFetching(SequenceTests):
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
 
+    @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_paired_only(self, mock_tmpdir, mock_subprocess):
+    def test_get_sequences_paired_only(
+            self, mock_tmpdir, mock_subprocess, mock_rm
+    ):
         acc_id = 'SRR123457'
         ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
                          acc_id + '.sra']
@@ -368,6 +447,9 @@ class TestSequenceFetching(SequenceTests):
             self.validate_counts(casava_single, casava_paired, [0], [3, 3])
             pd.testing.assert_series_equal(failed_ids,
                                            pd.Series([], name='ID'))
+            mock_rm.assert_called_with(
+                os.path.join(mock_tmpdir.return_value.name, acc_id + '.sra')
+            )
 
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
     @patch('tempfile.TemporaryDirectory')
@@ -442,3 +524,111 @@ class TestSequenceFetching(SequenceTests):
         ):
             get_sequences(test_temp_md, email='some@where.com', retries=0)
             mock_fasterq.assert_called_with([acc_id], ANY, 1, 0, ANY)
+
+
+class TestSequenceCombining(SequenceTests):
+
+    def load_seq_artifact(self, type='single', suffix=1):
+        t = '' if type == 'single' else 'PairedEnd'
+        return Artifact.import_data(
+            f'SampleData[{t}SequencesWithQuality]',
+            self.get_data_path(f'{type}{suffix}'),
+            CasavaOneEightSingleLanePerSampleDirFmt
+        ).view(CasavaOneEightSingleLanePerSampleDirFmt)
+
+    def test_combine_samples_single(self):
+        seqs = [
+            self.load_seq_artifact('single', 1),
+            self.load_seq_artifact('single', 2)
+        ]
+        obs_seqs = combine_seqs(seqs=seqs)
+        exp_ids = pd.Index(
+            ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
+        )
+        self.assertIsInstance(
+            obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+        )
+        pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+        self.assertFalse(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired(self):
+        seqs = [
+            self.load_seq_artifact('paired', 1),
+            self.load_seq_artifact('paired', 2)
+        ]
+        obs_seqs = combine_seqs(seqs=seqs)
+        exp_ids = pd.Index(
+            ['SEQID1', 'SEQID2', 'SEQID3', 'SEQID4'], name='sample-id'
+        )
+        self.assertIsInstance(
+            obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+        )
+        pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+        self.assertTrue(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_single_duplicated_error(self):
+        seqs = [self.load_seq_artifact('single', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_seqs(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_single_duplicated_warning(self):
+        seqs = [self.load_seq_artifact('single', 1)] * 2
+
+        with self.assertWarnsRegex(
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertFalse(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired_duplicated_error(self):
+        seqs = [self.load_seq_artifact('paired', 1)] * 2
+
+        with self.assertRaisesRegex(
+                ValueError, 'Duplicate sequence files.*SEQID1, SEQID2.'
+        ):
+            combine_seqs(seqs=seqs, on_duplicates='error')
+
+    def test_combine_samples_paired_duplicated_warning(self):
+        seqs = [self.load_seq_artifact('paired', 1)] * 2
+
+        with self.assertWarnsRegex(
+                Warning,
+                'Duplicate sequence files.*dropped.*SEQID1, SEQID2.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertTrue(all(obs_seqs.manifest.reverse))
+
+    def test_combine_samples_paired_with_empty_warning(self):
+        seqs = [
+            self.load_seq_artifact('paired', 1),
+            self.load_seq_artifact('empty', '')
+        ]
+
+        with self.assertWarnsRegex(
+                Warning,
+                '1 empty sequence files were found and excluded.'
+        ):
+            obs_seqs = combine_seqs(seqs=seqs, on_duplicates='warn')
+            exp_ids = pd.Index(['SEQID1', 'SEQID2'], name='sample-id')
+
+            self.assertIsInstance(
+                obs_seqs, CasavaOneEightSingleLanePerSampleDirFmt
+            )
+            pd.testing.assert_index_equal(obs_seqs.manifest.index, exp_ids)
+            self.assertTrue(all(obs_seqs.manifest.reverse))
