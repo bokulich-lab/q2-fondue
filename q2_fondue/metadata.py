@@ -19,7 +19,7 @@ from q2_fondue.utils import (
     _validate_esearch_result, _determine_id_type, handle_threaded_exception
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
-                                               set_up_logger)
+                                               set_up_logger, InvalidIDs)
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
@@ -77,8 +77,9 @@ def _get_run_meta(
     valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
 
     if not valid_ids:
-        logger.error('No valid run IDs were found.')
-        return pd.DataFrame(), invalid_ids
+        raise InvalidIDs(
+            'All provided IDs were invalid. Please check your input.'
+        )
 
     # fetch metadata
     meta_df, missing_ids = _execute_efetcher(

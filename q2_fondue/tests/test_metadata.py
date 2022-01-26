@@ -286,6 +286,22 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                         'independently.']
         )
 
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta_no_valid_ids(self, patch_ef, patch_val, patch_es):
+        patch_val.return_value = {
+            'AB': 'ID is invalid.', 'cd': 'ID is ambiguous.'
+        }
+
+        with self.assertRaisesRegexp(
+                InvalidIDs, 'All provided IDs were invalid.'
+        ):
+            _ = _get_run_meta(
+                'someone@somewhere.com', 1, ['AB', 'cd'],
+                'INFO', self.fake_logger
+            )
+
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_project_meta(self, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:

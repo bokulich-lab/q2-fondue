@@ -388,7 +388,7 @@ class EFetchResult(EutilsResult):
         for i, tag in enumerate(tags):
             total, count = tags.count(tag), tags[:i].count(tag)
             if total > 1:
-                self.logger.warning(
+                self.logger.debug(
                     f'One of the metadata keys ({tag}) is duplicated. '
                     f'It will be retained with a numeric suffix.'
                 ) if count == 0 else False
