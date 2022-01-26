@@ -261,13 +261,16 @@ class EFetchResult(EutilsResult):
         if exp_id not in self.experiments.keys():
             platform = list(exp_meta['PLATFORM'].keys())[0]
             instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
+            custom_meta = self._extract_custom_attributes(
+                exp_meta, 'experiment'
+            )
             self.experiments[exp_id] = SRAExperiment(
                 id=exp_id,
                 instrument=instrument,
                 platform=platform,
                 sample_id=sample_id,
                 library=self._extract_library_info(attributes),
-                custom_meta=None
+                custom_meta=custom_meta
             )
             # append experiment to sample
             self.samples[sample_id].experiments.append(

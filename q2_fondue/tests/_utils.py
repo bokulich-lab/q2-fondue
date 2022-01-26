@@ -131,7 +131,9 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
         )
         experiment = SRAExperiment(
             id=experiment_id, instrument='Illumina MiSeq', platform='ILLUMINA',
-            library=self.library_meta, sample_id=sample_id, custom_meta=None
+            library=self.library_meta, sample_id=sample_id, custom_meta={
+                'Temperature [EXPERIMENT]': '12', 'Depth [EXPERIMENT]': '500'
+            }
         )
         runs = [SRARun(
             id=_id, bases=11552099, spots=39323, public=True, bytes=3914295,
