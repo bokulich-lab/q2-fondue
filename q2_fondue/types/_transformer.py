@@ -10,7 +10,9 @@ import pandas as pd
 import qiime2
 
 from ..plugin_setup import plugin
-from ._format import SRAMetadataFormat, SRAFailedIDsFormat
+from ._format import (
+    SRAMetadataFormat, SRAFailedIDsFormat, NCBIAccessionIDsFormat
+)
 
 
 @plugin.register_transformer
@@ -57,3 +59,36 @@ def _6(ff: SRAFailedIDsFormat) -> (qiime2.Metadata):
     with ff.open() as fh:
         df = pd.read_csv(fh, header=0, index_col=0, dtype='str')
         return qiime2.Metadata(df)
+
+
+@plugin.register_transformer
+def _7(data: pd.Series) -> (NCBIAccessionIDsFormat):
+    ff = NCBIAccessionIDsFormat()
+    with ff.open() as fh:
+        data.to_csv(fh, sep='\t', header=True, index=False)
+    return ff
+
+
+@plugin.register_transformer
+def _8(ff: NCBIAccessionIDsFormat) -> (pd.Series):
+    with ff.open() as fh:
+        s = pd.read_csv(
+            fh, header=0, dtype='str', squeeze=True
+        )
+        return s
+
+
+@plugin.register_transformer
+def _9(ff: NCBIAccessionIDsFormat) -> (qiime2.Metadata):
+    with ff.open() as fh:
+        df = pd.read_csv(fh, header=0, index_col=0, dtype='str')
+        return qiime2.Metadata(df)
+
+
+@plugin.register_transformer
+def _10(ff: SRAMetadataFormat) -> (NCBIAccessionIDsFormat):
+    fout = NCBIAccessionIDsFormat()
+    with ff.open() as fh, fout.open() as fo:
+        df = pd.read_csv(fh, sep='\t', header=0, index_col=0, dtype='str')
+        df.index.to_series().to_csv(fo, sep='\t', header=True, index=False)
+    return fout

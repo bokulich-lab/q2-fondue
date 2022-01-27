@@ -23,9 +23,10 @@ from q2_fondue.metadata import get_metadata, merge_metadata
 from q2_fondue.sequences import get_sequences, combine_seqs
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
 )
-from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
+from q2_fondue.types._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
 common_param_descr = {
     'accession_ids': 'Path to file containing run or BioProject IDs for '
@@ -182,14 +183,18 @@ plugin.methods.register_function(
 
 plugin.register_formats(
     SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
 )
-plugin.register_semantic_types(SRAMetadata, SRAFailedIDs)
+plugin.register_semantic_types(SRAMetadata, SRAFailedIDs, NCBIAccessionIDs)
 plugin.register_semantic_type_to_format(
     SRAMetadata, artifact_format=SRAMetadataDirFmt
 )
 plugin.register_semantic_type_to_format(
     SRAFailedIDs, artifact_format=SRAFailedIDsDirFmt
+)
+plugin.register_semantic_type_to_format(
+    NCBIAccessionIDs, artifact_format=NCBIAccessionIDsDirFmt
 )
 
 importlib.import_module('q2_fondue.types._transformer')
