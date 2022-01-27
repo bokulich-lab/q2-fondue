@@ -14,7 +14,7 @@ from q2_types.per_sample_sequences import (
 from q2_types.sample_data import SampleData
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, List, Range, Metadata
+    Plugin, Citations, Choices, Str, Int, List, Range
 )
 
 from q2_fondue import __version__
@@ -28,20 +28,23 @@ from q2_fondue.types._format import (
 )
 from q2_fondue.types._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
-common_param_descr = {
-    'accession_ids': 'Path to file containing run or BioProject IDs for '
-                     'which the metadata and/or sequences should be fetched. '
-                     'Should conform to QIIME Metadata format.',
-    'email': 'Your e-mail address (required by NCBI).',
-    'n_jobs': 'Number of concurrent download jobs (default: 1).',
-    'log_level': 'Logging level.'
+common_inputs = {'accession_ids': NCBIAccessionIDs}
+
+common_input_descriptions = {
+    'accession_ids': 'Artifact containing run or BioProject IDs for '
+                     'which the metadata and/or sequences should be fetched.',
 }
 
 common_params = {
-    'accession_ids': Metadata,
     'email': Str,
     'n_jobs': Int % Range(1, None),
     'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR']),
+}
+
+common_param_descr = {
+    'email': 'Your e-mail address (required by NCBI).',
+    'n_jobs': 'Number of concurrent download jobs (default: 1).',
+    'log_level': 'Logging level.'
 }
 
 output_descriptions = {
@@ -70,10 +73,10 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=get_metadata,
-    inputs={},
+    inputs={**common_inputs},
     parameters=common_params,
     outputs=[('metadata', SRAMetadata)],
-    input_descriptions={},
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions=common_param_descr,
     output_descriptions={'metadata': output_descriptions['metadata']},
     name='Fetch sequence-related metadata based on run or BioProject ID.',
@@ -86,7 +89,7 @@ plugin.methods.register_function(
 
 plugin.methods.register_function(
     function=get_sequences,
-    inputs={},
+    inputs={**common_inputs},
     parameters={
         **common_params,
         'retries': Int % Range(0, None)
@@ -96,7 +99,7 @@ plugin.methods.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={},
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).',
@@ -113,7 +116,7 @@ plugin.methods.register_function(
 
 plugin.pipelines.register_function(
     function=get_all,
-    inputs={},
+    inputs={**common_inputs},
     parameters={
         **common_params,
         'retries': Int % Range(0, None)
@@ -124,7 +127,7 @@ plugin.pipelines.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={},
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).'

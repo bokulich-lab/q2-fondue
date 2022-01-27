@@ -6,26 +6,26 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import logging
-from unittest.mock import patch, call, ANY, MagicMock
-import os
 import gzip
-import shutil
 import itertools
-import tempfile
-
+import logging
+import os
 import pandas as pd
+import shutil
+import tempfile
+from q2_types.per_sample_sequences import (
+    FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt
+)
 from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
-from q2_types.per_sample_sequences import (
-    FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt)
-from q2_fondue.sequences import (get_sequences,
-                                 _run_fasterq_dump_for_all,
-                                 _process_downloaded_sequences,
-                                 _write_empty_casava,
-                                 _write2casava_dir_single,
-                                 _write2casava_dir_paired, combine_seqs)
+from unittest.mock import patch, call, ANY, MagicMock
+
+from q2_fondue.sequences import (
+    get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
+    _write_empty_casava, _write2casava_dir_single, _write2casava_dir_paired,
+    combine_seqs
+)
 from q2_fondue.utils import DownloadError
 
 

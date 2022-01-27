@@ -15,12 +15,12 @@ import subprocess
 import tempfile
 import threading
 import time
+from qiime2 import Metadata
 from warnings import warn
 
 import pandas as pd
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
-from qiime2 import Metadata
 from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects

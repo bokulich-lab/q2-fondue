@@ -6,27 +6,27 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import unittest
-from unittest.mock import patch, MagicMock, ANY, call
-
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
+import unittest
 from entrezpy import conduit
 from entrezpy.esearch import esearcher
 from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal
 from qiime2.metadata import Metadata
+from unittest.mock import patch, MagicMock, ANY, call
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
+from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.metadata import (
     _efetcher_inquire, _get_project_meta, get_metadata, _get_run_meta,
     merge_metadata
 )
-from q2_fondue.utils import (_validate_esearch_result,
-                             _determine_id_type)
-from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
+from q2_fondue.utils import (
+    _validate_esearch_result, _determine_id_type
+)
 
 
 class FakeConduit:

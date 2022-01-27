@@ -6,12 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import unittest
 import pandas as pd
-from unittest.mock import (patch, call, ANY, MagicMock)
-from q2_fondue.tests.test_sequences import SequenceTests
-from qiime2.metadata import Metadata
+import unittest
+from qiime2 import Artifact
 from qiime2.plugins import fondue
+from unittest.mock import (patch, call, ANY, MagicMock)
+
+from q2_fondue.tests.test_sequences import SequenceTests
 
 
 class TestGetAll(SequenceTests):
@@ -32,7 +33,9 @@ class TestGetAll(SequenceTests):
         individual actions are tested in details in respective test classes
         """
         acc_id = 'SRR123456'
-        test_md = Metadata.load(self.get_data_path(f'{acc_id}_md.tsv'))
+        test_md = Artifact.import_data(
+            'NCBIAccessionIDs', self.get_data_path(f'{acc_id}_md.tsv')
+        )
 
         # define mocked return values for get_metadata mocks
         mock_validation.return_value = True
