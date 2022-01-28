@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 import importlib
-
 from q2_types.per_sample_sequences import (
     SequencesWithQuality, PairedEndSequencesWithQuality
 )
@@ -28,7 +27,9 @@ from q2_fondue.types._format import (
 )
 from q2_fondue.types._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
-common_inputs = {'accession_ids': NCBIAccessionIDs}
+common_inputs = {
+    'accession_ids': NCBIAccessionIDs | SRAMetadata | SRAFailedIDs
+}
 
 common_input_descriptions = {
     'accession_ids': 'Artifact containing run or BioProject IDs for '
