@@ -5,6 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import glob
+from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
 import gzip
 import itertools
@@ -64,7 +66,8 @@ def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
 
 
 def _run_fasterq_dump_for_all(
-        accession_ids, tmpdirname, threads, retries, logger
+        accession_ids, tmpdirname, threads, retries,
+        fetched_queue, done_queue, logger
 ) -> dict:
     """Runs prefetch & fasterq-dump for all ids in accession_ids.
 
@@ -97,6 +100,8 @@ def _run_fasterq_dump_for_all(
                 acc, tmpdirname, threads)
             if result.returncode != 0:
                 failed_ids[acc] = result.stderr
+            else:
+                fetched_queue.put(acc)
             pbar.postfix = f'{len(failed_ids)} failed'
 
             # check space availability
@@ -127,6 +132,7 @@ def _run_fasterq_dump_for_all(
         retries -= 1
 
     msg = 'Download finished.'
+    fetched_queue.put(None)
     if failed_ids:
         errors = '\n'.join(
             [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
@@ -135,10 +141,34 @@ def _run_fasterq_dump_for_all(
                f'runs failed to fetch. Below are the error messages of the ' \
                f"first 5 failed runs:\n{errors}"
     logger.info(msg)
-    return failed_ids
+    done_queue.put({'failed_ids': list(failed_ids.keys())})
+    return True
 
 
-def _process_downloaded_sequences(output_dir):
+def _process_one_sequence(filename, output_dir):
+    new_name, is_paired = None, False
+    if filename.endswith('_1.fastq'):
+        # paired-end _1
+        acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
+        new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, True
+    elif filename.endswith('_2.fastq'):
+        # paired-end _2
+        acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
+        new_name, is_paired = '%s_00_L001_R2_001.fastq' % acc, True
+    elif filename.endswith('.fastq'):
+        # single-reads
+        acc = re.search(r'(.*)\.fastq$', filename).group(1)
+        new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, False
+    else:
+        return new_name, is_paired
+    os.rename(os.path.join(output_dir, filename),
+              os.path.join(output_dir, new_name))
+    return new_name, is_paired
+
+
+def _process_downloaded_sequences(
+        output_dir, fetched_queue, renaming_queue, n_workers
+):
     """Processes downloaded sequences and returns a list of processed files.
 
     Renames single-read and paired-end sequences according to casava file
@@ -147,30 +177,20 @@ def _process_downloaded_sequences(output_dir):
     """
     # rename all files to casava format & save single and paired
     # file names to list
-    ls_single, ls_paired = [], []
 
-    for filename in sorted(os.listdir(output_dir)):
-        if filename.endswith('_1.fastq'):
-            # paired-end _1
-            acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq' % acc
-            ls_paired.append(new_name)
-        elif filename.endswith('_2.fastq'):
-            # paired-end _2
-            acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R2_001.fastq' % acc
-            ls_paired.append(new_name)
-        elif filename.endswith('.fastq'):
-            # single-reads
-            acc = re.search(r'(.*)\.fastq$', filename).group(1)
-            new_name = '%s_00_L001_R1_001.fastq' % acc
-            ls_single.append(new_name)
-        else:
-            continue
-        os.rename(os.path.join(output_dir, filename),
-                  os.path.join(output_dir, new_name))
+    for _id in iter(fetched_queue.get, None):
+        filenames = glob.glob(os.path.join(output_dir, f'{_id}*.fastq'))
+        filenames = [
+            _process_one_sequence(f, output_dir) for f in filenames
+        ]
+        single = [x for x in filenames if not x[1]]
+        paired = sorted([x for x in filenames if x[1]])
 
-    return ls_single, ls_paired
+        renaming_queue.put(single) if single else False
+        renaming_queue.put(paired) if paired else False
+
+    [renaming_queue.put(None) for i in range(n_workers)]
+    return True
 
 
 def _read_fastq_seqs(filepath):
@@ -208,55 +228,74 @@ def _write_empty_casava(read_type, casava_out_path, logger):
             pass
 
 
-def _write2casava_dir_single(
-        tmpdirname, casava_result_path, ls_files_2_consider):
-    """Writes single-read files to casava directory.
+def _copy_single_to_casava(
+        filename, tmp_dir, casava_result_path
+):
+    fwd_path_in = os.path.join(tmp_dir, filename)
+    fwd_path_out = os.path.join(casava_result_path, f'{filename}.gz')
 
-    Downloaded sequence files will be copied from tmpdirname to
-    casava_result_path following single read sequence rules.
-    """
-    # Edited from original in: q2_demux._subsample.subsample_single
-    for filename in os.listdir(tmpdirname):
-        if filename in ls_files_2_consider:
-            fwd_path_in = os.path.join(tmpdirname, filename)
-            filename_out = filename + '.gz'
-            fwd_path_out = str(casava_result_path.path / filename_out)
-
-            with gzip.open(str(fwd_path_out), mode='w') as fwd:
-                for fwd_rec in _read_fastq_seqs(fwd_path_in):
-                    fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
+    with gzip.open(fwd_path_out, mode='w') as fwd:
+        for fwd_rec in _read_fastq_seqs(fwd_path_in):
+            fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
 
 
-def _write2casava_dir_paired(
-        tmpdirname, casava_result_path, ls_files_2_consider):
+def _copy_paired_to_casava(
+        filenames, tmp_dir, casava_result_path
+):
+    fwd_path_in = os.path.join(tmp_dir, filenames[0])
+    fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
+    rev_path_in = os.path.join(tmp_dir, filenames[1])
+    rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
+
+    with gzip.open(fwd_path_out, mode='w') as fwd, \
+            gzip.open(rev_path_out, mode='w') as rev:
+        file_pair = zip(
+            _read_fastq_seqs(fwd_path_in), _read_fastq_seqs(rev_path_in)
+        )
+        for fwd_rec, rev_rec in file_pair:
+            fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
+            rev.write(('\n'.join(rev_rec) + '\n').encode('utf-8'))
+
+
+def _write2casava_dir(
+        tmp_dir, casava_out_single, casava_out_paired,
+        renaming_queue, done_queue
+):
     """Writes paired-end files to casava directory.
 
-    Downloaded sequence files will be copied from tmpdirname to
+    Downloaded sequence files will be copied from tmp_dir to
     casava_result_path following paired-end sequence rules.
     """
     # Edited from original in: q2_demux._subsample.subsample_paired
     # ensure correct order of file names:
-    ls_files_sorted = sorted(ls_files_2_consider)
 
-    # iterate and save
-    for i in range(0, len(ls_files_sorted), 2):
-        filename_1 = ls_files_sorted[i]
-        filename_2 = ls_files_sorted[i+1]
+    for filenames in iter(renaming_queue.get, None):
+        if len(filenames) == 1:
+            filename = os.path.split(filenames[0][0])[-1]
+            _copy_single_to_casava(filename, tmp_dir, casava_out_single)
+            done_queue.put([filename])
+        elif len(filenames) == 2:
+            filenames = [
+                os.path.split(x[0])[-1] for x in sorted(filenames)
+            ]
+            _copy_paired_to_casava(filenames, tmp_dir, casava_out_paired)
+            done_queue.put(filenames)
+        renaming_queue.task_done()
+    return True
 
-        fwd_path_in = os.path.join(tmpdirname, filename_1)
-        filename_1_out = filename_1 + '.gz'
-        fwd_path_out = str(casava_result_path.path / filename_1_out)
-        rev_path_in = os.path.join(tmpdirname, filename_2)
-        filename_2_out = filename_2 + '.gz'
-        rev_path_out = str(casava_result_path.path / filename_2_out)
 
-        with gzip.open(str(fwd_path_out), mode='w') as fwd:
-            with gzip.open(str(rev_path_out), mode='w') as rev:
-                file_pair = zip(_read_fastq_seqs(fwd_path_in),
-                                _read_fastq_seqs(rev_path_in))
-                for fwd_rec, rev_rec in file_pair:
-                    fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
-                    rev.write(('\n'.join(rev_rec) + '\n').encode('utf-8'))
+def _announce_completion(queue):
+    queue.put(None)
+    results = []
+    failed_ids = {}
+    for i in iter(queue.get, None):
+        if isinstance(i, list):
+            results.append(i)
+        elif isinstance(i, dict):
+            failed_ids = i['failed_ids']
+    ls_single_files = [x for x in results if len(x) == 1]
+    ls_paired_files = [x for x in results if len(x) == 2]
+    return failed_ids, ls_single_files, ls_paired_files
 
 
 def get_sequences(
@@ -302,35 +341,66 @@ def get_sequences(
             email, n_jobs, accession_ids, log_level
         )
 
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        # run fasterq-dump for all accessions
-        failed_ids = _run_fasterq_dump_for_all(
-            accession_ids, tmpdirname, n_jobs, retries, logger)
+    fetched_q = Queue()
+    manager = Manager()
+    renamed_q = manager.Queue()
+    processed_q = manager.Queue()
 
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # run fasterq-dump for all accessions
+        fetcher_process = Process(
+            target=_run_fasterq_dump_for_all,
+            args=(
+                accession_ids, tmp_dir, n_jobs, retries,
+                fetched_q, processed_q, logger
+            ),
+            daemon=True
+        )
         # processing downloaded files
-        ls_single_files, ls_paired_files = _process_downloaded_sequences(
-            tmpdirname)
+        worker_count = int(min(max(n_jobs - 1, 1), cpu_count() - 1))
+        logger.debug(f'Using {worker_count} workers.')
+        renamer_process = Process(
+            target=_process_downloaded_sequences,
+            args=(tmp_dir, fetched_q, renamed_q, worker_count),
+            daemon=True
+        )
+        # writing to Casava directory
+        worker_pool = Pool(
+            worker_count, _write2casava_dir,
+            (tmp_dir, str(casava_out_single.path),
+             str(casava_out_paired.path), renamed_q, processed_q)
+        )
+
+        # start all processes
+        fetcher_process.start()
+        renamer_process.start()
+        worker_pool.close()
+
+        # wait for all the results
+        fetcher_process.join()
+        renamer_process.join()
+        worker_pool.join()
+
+        # announce processing is done
+        failed_ids, single_files, paired_files = \
+            _announce_completion(processed_q)
 
         # make sure either of the sequences were downloaded
-        if len(ls_single_files) == 0 and len(ls_paired_files) == 0:
+        if len(single_files) == 0 and len(paired_files) == 0:
             raise DownloadError(
                 'Neither single- nor paired-end sequences could '
                 'be downloaded. Please check your accession IDs.'
             )
 
         # write downloaded single-read seqs from tmp to casava dir
-        if len(ls_single_files) == 0:
+        if len(single_files) == 0:
             _write_empty_casava('single', casava_out_single, logger)
-        else:
-            _write2casava_dir_single(tmpdirname, casava_out_single,
-                                     ls_single_files)
 
         # write downloaded paired-end seqs from tmp to casava dir
-        if len(ls_paired_files) == 0:
+        if len(paired_files) == 0:
             _write_empty_casava('paired', casava_out_paired, logger)
-        else:
-            _write2casava_dir_paired(tmpdirname, casava_out_paired,
-                                     ls_paired_files)
+
+    logger.info('Processing finished.')
 
     failed_ids = pd.DataFrame(
         data={'Error message': failed_ids.values()},
