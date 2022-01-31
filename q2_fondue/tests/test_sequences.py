@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from multiprocessing import Queue, Manager
 
 import gzip
 import itertools
@@ -19,12 +20,11 @@ from q2_types.per_sample_sequences import (
 from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
-from unittest.mock import patch, call, ANY, MagicMock
+from unittest.mock import patch, call, MagicMock
 
 from q2_fondue.sequences import (
     get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
-    _write_empty_casava, _write2casava_dir_single, _write2casava_dir_paired,
-    combine_seqs
+    _write_empty_casava, combine_seqs, _write2casava_dir
 )
 from q2_fondue.utils import DownloadError
 
@@ -41,6 +41,13 @@ class SequenceTests(TestPluginBase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.fake_logger = logging.getLogger('test_log')
+
+    def setUp(self):
+        super().setUp()
+        self.fetched_q = Queue()
+        self.manager = Manager()
+        self.renamed_q = self.manager.Queue()
+        self.processed_q = self.manager.Queue()
 
     def move_files_2_tmp_dir(self, ls_files):
         test_temp_dir = MockTempDir()
@@ -103,7 +110,8 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
-            retries=0, logger=self.fake_logger
+            retries=0, fetched_queue=self.fetched_q,
+            done_queue=self.processed_q, logger=self.fake_logger
         )
         mock_subprocess.assert_has_calls([
             call(exp_prefetch, text=True,
@@ -127,7 +135,8 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
-            retries=0, logger=self.fake_logger
+            retries=0, fetched_queue=self.fetched_q,
+            done_queue=self.processed_q, logger=self.fake_logger
         )
         mock_subprocess.assert_has_calls([
             call(exp_prefetch, text=True,
@@ -151,7 +160,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=0, logger=self.fake_logger
+                retries=0, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             mock_subprocess.assert_has_calls([
                 call(exp_prefetch, text=True,
@@ -177,7 +187,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=1, logger=self.fake_logger
+                retries=1, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
@@ -207,7 +218,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=1, logger=self.fake_logger
+                retries=1, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 4)
@@ -236,7 +248,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=2, logger=self.fake_logger
+                retries=2, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
@@ -268,7 +281,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=2, logger=self.fake_logger
+                retries=2, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
@@ -306,7 +320,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertLogs('test_log', level='INFO') as cm:
             failed_ids = _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
-                retries=1, logger=self.fake_logger
+                retries=1, fetched_queue=self.fetched_q,
+                done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 5)
@@ -330,16 +345,29 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
 
     def test_process_downloaded_sequences(self):
-        ls_fastq_files = ['testaccA.fastq',
-                          'testacc_1.fastq', 'testacc_2.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_fastq_files)
+        ids = ['testaccA', 'testacc_1', 'testacc_2']
+        test_temp_dir = self.move_files_2_tmp_dir([f'{x}.fastq' for x in ids])
 
-        ls_act_single, ls_act_paired = _process_downloaded_sequences(
-            test_temp_dir.name)
+        [self.fetched_q.put(_id) for _id in ids]
+        self.fetched_q.put(None)
 
-        ls_exp_single = ['testaccA_00_L001_R1_001.fastq']
-        ls_exp_paired = ['testacc_00_L001_R1_001.fastq',
-                         'testacc_00_L001_R2_001.fastq']
+        _ = _process_downloaded_sequences(
+            output_dir=test_temp_dir.name, fetched_queue=self.fetched_q,
+            renaming_queue=self.renamed_q, n_workers=1
+        )
+
+        ls_act_single, ls_act_paired = [], []
+        for _id in iter(self.renamed_q.get, None):
+            ls_act_single.append(_id[0][0]) if not _id[0][1] else False
+            ls_act_paired.append(_id[0][0]) if _id[0][1] else False
+
+        ls_exp_single = [
+            os.path.join(test_temp_dir.name, 'testaccA_00_L001_R1_001.fastq')
+        ]
+        ls_exp_paired = [
+            os.path.join(test_temp_dir.name, 'testacc_00_L001_R1_001.fastq'),
+            os.path.join(test_temp_dir.name, 'testacc_00_L001_R2_001.fastq')
+        ]
 
         self.assertEqual(set(ls_act_single), set(ls_exp_single))
         self.assertEqual(set(ls_act_paired), set(ls_exp_paired))
@@ -374,24 +402,41 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
+        casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_single = ['testaccA_00_L001_R1_001.fastq']
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_single)
 
-        _write2casava_dir_single(test_temp_dir.name, casava_out_single,
-                                 ls_file_single)
+        self.renamed_q.put(
+            [(os.path.join(test_temp_dir.name, ls_file_single[0]), False)]
+        )
+        self.renamed_q.put(None)
+
+        _write2casava_dir(
+            test_temp_dir.name, str(casava_out_single.path),
+            str(casava_out_paired.path), self.renamed_q, self.processed_q
+        )
         exp_casava_fpath = os.path.join(str(casava_out_single),
                                         ls_file_single[0] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath))
+        self.assertEqual(1, self.processed_q.qsize())
 
     def test_write2casava_dir_paired(self):
+        casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_paired = ['testacc_00_L001_R1_001.fastq',
                           'testacc_00_L001_R2_001.fastq']
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_paired)
 
-        _write2casava_dir_paired(test_temp_dir.name, casava_out_paired,
-                                 ls_file_paired)
+        self.renamed_q.put([
+            (os.path.join(test_temp_dir.name, ls_file_paired[0]), True),
+            (os.path.join(test_temp_dir.name, ls_file_paired[1]), True)
+        ])
+        self.renamed_q.put(None)
 
+        _write2casava_dir(
+            test_temp_dir.name, str(casava_out_single.path),
+            str(casava_out_paired.path), self.renamed_q, self.processed_q
+        )
         exp_casava_fpath_fwd = os.path.join(str(casava_out_paired),
                                             ls_file_paired[0] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath_fwd))
@@ -408,14 +453,19 @@ class TestSequenceFetching(SequenceTests):
         _ = self.move_files_2_tmp_dir([acc_id_tsv])
         return Metadata.load(self.get_data_path(acc_id_tsv))
 
-    @patch('subprocess.run', return_value=MagicMock(returncode=0))
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_single_only(self, mock_tmpdir, mock_subprocess):
+    def test_get_sequences_single_only(
+            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    ):
         acc_id = 'SRR123456'
-        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata(acc_id)
+        mock_announce.return_value = [], [ls_file_names[0]], []
 
         with self.assertWarnsRegex(Warning, 'No paired-read sequences'):
             casava_single, casava_paired, failed_ids = get_sequences(
@@ -424,7 +474,6 @@ class TestSequenceFetching(SequenceTests):
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
-            self.validate_counts(casava_single, casava_paired, [3], [0, 0])
             pd.testing.assert_frame_equal(
                 failed_ids, pd.DataFrame(
                     [], index=pd.Index([], name='ID'),
@@ -432,18 +481,21 @@ class TestSequenceFetching(SequenceTests):
                 ), check_dtype=False
             )
 
-    @patch('os.remove')
-    @patch('subprocess.run', return_value=MagicMock(returncode=0))
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_paired_only(
-            self, mock_tmpdir, mock_subprocess, mock_rm
+            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
     ):
         acc_id = 'SRR123457'
-        ls_file_names = [acc_id + '_1.fastq', acc_id + '_2.fastq',
-                         acc_id + '.sra']
+        ls_file_names = [
+            f'{acc_id}_1.fastq', f'{acc_id}_2.fastq', f'{acc_id}.sra'
+        ]
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata(acc_id)
+        mock_announce.return_value = [], [], ls_file_names[:2]
 
         with self.assertWarnsRegex(Warning, 'No single-read sequences'):
             casava_single, casava_paired, failed_ids = get_sequences(
@@ -459,19 +511,21 @@ class TestSequenceFetching(SequenceTests):
                     columns=['Error message']
                 ), check_dtype=False
             )
-            mock_rm.assert_called_with(
-                os.path.join(mock_tmpdir.return_value.name, acc_id + '.sra')
-            )
 
-    @patch('subprocess.run', return_value=MagicMock(returncode=0))
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_single_n_paired(self, mock_tmpdir, mock_subprocess):
+    def test_get_sequences_single_n_paired(
+            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    ):
         ls_file_names = [
             'SRR123456.fastq', 'SRR123457_1.fastq', 'SRR123457_2.fastq',
             'SRR123456.sra', 'SRR123457.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata('testaccBC')
+        mock_announce.return_value = [], [ls_file_names[0]], ls_file_names[1:3]
 
         casava_single, casava_paired, failed_ids = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -479,7 +533,6 @@ class TestSequenceFetching(SequenceTests):
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
-        self.validate_counts(casava_single, casava_paired, [3], [3, 3])
         pd.testing.assert_frame_equal(
             failed_ids, pd.DataFrame(
                 [], index=pd.Index([], name='ID'),
@@ -487,16 +540,21 @@ class TestSequenceFetching(SequenceTests):
             ), check_dtype=False
         )
 
-    @patch('q2_fondue.sequences._run_fasterq_dump_for_all', return_value={})
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('q2_fondue.sequences._get_run_ids_from_projects',
            return_value=['SRR123456'])
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_bioproject(self, mock_tmpdir, mock_get, mock_run):
+    def test_get_sequences_bioproject(
+            self, mock_tmpdir, mock_get,  mock_announce, mock_pool, mock_proc
+    ):
         acc_id = 'SRR123456'
         proj_acc_id = 'PRJNA734376'
-        ls_file_names = [acc_id + '.fastq', acc_id + '.sra']
+        ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata(proj_acc_id)
+        mock_announce.return_value = [], [ls_file_names[0]], []
 
         _, _, _ = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -504,20 +562,18 @@ class TestSequenceFetching(SequenceTests):
         mock_get.assert_called_with(
             'some@where.com', 1, ['PRJNA734376'], 'INFO'
         )
-        mock_run.assert_called_with(['SRR123456'], ANY, 1, 0, ANY)
 
-    @patch('subprocess.run')
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_with_failed(self, mock_tmpdir, mock_subprocess):
+    def test_get_sequences_with_failed(
+            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    ):
         ls_file_names = ['SRR123456.fastq']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata('testaccBC')
-
-        mock_subprocess.side_effect = [
-            MagicMock(returncode=0), MagicMock(returncode=0),
-            MagicMock(returncode=1, stderr='Some error'),
-            MagicMock(returncode=1, stderr='Some error')
-        ]
+        mock_announce.return_value = ['SRR123457'], ls_file_names[0], []
 
         casava_single, casava_paired, failed_ids = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -525,7 +581,6 @@ class TestSequenceFetching(SequenceTests):
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
-        self.validate_counts(casava_single, casava_paired, [3], [0, 0])
         pd.testing.assert_frame_equal(
             failed_ids, pd.DataFrame(
                 ['Some error'], index=pd.Index(['SRR123457'], name='ID'),
@@ -533,18 +588,22 @@ class TestSequenceFetching(SequenceTests):
             )
         )
 
-    @patch('q2_fondue.sequences._run_fasterq_dump_for_all', return_value=[])
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory', return_value=MockTempDir())
-    def test_get_sequences_nothing_downloaded(self, mock_tmpdir, mock_fasterq):
+    def test_get_sequences_nothing_downloaded(
+            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    ):
         acc_id = 'SRR123456'
         test_temp_md = self.prepare_metadata(acc_id)
+        mock_announce.return_value = [], [], []
 
         with self.assertRaisesRegex(
                 DownloadError,
                 'Neither single- nor paired-end sequences could be downloaded'
         ):
             get_sequences(test_temp_md, email='some@where.com', retries=0)
-            mock_fasterq.assert_called_with([acc_id], ANY, 1, 0, ANY)
 
 
 class TestSequenceCombining(SequenceTests):
