@@ -6,9 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+import itertools
+
 import pandas as pd
 from qiime2.plugin import ValidationError
 from qiime2.plugin import model
+
+from q2_fondue.entrezpy_clients._utils import PREFIX
 
 
 class SRAMetadataFormat(model.TextFileFormat):
@@ -72,4 +76,40 @@ class SRAFailedIDsFormat(model.TextFileFormat):
 
 SRAFailedIDsDirFmt = model.SingleFileDirectoryFormat(
     'SRAFailedIDsDirFmt', 'sra-failed-ids.tsv', SRAFailedIDsFormat
+)
+
+
+class NCBIAccessionIDsFormat(model.TextFileFormat):
+    """
+    This is a format used to store a list of SRA run or BioProject IDs,
+    which can be converted to QIIME's metadata and input into any fondue
+    action.
+    """
+
+    ALLOWED_PREFIXES = tuple(itertools.chain(*[
+        v for k, v in PREFIX.items() if k in ('bioproject', 'run')
+    ]))
+
+    def _validate_id(self, _id: str):
+        if not _id.startswith(self.ALLOWED_PREFIXES):
+            raise ValidationError(
+                'Some of the provided IDs are invalid - only SRA run and '
+                'BioProject IDs are allowed. Please check your input and '
+                'try again.'
+            )
+
+    def _validate_(self, level):
+        df = pd.read_csv(str(self), sep='\t')
+
+        if df.shape[1] > 1:
+            raise ValidationError(
+                'NCBI Accession IDs artifact should only contain a single '
+                'column with IDs of the SRA runs or NCBI\'s BioProjects.'
+            )
+
+        df.iloc[:, 0].apply(self._validate_id)
+
+
+NCBIAccessionIDsDirFmt = model.SingleFileDirectoryFormat(
+    'NCBIAccessionIDsDirFmt', 'ncbi-accession-ids.tsv', NCBIAccessionIDsFormat
 )

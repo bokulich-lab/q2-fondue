@@ -55,19 +55,37 @@ q2-fondue provides a couple of actions to fetch and manipulate SRA data. Below y
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
 
 
+### Import run/BioProject accession IDs
+All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to 
+be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. To import a list of IDs 
+into that type simply run:
+
+```shell
+qiime tools import \
+              --type NCBIAccessionIDs \
+              --input-path ids.tsv \
+              --output-path ids.qza
+```
+
+where:
+- `--input-path` is a path to the TSV file containing run or project IDs
+- `--output-path` is the output artifact
+
+__Note:__ the input TSV file needs to consist of a single column named "ID".
+
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
 
 ```shell
 qiime fondue get-metadata \
-              --m-accession-ids-file metadata_file.tsv \
+              --i-accession-ids ids.qza \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
 
 where:
-- `--m-accession-ids-file` is a TSV containing run or project IDs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
@@ -79,7 +97,7 @@ for all of the requested runs.
 To get single-read and paired-end sequences associated with a number of run or project IDs, execute this command:
 ```shell
 qiime fondue get-sequences \
-              --m-accession-ids-file metadata_file.tsv \
+              --i-accession-ids ids.qza \
               --p-email your_email@somewhere.com \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired \
@@ -87,7 +105,7 @@ qiime fondue get-sequences \
 ```
 
 where:
-- `--m-accession-ids-file` is a TSV containing run or project IDs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
@@ -105,12 +123,12 @@ To fetch both sequence-associated metadata and sequences associated with the pro
 
 ```shell
 qiime fondue get-all \
-              --m-accession-ids-file metadata_file.tsv \ 
+              --i-accession-ids ids.qza \
               --p-email your_email@somewhere.com \
               --output-dir output-dir-name
 ```
 where:
-- `--m-accession-ids-file` is a TSV containing accession numbers for all the runs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 

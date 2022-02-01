@@ -10,7 +10,27 @@ import pandas as pd
 import qiime2
 
 from ..plugin_setup import plugin
-from ._format import SRAMetadataFormat, SRAFailedIDsFormat
+from ._format import (
+    SRAMetadataFormat, SRAFailedIDsFormat, NCBIAccessionIDsFormat
+)
+
+
+def _meta_fmt_to_metadata(ff):
+    with ff.open() as fh:
+        df = pd.read_csv(fh, sep='\t', header=0, index_col=0, dtype='str')
+        return qiime2.Metadata(df)
+
+
+def _meta_fmt_to_series(ff):
+    with ff.open() as fh:
+        s = pd.read_csv(fh, header=0, dtype='str', squeeze=True)
+        return s
+
+
+def _series_to_meta_fmt(data: pd.Series, meta_fmt):
+    with meta_fmt.open() as fh:
+        data.to_csv(fh, sep='\t', header=True, index=False)
+    return meta_fmt
 
 
 @plugin.register_transformer
@@ -30,9 +50,7 @@ def _2(ff: SRAMetadataFormat) -> (pd.DataFrame):
 
 @plugin.register_transformer
 def _3(ff: SRAMetadataFormat) -> (qiime2.Metadata):
-    with ff.open() as fh:
-        df = pd.read_csv(fh, sep='\t', header=0, index_col=0, dtype='str')
-        return qiime2.Metadata(df)
+    return _meta_fmt_to_metadata(ff)
 
 
 @plugin.register_transformer
@@ -54,6 +72,29 @@ def _5(ff: SRAFailedIDsFormat) -> (pd.DataFrame):
 
 @plugin.register_transformer
 def _6(ff: SRAFailedIDsFormat) -> (qiime2.Metadata):
-    with ff.open() as fh:
+    return _meta_fmt_to_metadata(ff)
+
+
+@plugin.register_transformer
+def _7(data: pd.Series) -> (NCBIAccessionIDsFormat):
+    ff = NCBIAccessionIDsFormat()
+    return _series_to_meta_fmt(data, ff)
+
+
+@plugin.register_transformer
+def _8(ff: NCBIAccessionIDsFormat) -> (pd.Series):
+    return _meta_fmt_to_series(ff)
+
+
+@plugin.register_transformer
+def _9(ff: NCBIAccessionIDsFormat) -> (qiime2.Metadata):
+    return _meta_fmt_to_metadata(ff)
+
+
+@plugin.register_transformer
+def _10(ff: SRAMetadataFormat) -> (NCBIAccessionIDsFormat):
+    fout = NCBIAccessionIDsFormat()
+    with ff.open() as fh, fout.open() as fo:
         df = pd.read_csv(fh, sep='\t', header=0, index_col=0, dtype='str')
-        return qiime2.Metadata(df)
+        df.index.to_series().to_csv(fo, sep='\t', header=True, index=False)
+    return fout
