@@ -19,7 +19,7 @@ from q2_fondue.utils import (
     _validate_esearch_result, _determine_id_type, handle_threaded_exception
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
-                                               set_up_logger)
+                                               set_up_logger, InvalidIDs)
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 
 
@@ -64,17 +64,27 @@ def _execute_efetcher(email, n_jobs, run_ids, log_level):
     return meta_df, missing_ids
 
 
-def _get_run_meta(email, n_jobs, run_ids, log_level, logger):
+def _get_run_meta(
+        email, n_jobs, run_ids, log_level, logger
+) -> (pd.DataFrame, dict):
     # validate the IDs
     esearcher = es.Esearcher(
         'esearcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None
     )
     set_up_entrezpy_logging(esearcher, log_level)
-    _validate_esearch_result(esearcher, run_ids)
+    invalid_ids = _validate_esearch_result(esearcher, run_ids, log_level)
+    valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
+
+    if not valid_ids:
+        raise InvalidIDs(
+            'All provided IDs were invalid. Please check your input.'
+        )
 
     # fetch metadata
-    meta_df, missing_ids = _execute_efetcher(email, n_jobs, run_ids, log_level)
+    meta_df, missing_ids = _execute_efetcher(
+        email, n_jobs, valid_ids, log_level
+    )
 
     # when hundreds of runs were requested, it could happen that not all
     # metadata will be fetched - in that case, keep running efetcher
@@ -99,10 +109,12 @@ def _get_run_meta(email, n_jobs, run_ids, log_level, logger):
             f'Please try fetching those independently.'
         )
 
-    return pd.concat(meta_df, axis=0)
+    return pd.concat(meta_df, axis=0), invalid_ids
 
 
-def _get_project_meta(email, n_jobs, project_ids, log_level, logger):
+def _get_project_meta(
+        email, n_jobs, project_ids, log_level, logger
+) -> (pd.DataFrame, dict):
     run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids, log_level)
     return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
 
@@ -110,7 +122,7 @@ def _get_project_meta(email, n_jobs, project_ids, log_level, logger):
 def get_metadata(
         accession_ids: Metadata, email: str,
         n_jobs: int = 1, log_level: str = 'INFO'
-) -> pd.DataFrame:
+) -> (pd.DataFrame, pd.DataFrame):
     """Fetches metadata using the provided run/bioproject accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
@@ -126,7 +138,7 @@ def get_metadata(
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
-
+        pd.DataFrame: DataFrame with invalid IDs and their descriptions.
     """
     logger = set_up_logger(log_level, logger_name=__name__)
 
@@ -137,12 +149,19 @@ def get_metadata(
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':
-        return _get_run_meta(email, n_jobs, accession_ids, log_level, logger)
-
-    elif id_type == 'bioproject':
-        return _get_project_meta(
+        meta, invalid_ids = _get_run_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+    elif id_type == 'bioproject':
+        meta, invalid_ids = _get_project_meta(
+            email, n_jobs, accession_ids, log_level, logger
+        )
+
+    invalid_ids = pd.DataFrame(
+        data={'Error message': invalid_ids.values()},
+        index=pd.Index(invalid_ids.keys(), name='ID')
+    )
+    return meta, invalid_ids
 
 
 def merge_metadata(

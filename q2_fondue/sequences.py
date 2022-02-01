@@ -65,7 +65,7 @@ def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
 
 def _run_fasterq_dump_for_all(
         accession_ids, tmpdirname, threads, retries, logger
-) -> list:
+) -> dict:
     """Runs prefetch & fasterq-dump for all ids in accession_ids.
 
     Args:
@@ -76,7 +76,7 @@ def _run_fasterq_dump_for_all(
         logger (logging.Logger): An instance of a logger.
 
     Returns:
-        failed_ids (list): List of failed run IDs.
+        failed_ids (dict): Failed run IDs with corresponding errors.
     """
     logger.info(
         f'Downloading sequences for {len(accession_ids)} accession IDs...'
@@ -135,7 +135,7 @@ def _run_fasterq_dump_for_all(
                f'runs failed to fetch. Below are the error messages of the ' \
                f"first 5 failed runs:\n{errors}"
     logger.info(msg)
-    return list(failed_ids.keys())
+    return failed_ids
 
 
 def _process_downloaded_sequences(output_dir):
@@ -264,7 +264,7 @@ def get_sequences(
         n_jobs: int = 1, log_level: str = 'INFO',
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt,
-      pd.Series):
+      pd.DataFrame):
     """
     Fetches single-read and paired-end sequences based on provided
     accession IDs.
@@ -287,7 +287,7 @@ def get_sequences(
         only contain one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
 
-        failed_ids (pd.Series): A list of run IDs that failed to download.
+        failed_ids (pd.DataFrame): Run IDs that failed to download with errors.
     """
     logger = set_up_logger(log_level, logger_name=__name__)
 
@@ -332,8 +332,11 @@ def get_sequences(
             _write2casava_dir_paired(tmpdirname, casava_out_paired,
                                      ls_paired_files)
 
-    return \
-        casava_out_single, casava_out_paired, pd.Series(failed_ids, name='ID')
+    failed_ids = pd.DataFrame(
+        data={'Error message': failed_ids.values()},
+        index=pd.Index(failed_ids.keys(), name='ID')
+    )
+    return casava_out_single, casava_out_paired, failed_ids
 
 
 def combine_seqs(
