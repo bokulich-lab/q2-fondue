@@ -20,11 +20,11 @@ from q2_types.per_sample_sequences import (
 from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
-from unittest.mock import patch, call, MagicMock
+from unittest.mock import patch, call, MagicMock, ANY
 
 from q2_fondue.sequences import (
     get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
-    _write_empty_casava, combine_seqs, _write2casava_dir
+    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion
 )
 from q2_fondue.utils import DownloadError
 
@@ -445,6 +445,57 @@ class TestUtils4SequenceFetching(SequenceTests):
                                             ls_file_paired[1] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath_rev))
 
+    def test_announce_completion_single(self):
+        self.processed_q.put(['fileA.fastq'])
+        self.processed_q.put(['fileB.fastq'])
+        self.processed_q.put({'failed_ids': []})
+
+        obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
+
+        self.assertEqual(self.processed_q.qsize(), 0)
+        self.assertListEqual(obs_fail, [])
+        self.assertListEqual(obs_s, [['fileA.fastq'], ['fileB.fastq']])
+        self.assertListEqual(obs_p, [])
+
+    def test_announce_completion_paired(self):
+        self.processed_q.put(['fileA_1.fastq', 'fileA_2.fastq'])
+        self.processed_q.put(['fileB_1.fastq', 'fileB_2.fastq'])
+        self.processed_q.put({'failed_ids': []})
+
+        obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
+
+        self.assertEqual(self.processed_q.qsize(), 0)
+        self.assertListEqual(obs_fail, [])
+        self.assertListEqual(obs_s, [])
+        self.assertListEqual(
+            obs_p,
+            [['fileA_1.fastq', 'fileA_2.fastq'],
+             ['fileB_1.fastq', 'fileB_2.fastq']]
+        )
+
+    def test_announce_completion_mixed(self):
+        self.processed_q.put(['fileA.fastq'])
+        self.processed_q.put(['fileB_1.fastq', 'fileB_2.fastq'])
+        self.processed_q.put({'failed_ids': []})
+
+        obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
+
+        self.assertEqual(self.processed_q.qsize(), 0)
+        self.assertListEqual(obs_fail, [])
+        self.assertListEqual(obs_s, [['fileA.fastq']])
+        self.assertListEqual(obs_p, [['fileB_1.fastq', 'fileB_2.fastq']])
+
+    def test_announce_completion_with_failed(self):
+        self.processed_q.put(['fileA.fastq'])
+        self.processed_q.put({'failed_ids': ['fileB']})
+
+        obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
+
+        self.assertEqual(self.processed_q.qsize(), 0)
+        self.assertListEqual(obs_fail, ['fileB'])
+        self.assertListEqual(obs_s, [['fileA.fastq']])
+        self.assertListEqual(obs_p, [])
+
 
 class TestSequenceFetching(SequenceTests):
 
@@ -480,6 +531,17 @@ class TestSequenceFetching(SequenceTests):
                     columns=['Error message']
                 ), check_dtype=False
             )
+            mock_proc.assert_has_calls([
+                call(target=_run_fasterq_dump_for_all, args=(
+                    [acc_id], mock_tmpdir.return_value.name, 1, 0,
+                    ANY, ANY, ANY), daemon=True),
+                call(target=_process_downloaded_sequences, args=(
+                    mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
+            ])
+            mock_pool.assert_called_once_with(
+                1, _write2casava_dir,
+                (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+            )
 
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
@@ -504,12 +566,22 @@ class TestSequenceFetching(SequenceTests):
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
-            self.validate_counts(casava_single, casava_paired, [0], [3, 3])
             pd.testing.assert_frame_equal(
                 failed_ids, pd.DataFrame(
                     [], index=pd.Index([], name='ID'),
                     columns=['Error message']
                 ), check_dtype=False
+            )
+            mock_proc.assert_has_calls([
+                call(target=_run_fasterq_dump_for_all, args=(
+                    [acc_id], mock_tmpdir.return_value.name, 1, 0,
+                    ANY, ANY, ANY), daemon=True),
+                call(target=_process_downloaded_sequences, args=(
+                    mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
+            ])
+            mock_pool.assert_called_once_with(
+                1, _write2casava_dir,
+                (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
 
     @patch('q2_fondue.sequences.Process')
@@ -539,6 +611,17 @@ class TestSequenceFetching(SequenceTests):
                 columns=['Error message']
             ), check_dtype=False
         )
+        mock_proc.assert_has_calls([
+            call(target=_run_fasterq_dump_for_all, args=(
+                ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
+                0, ANY, ANY, ANY), daemon=True),
+            call(target=_process_downloaded_sequences, args=(
+                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
+        ])
+        mock_pool.assert_called_once_with(
+            1, _write2casava_dir,
+            (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+        )
 
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
@@ -561,6 +644,17 @@ class TestSequenceFetching(SequenceTests):
 
         mock_get.assert_called_with(
             'some@where.com', 1, ['PRJNA734376'], 'INFO'
+        )
+        mock_proc.assert_has_calls([
+            call(target=_run_fasterq_dump_for_all, args=(
+                ['SRR123456'], mock_tmpdir.return_value.name, 1,
+                0, ANY, ANY, ANY), daemon=True),
+            call(target=_process_downloaded_sequences, args=(
+                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
+        ])
+        mock_pool.assert_called_once_with(
+            1, _write2casava_dir,
+            (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
 
     @patch('q2_fondue.sequences.Process')
@@ -587,6 +681,17 @@ class TestSequenceFetching(SequenceTests):
                 columns=['Error message']
             )
         )
+        mock_proc.assert_has_calls([
+            call(target=_run_fasterq_dump_for_all, args=(
+                ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
+                0, ANY, ANY, ANY), daemon=True),
+            call(target=_process_downloaded_sequences, args=(
+                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
+        ])
+        mock_pool.assert_called_once_with(
+            1, _write2casava_dir,
+            (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+        )
 
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
@@ -604,6 +709,18 @@ class TestSequenceFetching(SequenceTests):
                 'Neither single- nor paired-end sequences could be downloaded'
         ):
             get_sequences(test_temp_md, email='some@where.com', retries=0)
+            mock_proc.assert_has_calls([
+                call(target=_run_fasterq_dump_for_all, args=(
+                    ['SRR123456'], mock_tmpdir.return_value.name,
+                    1,
+                    0, ANY, ANY, ANY), daemon=True),
+                call(target=_process_downloaded_sequences, args=(
+                    mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
+            ])
+            mock_pool.assert_called_once_with(
+                1, _write2casava_dir,
+                (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+            )
 
 
 class TestSequenceCombining(SequenceTests):

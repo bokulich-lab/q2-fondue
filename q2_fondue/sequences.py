@@ -5,6 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from multiprocessing.managers import SyncManager
+
 import glob
 from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
@@ -146,6 +148,7 @@ def _run_fasterq_dump_for_all(
 
 
 def _process_one_sequence(filename, output_dir):
+    """Renames sequence files to follow the required naming convention."""
     new_name, is_paired = None, False
     if filename.endswith('_1.fastq'):
         # paired-end _1
@@ -231,6 +234,13 @@ def _write_empty_casava(read_type, casava_out_path, logger):
 def _copy_single_to_casava(
         filename, tmp_dir, casava_result_path
 ):
+    """Copies single-end sequences to Casava directory.
+
+    Downloaded sequence files will be copied from tmp_dir to
+    casava_result_path following single-end sequence rules.
+    """
+    # Edited from original in: q2_demux._subsample.subsample_single
+    # ensure correct order of file names:
     fwd_path_in = os.path.join(tmp_dir, filename)
     fwd_path_out = os.path.join(casava_result_path, f'{filename}.gz')
 
@@ -242,6 +252,13 @@ def _copy_single_to_casava(
 def _copy_paired_to_casava(
         filenames, tmp_dir, casava_result_path
 ):
+    """Copies paired-end sequences to Casava directory.
+
+    Downloaded sequence files will be copied from tmp_dir to
+    casava_result_path following paired-end sequence rules.
+    """
+    # Edited from original in: q2_demux._subsample.subsample_paired
+    # ensure correct order of file names:
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
     fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
     rev_path_in = os.path.join(tmp_dir, filenames[1])
@@ -261,14 +278,14 @@ def _write2casava_dir(
         tmp_dir, casava_out_single, casava_out_paired,
         renaming_queue, done_queue
 ):
-    """Writes paired-end files to casava directory.
+    """Writes single- or paired-end files to casava directory.
 
-    Downloaded sequence files will be copied from tmp_dir to
-    casava_result_path following paired-end sequence rules.
+    Picks up jobs (filenames) from the renaming_queue and decides whether they
+    should be processed as single- or paired-end files.
+    For example, [('fileA', False)] would be processed as single-end,
+    while [('fileB_1', True), ('fileB_2', True)] as paired-end.
+    When done, it inserts filenames into the done_queue to announce completion.
     """
-    # Edited from original in: q2_demux._subsample.subsample_paired
-    # ensure correct order of file names:
-
     for filenames in iter(renaming_queue.get, None):
         if len(filenames) == 1:
             filename = os.path.split(filenames[0][0])[-1]
@@ -284,7 +301,23 @@ def _write2casava_dir(
     return True
 
 
-def _announce_completion(queue):
+def _announce_completion(queue: SyncManager.Queue):
+    """Announces that processing is finished by inserting a None value into
+        a queue and retrieve its all elements.
+
+    List of filenames will be retrieved and assigned to either a single- or
+    paired-end list of outputs. The single dictionary containing failed IDs
+    will also be retrieved and returned.
+
+    Args:
+        queue (SyncManager.Queue): an instance of a queue which should
+            be processed
+
+    Returns:
+        failed_ids (list): List of all failed IDs.
+        single_files (list): Filename list for all single-end reads.
+        paired_files (list): Filename list for all paired-end reads.
+    """
     queue.put(None)
     results = []
     failed_ids = {}
@@ -293,9 +326,9 @@ def _announce_completion(queue):
             results.append(i)
         elif isinstance(i, dict):
             failed_ids = i['failed_ids']
-    ls_single_files = [x for x in results if len(x) == 1]
-    ls_paired_files = [x for x in results if len(x) == 2]
-    return failed_ids, ls_single_files, ls_paired_files
+    single_files = [x for x in results if len(x) == 1]
+    paired_files = [x for x in results if len(x) == 2]
+    return failed_ids, single_files, paired_files
 
 
 def get_sequences(
@@ -351,7 +384,7 @@ def get_sequences(
         fetcher_process = Process(
             target=_run_fasterq_dump_for_all,
             args=(
-                accession_ids, tmp_dir, n_jobs, retries,
+                sorted(accession_ids), tmp_dir, n_jobs, retries,
                 fetched_q, processed_q, logger
             ),
             daemon=True
