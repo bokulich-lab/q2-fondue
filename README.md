@@ -123,7 +123,7 @@ To fetch both sequence-associated metadata and sequences associated with the pro
 
 ```shell
 qiime fondue get-all \
-              --i-accession-ids ids.qza \ 
+              --i-accession-ids ids.qza \
               --p-email your_email@somewhere.com \
               --output-dir output-dir-name
 ```
