@@ -172,7 +172,9 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
     def generate_es_result(self, kind, suffix):
         return ESearchResult(
             response=self.json_to_response(kind, suffix, utility='esearch'),
-            request=self.generate_es_request(term="abc OR 123"))
+            request=self.generate_es_request(term="abc OR 123"),
+            log_level='INFO'
+        )
 
     def generate_el_request(self):
         request_params = FakeParams(self.temp_dir.name, retmode='json',

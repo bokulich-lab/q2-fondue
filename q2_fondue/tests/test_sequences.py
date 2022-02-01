@@ -181,7 +181,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
-            self.assertListEqual(failed_ids, ls_acc_ids)
+            self.assertDictEqual(failed_ids, {'test_accERROR': 'Some error'})
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 1 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -211,7 +211,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 4)
-            self.assertListEqual(failed_ids, ['testaccERROR'])
+            self.assertDictEqual(failed_ids, {'testaccERROR': 'Error 2'})
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -240,7 +240,9 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
-            self.assertListEqual(failed_ids, ['testaccERROR'])
+            self.assertDictEqual(
+                failed_ids, {'testaccERROR': 'Storage exhausted.'}
+            )
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -270,7 +272,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
-            self.assertListEqual(failed_ids, [])
+            self.assertDictEqual(failed_ids, {})
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
             )
@@ -308,8 +310,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 5)
-            self.assertListEqual(
-                failed_ids, ['testaccERROR', 'testaccNOSPACE']
+            self.assertDictEqual(
+                failed_ids,
+                {'testaccERROR': 'Error 1',
+                 'testaccNOSPACE': 'Storage exhausted.'}
             )
             self.assertIn(
                 'INFO:test_log:Download finished. 2 out of 4 runs failed to '
@@ -376,7 +380,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         _write2casava_dir_single(test_temp_dir.name, casava_out_single,
                                  ls_file_single)
         exp_casava_fpath = os.path.join(str(casava_out_single),
-                                        ls_file_single[0]+'.gz')
+                                        ls_file_single[0] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath))
 
     def test_write2casava_dir_paired(self):
@@ -389,11 +393,11 @@ class TestUtils4SequenceFetching(SequenceTests):
                                  ls_file_paired)
 
         exp_casava_fpath_fwd = os.path.join(str(casava_out_paired),
-                                            ls_file_paired[0]+'.gz')
+                                            ls_file_paired[0] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath_fwd))
 
         exp_casava_fpath_rev = os.path.join(str(casava_out_paired),
-                                            ls_file_paired[1]+'.gz')
+                                            ls_file_paired[1] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath_rev))
 
 
@@ -421,8 +425,12 @@ class TestSequenceFetching(SequenceTests):
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.validate_counts(casava_single, casava_paired, [3], [0, 0])
-            pd.testing.assert_series_equal(failed_ids,
-                                           pd.Series([], name='ID'))
+            pd.testing.assert_frame_equal(
+                failed_ids, pd.DataFrame(
+                    [], index=pd.Index([], name='ID'),
+                    columns=['Error message']
+                ), check_dtype=False
+            )
 
     @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
@@ -445,8 +453,12 @@ class TestSequenceFetching(SequenceTests):
             self.assertIsInstance(casava_paired,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.validate_counts(casava_single, casava_paired, [0], [3, 3])
-            pd.testing.assert_series_equal(failed_ids,
-                                           pd.Series([], name='ID'))
+            pd.testing.assert_frame_equal(
+                failed_ids, pd.DataFrame(
+                    [], index=pd.Index([], name='ID'),
+                    columns=['Error message']
+                ), check_dtype=False
+            )
             mock_rm.assert_called_with(
                 os.path.join(mock_tmpdir.return_value.name, acc_id + '.sra')
             )
@@ -468,9 +480,14 @@ class TestSequenceFetching(SequenceTests):
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.validate_counts(casava_single, casava_paired, [3], [3, 3])
-        pd.testing.assert_series_equal(failed_ids, pd.Series([], name='ID'))
+        pd.testing.assert_frame_equal(
+            failed_ids, pd.DataFrame(
+                [], index=pd.Index([], name='ID'),
+                columns=['Error message']
+            ), check_dtype=False
+        )
 
-    @patch('q2_fondue.sequences._run_fasterq_dump_for_all')
+    @patch('q2_fondue.sequences._run_fasterq_dump_for_all', return_value={})
     @patch('q2_fondue.sequences._get_run_ids_from_projects',
            return_value=['SRR123456'])
     @patch('tempfile.TemporaryDirectory')
@@ -509,8 +526,12 @@ class TestSequenceFetching(SequenceTests):
         self.assertIsInstance(casava_paired,
                               CasavaOneEightSingleLanePerSampleDirFmt)
         self.validate_counts(casava_single, casava_paired, [3], [0, 0])
-        pd.testing.assert_series_equal(
-            failed_ids, pd.Series(['SRR123457'], name='ID'))
+        pd.testing.assert_frame_equal(
+            failed_ids, pd.DataFrame(
+                ['Some error'], index=pd.Index(['SRR123457'], name='ID'),
+                columns=['Error message']
+            )
+        )
 
     @patch('q2_fondue.sequences._run_fasterq_dump_for_all', return_value=[])
     @patch('tempfile.TemporaryDirectory', return_value=MockTempDir())

@@ -9,7 +9,6 @@
 import unittest
 
 import pandas as pd
-from q2_fondue.entrezpy_clients._utils import InvalidIDs
 
 from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
@@ -83,48 +82,50 @@ class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
             data=[1], index=["SRR000001"], name="count")
 
         obs = esearch_result.validate_result()
-        self.assertTrue(obs)
+        self.assertDictEqual(obs, {})
 
     def test_esresult_validate_result_single_ambiguous(self):
         esearch_result = self.generate_es_result('single', '_ambiguous')
         esearch_result.result = pd.Series(
-            data=[7], index=["SR012"], name="count")
+            data=[7], index=['SR012'], name='count')
 
-        with self.assertRaisesRegexp(
-                InvalidIDs, r'.*Ambiguous IDs\: SR012'):
-            esearch_result.validate_result()
+        obs = esearch_result.validate_result()
+        exp = {'SR012': 'ID is ambiguous.'}
+        self.assertDictEqual(obs, exp)
 
     def test_esresult_validate_result_multi(self):
         esearch_result = self.generate_es_result('multi', '_correct')
         esearch_result.result = pd.Series(
             data=[1, 1, 1],
-            index=["SRR000001", "SRR000013", "ERR3978173"],
-            name="count"
+            index=['SRR000001', 'SRR000013', 'ERR3978173'],
+            name='count'
         )
 
         obs = esearch_result.validate_result()
-        self.assertTrue(obs)
+        self.assertDictEqual(obs, {})
 
     def test_esresult_validate_result_multi_invalid(self):
         esearch_result = self.generate_es_result('multi', '_invalid')
         esearch_result.result = pd.Series(
-            data=[0, 0], index=["ABCD123", "SRR001"], name="count")
+            data=[0, 0], index=['ABCD123', 'SRR001'], name='count')
 
-        with self.assertRaisesRegexp(
-                InvalidIDs, r'.*Invalid IDs\: ABCD123, SRR001'):
-            esearch_result.validate_result()
+        obs = esearch_result.validate_result()
+        exp = {'ABCD123': 'ID is invalid.', 'SRR001': 'ID is invalid.'}
+        self.assertDictEqual(obs, exp)
 
     def test_esresult_validate_result_multi_mixed(self):
         esearch_result = self.generate_es_result('multi', '_mixed')
         esearch_result.result = pd.Series(
             data=[1, 1, 7, 0, 0],
-            index=["SRR000001", "SRR000013", "SR012", "ABCD123", "SRR001"],
-            name="count")
+            index=['SRR000001', 'SRR000013', 'SR012', 'ABCD123', 'SRR001'],
+            name='count')
 
-        with self.assertRaisesRegexp(
-                InvalidIDs,
-                r'.*Ambiguous IDs\: SR012\n.*Invalid IDs\: ABCD123, SRR001'):
-            esearch_result.validate_result()
+        obs = esearch_result.validate_result()
+        exp = {
+            'SR012': 'ID is ambiguous.', 'ABCD123': 'ID is invalid.',
+            'SRR001': 'ID is invalid.'
+        }
+        self.assertDictEqual(obs, exp)
 
     def test_esresult_size(self):
         esearch_result = self.generate_es_result('multi', '_mixed')
@@ -145,7 +146,7 @@ class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
         self.assertFalse(obs)
 
     def test_esanalyzer_analyze_result(self):
-        es_analyzer = ESearchAnalyzer(["SRR000001"])
+        es_analyzer = ESearchAnalyzer(["SRR000001"], 'INFO')
         es_analyzer.analyze_result(
             response=self.json_to_response('single', '_correct'),
             request=self.generate_es_request("SRR000001")

@@ -139,8 +139,8 @@ class TestTransformers(TestPluginBase):
         )
         failed_ids_path = self.get_data_path('sra-failed-ids.tsv')
         self.sra_failed = SRAFailedIDsFormat(failed_ids_path, mode='r')
-        self.sra_failed_ser = pd.read_csv(
-            failed_ids_path, header=0, dtype='str', squeeze=True
+        self.sra_failed_df = pd.read_csv(
+            failed_ids_path, sep='\t', header=0, index_col=0, dtype='str'
         )
         ncbi_ids_path = self.get_data_path('ncbi-ids-runs.tsv')
         self.ncbi_ids = NCBIAccessionIDsFormat(ncbi_ids_path, mode='r')
@@ -171,28 +171,27 @@ class TestTransformers(TestPluginBase):
         exp = qiime2.Metadata(self.sra_meta_df)
         self.assertEqual(obs, exp)
 
-    def test_series_to_sra_failed_ids(self):
-        transformer = self.get_transformer(pd.Series, SRAFailedIDsFormat)
-        obs = transformer(self.sra_failed_ser)
+    def test_dataframe_to_sra_failed_ids(self):
+        transformer = self.get_transformer(pd.DataFrame, SRAFailedIDsFormat)
+        obs = transformer(self.sra_failed_df)
         self.assertIsInstance(obs, SRAFailedIDsFormat)
 
         obs = pd.read_csv(
-            str(obs), header=0, dtype='str', squeeze=True)
-        pd.testing.assert_series_equal(obs, self.sra_failed_ser)
+            str(obs), sep='\t', header=0, index_col=0, dtype='str')
+        pd.testing.assert_frame_equal(obs, self.sra_failed_df)
 
-    def test_sra_failed_ids_to_series(self):
+    def test_sra_failed_ids_to_dataframe(self):
         _, obs = self.transform_format(
-            SRAFailedIDsFormat, pd.Series, 'sra-failed-ids.tsv'
+            SRAFailedIDsFormat, pd.DataFrame, 'sra-failed-ids.tsv'
         )
-        self.assertIsInstance(obs, pd.Series)
-        pd.testing.assert_series_equal(obs, self.sra_failed_ser)
+        self.assertIsInstance(obs, pd.DataFrame)
+        pd.testing.assert_frame_equal(obs, self.sra_failed_df)
 
     def test_sra_failed_ids_to_q2_metadata(self):
         _, obs = self.transform_format(
             SRAFailedIDsFormat, qiime2.Metadata, 'sra-failed-ids.tsv'
         )
-        exp = qiime2.Metadata(
-            pd.DataFrame([], index=self.sra_failed_ser))
+        exp = qiime2.Metadata(self.sra_failed_df)
         self.assertEqual(obs, exp)
 
     def test_series_to_ncbi_accession_ids(self):

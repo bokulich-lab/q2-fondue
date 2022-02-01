@@ -54,14 +54,20 @@ def _3(ff: SRAMetadataFormat) -> (qiime2.Metadata):
 
 
 @plugin.register_transformer
-def _4(data: pd.Series) -> (SRAFailedIDsFormat):
+def _4(data: pd.DataFrame) -> (SRAFailedIDsFormat):
     ff = SRAFailedIDsFormat()
-    return _series_to_meta_fmt(data, ff)
+    with ff.open() as fh:
+        data.to_csv(fh, sep='\t', header=True, index=True)
+    return ff
 
 
 @plugin.register_transformer
-def _5(ff: SRAFailedIDsFormat) -> (pd.Series):
-    return _meta_fmt_to_series(ff)
+def _5(ff: SRAFailedIDsFormat) -> (pd.DataFrame):
+    with ff.open() as fh:
+        df = pd.read_csv(
+            fh, sep='\t', header=0, index_col=0, dtype='str'
+        )
+        return df
 
 
 @plugin.register_transformer

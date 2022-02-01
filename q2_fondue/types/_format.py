@@ -64,12 +64,13 @@ class SRAFailedIDsFormat(model.TextFileFormat):
     """
 
     def _validate_(self, level):
-        df = pd.read_csv(str(self), sep='\t')
+        df = pd.read_csv(str(self), sep='\t', index_col=0)
 
         if df.shape[1] > 1:
             raise ValidationError(
                 'Failed IDs artifact should only contain a single column '
-                'with IDs of the runs that could not be fetched.'
+                'with error message for the runs that could not be fetched '
+                '(indexed by run ID).'
             )
 
 

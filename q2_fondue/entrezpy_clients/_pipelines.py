@@ -23,7 +23,7 @@ def _get_run_ids_from_projects(email, n_jobs, project_ids, log_level) -> list:
     # search for project IDs
     es = samp_ids_pipeline.add_search(
         {'db': 'bioproject', 'term': " OR ".join(project_ids)},
-        analyzer=ESearchAnalyzer(project_ids)
+        analyzer=ESearchAnalyzer(project_ids, log_level)
     )
     # given bioproject, find linked SRA runs
     el = samp_ids_pipeline.add_link(
