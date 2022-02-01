@@ -430,6 +430,12 @@ class TestUtils4SequenceFetching(SequenceTests):
                                         ls_file_single[0] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath))
         self.assertEqual(1, self.processed_q.qsize())
+        self.assertTupleEqual(
+            (1, [3]), self._validate_sequences_in_samples(casava_out_single)
+        )
+        self.assertTupleEqual(
+            (0, []), self._validate_sequences_in_samples(casava_out_paired)
+        )
 
     def test_write2casava_dir_paired(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -455,6 +461,12 @@ class TestUtils4SequenceFetching(SequenceTests):
         exp_casava_fpath_rev = os.path.join(str(casava_out_paired),
                                             ls_file_paired[1] + '.gz')
         self.assertTrue(os.path.isfile(exp_casava_fpath_rev))
+        self.assertTupleEqual(
+            (0, []), self._validate_sequences_in_samples(casava_out_single)
+        )
+        self.assertTupleEqual(
+            (2, [3, 3]), self._validate_sequences_in_samples(casava_out_paired)
+        )
 
     def test_announce_completion_single(self):
         self.processed_q.put(['fileA.fastq'])
