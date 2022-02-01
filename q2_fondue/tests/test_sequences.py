@@ -158,7 +158,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=0, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
@@ -172,10 +172,11 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
             )
-            self.assertEqual(len(failed_ids), 0)
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
             )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(obs_failed, {'failed_ids': {}})
 
     @patch('time.sleep')
     @patch('subprocess.run',
@@ -185,19 +186,22 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['test_accERROR']
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
-            self.assertDictEqual(failed_ids, {'test_accERROR': 'Some error'})
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 1 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
                 'runs:\nID=test_accERROR, Error=Some error',
                 cm.output
+            )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(
+                obs_failed, {'failed_ids': {'test_accERROR': 'Some error'}}
             )
 
     @patch('os.remove')
@@ -216,14 +220,13 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 4)
-            self.assertDictEqual(failed_ids, {'testaccERROR': 'Error 2'})
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -232,6 +235,10 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
+            )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(
+                obs_failed, {'failed_ids': {'testaccERROR': 'Error 2'}}
             )
 
     @patch('shutil.rmtree')
@@ -246,16 +253,13 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
-            self.assertDictEqual(
-                failed_ids, {'testaccERROR': 'Storage exhausted.'}
-            )
             self.assertIn(
                 'INFO:test_log:Download finished. 1 out of 2 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -264,6 +268,11 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
+            )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(
+                obs_failed,
+                {'failed_ids': {'testaccERROR': 'Storage exhausted.'}}
             )
 
     @patch('shutil.rmtree')
@@ -279,20 +288,21 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['testaccA']
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
-            self.assertDictEqual(failed_ids, {})
             self.assertIn(
                 'INFO:test_log:Download finished.', cm.output
             )
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
             )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(obs_failed, {'failed_ids': {}})
 
     @patch('shutil.rmtree')
     @patch('os.remove')
@@ -318,18 +328,13 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         with self.assertLogs('test_log', level='INFO') as cm:
-            failed_ids = _run_fasterq_dump_for_all(
+            _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q, logger=self.fake_logger
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 5)
-            self.assertDictEqual(
-                failed_ids,
-                {'testaccERROR': 'Error 1',
-                 'testaccNOSPACE': 'Storage exhausted.'}
-            )
             self.assertIn(
                 'INFO:test_log:Download finished. 2 out of 4 runs failed to '
                 'fetch. Below are the error messages of the first 5 failed '
@@ -342,6 +347,12 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             mock_rmtree.assert_called_with(
                 os.path.join(test_temp_dir.name, 'testaccF')
+            )
+            obs_failed = self.processed_q.get()
+            self.assertDictEqual(
+                obs_failed,
+                {'failed_ids': {'testaccERROR': 'Error 1',
+                                'testaccNOSPACE': 'Storage exhausted.'}}
             )
 
     def test_process_downloaded_sequences(self):
@@ -448,24 +459,24 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_announce_completion_single(self):
         self.processed_q.put(['fileA.fastq'])
         self.processed_q.put(['fileB.fastq'])
-        self.processed_q.put({'failed_ids': []})
+        self.processed_q.put({'failed_ids': {}})
 
         obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
 
         self.assertEqual(self.processed_q.qsize(), 0)
-        self.assertListEqual(obs_fail, [])
+        self.assertDictEqual(obs_fail, {})
         self.assertListEqual(obs_s, [['fileA.fastq'], ['fileB.fastq']])
         self.assertListEqual(obs_p, [])
 
     def test_announce_completion_paired(self):
         self.processed_q.put(['fileA_1.fastq', 'fileA_2.fastq'])
         self.processed_q.put(['fileB_1.fastq', 'fileB_2.fastq'])
-        self.processed_q.put({'failed_ids': []})
+        self.processed_q.put({'failed_ids': {}})
 
         obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
 
         self.assertEqual(self.processed_q.qsize(), 0)
-        self.assertListEqual(obs_fail, [])
+        self.assertDictEqual(obs_fail, {})
         self.assertListEqual(obs_s, [])
         self.assertListEqual(
             obs_p,
@@ -476,23 +487,23 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_announce_completion_mixed(self):
         self.processed_q.put(['fileA.fastq'])
         self.processed_q.put(['fileB_1.fastq', 'fileB_2.fastq'])
-        self.processed_q.put({'failed_ids': []})
+        self.processed_q.put({'failed_ids': {}})
 
         obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
 
         self.assertEqual(self.processed_q.qsize(), 0)
-        self.assertListEqual(obs_fail, [])
+        self.assertDictEqual(obs_fail, {})
         self.assertListEqual(obs_s, [['fileA.fastq']])
         self.assertListEqual(obs_p, [['fileB_1.fastq', 'fileB_2.fastq']])
 
     def test_announce_completion_with_failed(self):
         self.processed_q.put(['fileA.fastq'])
-        self.processed_q.put({'failed_ids': ['fileB']})
+        self.processed_q.put({'failed_ids': {'fileB': 'some error'}})
 
         obs_fail, obs_s, obs_p = _announce_completion(self.processed_q)
 
         self.assertEqual(self.processed_q.qsize(), 0)
-        self.assertListEqual(obs_fail, ['fileB'])
+        self.assertDictEqual(obs_fail, {'fileB': 'some error'})
         self.assertListEqual(obs_s, [['fileA.fastq']])
         self.assertListEqual(obs_p, [])
 
@@ -516,7 +527,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata(acc_id)
-        mock_announce.return_value = [], [ls_file_names[0]], []
+        mock_announce.return_value = {}, [ls_file_names[0]], []
 
         with self.assertWarnsRegex(Warning, 'No paired-read sequences'):
             casava_single, casava_paired, failed_ids = get_sequences(
@@ -557,7 +568,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata(acc_id)
-        mock_announce.return_value = [], [], ls_file_names[:2]
+        mock_announce.return_value = {}, [], ls_file_names[:2]
 
         with self.assertWarnsRegex(Warning, 'No single-read sequences'):
             casava_single, casava_paired, failed_ids = get_sequences(
@@ -597,7 +608,7 @@ class TestSequenceFetching(SequenceTests):
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
         test_temp_md = self.prepare_metadata('testaccBC')
-        mock_announce.return_value = [], [ls_file_names[0]], ls_file_names[1:3]
+        mock_announce.return_value = {}, [ls_file_names[0]], ls_file_names[1:3]
 
         casava_single, casava_paired, failed_ids = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -637,7 +648,7 @@ class TestSequenceFetching(SequenceTests):
         ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata(proj_acc_id)
-        mock_announce.return_value = [], [ls_file_names[0]], []
+        mock_announce.return_value = {}, [ls_file_names[0]], []
 
         _, _, _ = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -667,7 +678,8 @@ class TestSequenceFetching(SequenceTests):
         ls_file_names = ['SRR123456.fastq']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
         test_temp_md = self.prepare_metadata('testaccBC')
-        mock_announce.return_value = ['SRR123457'], ls_file_names[0], []
+        mock_announce.return_value = \
+            {'SRR123457': 'Some error'}, ls_file_names[0], []
 
         casava_single, casava_paired, failed_ids = get_sequences(
             test_temp_md, email='some@where.com', retries=0)
@@ -702,7 +714,7 @@ class TestSequenceFetching(SequenceTests):
     ):
         acc_id = 'SRR123456'
         test_temp_md = self.prepare_metadata(acc_id)
-        mock_announce.return_value = [], [], []
+        mock_announce.return_value = {}, [], []
 
         with self.assertRaisesRegex(
                 DownloadError,

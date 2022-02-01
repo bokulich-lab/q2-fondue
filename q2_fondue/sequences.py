@@ -70,7 +70,7 @@ def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
 def _run_fasterq_dump_for_all(
         accession_ids, tmpdirname, threads, retries,
         fetched_queue, done_queue, logger
-) -> dict:
+):
     """Runs prefetch & fasterq-dump for all ids in accession_ids.
 
     Args:
@@ -143,8 +143,7 @@ def _run_fasterq_dump_for_all(
                f'runs failed to fetch. Below are the error messages of the ' \
                f"first 5 failed runs:\n{errors}"
     logger.info(msg)
-    done_queue.put({'failed_ids': list(failed_ids.keys())})
-    return True
+    done_queue.put({'failed_ids': failed_ids})
 
 
 def _process_one_sequence(filename, output_dir):
@@ -172,15 +171,11 @@ def _process_one_sequence(filename, output_dir):
 def _process_downloaded_sequences(
         output_dir, fetched_queue, renaming_queue, n_workers
 ):
-    """Processes downloaded sequences and returns a list of processed files.
+    """Processes downloaded sequences.
 
-    Renames single-read and paired-end sequences according to casava file
-    format and outputs list of single-read and paired-end sequence
-    filenames.
+    Picks up filenames of fetched sequences from the fetched_queue, renames
+    them and inserts processed filenames into the renaming_queue when finished.
     """
-    # rename all files to casava format & save single and paired
-    # file names to list
-
     for _id in iter(fetched_queue.get, None):
         filenames = glob.glob(os.path.join(output_dir, f'{_id}*.fastq'))
         filenames = [
@@ -192,8 +187,8 @@ def _process_downloaded_sequences(
         renaming_queue.put(single) if single else False
         renaming_queue.put(paired) if paired else False
 
+    # tell all the workers we are done
     [renaming_queue.put(None) for i in range(n_workers)]
-    return True
 
 
 def _read_fastq_seqs(filepath):
