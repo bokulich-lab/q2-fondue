@@ -91,7 +91,7 @@ class TestGetAll(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 [acc_id], mock_tmpdir.return_value.name, 1, 1,
-                ANY, ANY, ANY), daemon=True),
+                ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
@@ -168,7 +168,7 @@ class TestGetAll(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 [acc_ids[0]], mock_tmpdir.return_value.name, 1, 0,
-                ANY, ANY, ANY), daemon=True),
+                ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])

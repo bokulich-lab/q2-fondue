@@ -34,6 +34,8 @@ from q2_fondue.utils import (_determine_id_type, handle_threaded_exception,
 
 threading.excepthook = handle_threaded_exception
 
+LOGGER = set_up_logger('INFO', logger_name=__name__)
+
 
 def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int):
@@ -69,7 +71,7 @@ def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
 
 def _run_fasterq_dump_for_all(
         accession_ids, tmpdirname, threads, retries,
-        fetched_queue, done_queue, logger
+        fetched_queue, done_queue
 ):
     """Runs prefetch & fasterq-dump for all ids in accession_ids.
 
@@ -78,12 +80,11 @@ def _run_fasterq_dump_for_all(
         tmpdirname (str): Name of temporary directory to store the data.
         threads (int, default=1): Number of threads to be used in parallel.
         retries (int, default=2): Number of retries to fetch sequences.
-        logger (logging.Logger): An instance of a logger.
 
     Returns:
         failed_ids (dict): Failed run IDs with corresponding errors.
     """
-    logger.info(
+    LOGGER.info(
         f'Downloading sequences for {len(accession_ids)} accession IDs...'
     )
     accession_ids_init = accession_ids.copy()
@@ -114,7 +115,7 @@ def _run_fasterq_dump_for_all(
             if free_space < (0.35 * used_seq_space):
                 failed_ids.update(
                     _get_remaining_ids_with_storage_error(acc, pbar))
-                logger.warning(
+                LOGGER.warning(
                     'Available storage was exhausted - there will be no '
                     'more retries.')
                 retries = -1
@@ -124,7 +125,7 @@ def _run_fasterq_dump_for_all(
             # log & add time buffer if we retry
             sleep_lag = (1/(retries+1))*180
             ls_failed_ids = list(failed_ids.keys())
-            logger.info(
+            LOGGER.info(
                 f'Retrying to download the following failed accession IDs in '
                 f'{round(sleep_lag/60,1)} min: {ls_failed_ids}'
             )
@@ -142,7 +143,7 @@ def _run_fasterq_dump_for_all(
         msg += f' {len(failed_ids.keys())} out of {len(accession_ids_init)} ' \
                f'runs failed to fetch. Below are the error messages of the ' \
                f"first 5 failed runs:\n{errors}"
-    logger.info(msg)
+    LOGGER.info(msg)
     done_queue.put({'failed_ids': failed_ids})
 
 
@@ -202,7 +203,7 @@ def _read_fastq_seqs(filepath):
                qual.strip())
 
 
-def _write_empty_casava(read_type, casava_out_path, logger):
+def _write_empty_casava(read_type, casava_out_path):
     """Writes empty casava file to output directory.
 
     Warns about `read_type` sequences that are not available
@@ -211,7 +212,7 @@ def _write_empty_casava(read_type, casava_out_path, logger):
     warn_msg = f'No {read_type}-read sequences available ' \
                f'for these accession IDs.'
     warn(warn_msg)
-    logger.warning(warn_msg)
+    LOGGER.warning(warn_msg)
 
     if read_type == 'single':
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
@@ -356,7 +357,7 @@ def get_sequences(
 
         failed_ids (pd.DataFrame): Run IDs that failed to download with errors.
     """
-    logger = set_up_logger(log_level, logger_name=__name__)
+    LOGGER.setLevel(log_level.upper())
 
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -380,13 +381,13 @@ def get_sequences(
             target=_run_fasterq_dump_for_all,
             args=(
                 sorted(accession_ids), tmp_dir, n_jobs, retries,
-                fetched_q, processed_q, logger
+                fetched_q, processed_q
             ),
             daemon=True
         )
         # processing downloaded files
         worker_count = int(min(max(n_jobs - 1, 1), cpu_count() - 1))
-        logger.debug(f'Using {worker_count} workers.')
+        LOGGER.debug(f'Using {worker_count} workers.')
         renamer_process = Process(
             target=_process_downloaded_sequences,
             args=(tmp_dir, fetched_q, renamed_q, worker_count),
@@ -422,13 +423,13 @@ def get_sequences(
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(single_files) == 0:
-            _write_empty_casava('single', casava_out_single, logger)
+            _write_empty_casava('single', casava_out_single)
 
         # write downloaded paired-end seqs from tmp to casava dir
         if len(paired_files) == 0:
-            _write_empty_casava('paired', casava_out_paired, logger)
+            _write_empty_casava('paired', casava_out_paired)
 
-    logger.info('Processing finished.')
+    LOGGER.info('Processing finished.')
 
     failed_ids = pd.DataFrame(
         data={'Error message': failed_ids.values()},

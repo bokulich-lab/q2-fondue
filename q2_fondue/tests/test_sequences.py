@@ -111,7 +111,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, fetched_queue=self.fetched_q,
-            done_queue=self.processed_q, logger=self.fake_logger
+            done_queue=self.processed_q
         )
         mock_subprocess.assert_has_calls([
             call(exp_prefetch, text=True,
@@ -136,7 +136,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
             retries=0, fetched_queue=self.fetched_q,
-            done_queue=self.processed_q, logger=self.fake_logger
+            done_queue=self.processed_q
         )
         mock_subprocess.assert_has_calls([
             call(exp_prefetch, text=True,
@@ -157,11 +157,11 @@ class TestUtils4SequenceFetching(SequenceTests):
         exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
         exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=0, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             mock_subprocess.assert_has_calls([
                 call(exp_prefetch, text=True,
@@ -173,7 +173,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                 os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
             )
             self.assertIn(
-                'INFO:test_log:Download finished.', cm.output
+                'INFO:q2_fondue.sequences:Download finished.', cm.output
             )
             obs_failed = self.processed_q.get()
             self.assertDictEqual(obs_failed, {'failed_ids': {}})
@@ -185,18 +185,18 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertIn(
-                'INFO:test_log:Download finished. 1 out of 1 runs failed to '
-                'fetch. Below are the error messages of the first 5 failed '
-                'runs:\nID=test_accERROR, Error=Some error',
+                'INFO:q2_fondue.sequences:Download finished. 1 out of 1 '
+                'runs failed to fetch. Below are the error messages of the '
+                'first 5 failed runs:\nID=test_accERROR, Error=Some error',
                 cm.output
             )
             obs_failed = self.processed_q.get()
@@ -219,18 +219,18 @@ class TestUtils4SequenceFetching(SequenceTests):
             MagicMock(returncode=1, stderr='Error 2')
         ]
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 4)
             self.assertIn(
-                'INFO:test_log:Download finished. 1 out of 2 runs failed to '
-                'fetch. Below are the error messages of the first 5 failed '
-                'runs:\nID=testaccERROR, Error=Error 2',
+                'INFO:q2_fondue.sequences:Download finished. 1 out of 2 runs '
+                'failed to fetch. Below are the error messages of the first '
+                '5 failed runs:\nID=testaccERROR, Error=Error 2',
                 cm.output
             )
             mock_rm.assert_called_with(
@@ -252,18 +252,18 @@ class TestUtils4SequenceFetching(SequenceTests):
         os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertIn(
-                'INFO:test_log:Download finished. 1 out of 2 runs failed to '
-                'fetch. Below are the error messages of the first 5 failed '
-                'runs:\nID=testaccERROR, Error=Storage exhausted.',
+                'INFO:q2_fondue.sequences:Download finished. 1 out of 2 runs '
+                'failed to fetch. Below are the error messages of the first '
+                '5 failed runs:\nID=testaccERROR, Error=Storage exhausted.',
                 cm.output
             )
             mock_rm.assert_called_with(
@@ -287,16 +287,16 @@ class TestUtils4SequenceFetching(SequenceTests):
         os.makedirs(f'{test_temp_dir.name}/testaccA')
         ls_acc_ids = ['testaccA']
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=2, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             self.assertEqual(mock_subprocess.call_count, 2)
             self.assertEqual(mock_disk_usage.call_count, 2)
             self.assertIn(
-                'INFO:test_log:Download finished.', cm.output
+                'INFO:q2_fondue.sequences:Download finished.', cm.output
             )
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
@@ -327,18 +327,18 @@ class TestUtils4SequenceFetching(SequenceTests):
             (0, 0, 10), (0, 0, 10), (0, 0, 10), (0, 0, 2)
         ]
 
-        with self.assertLogs('test_log', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
                 ls_acc_ids, test_temp_dir.name, threads=6,
                 retries=1, fetched_queue=self.fetched_q,
-                done_queue=self.processed_q, logger=self.fake_logger
+                done_queue=self.processed_q
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 5)
             self.assertIn(
-                'INFO:test_log:Download finished. 2 out of 4 runs failed to '
-                'fetch. Below are the error messages of the first 5 failed '
-                'runs:\nID=testaccERROR, Error=Error 1'
+                'INFO:q2_fondue.sequences:Download finished. 2 out of 4 runs '
+                'failed to fetch. Below are the error messages of the first '
+                '5 failed runs:\nID=testaccERROR, Error=Error 1'
                 '\nID=testaccNOSPACE, Error=Storage exhausted.',
                 cm.output
             )
@@ -389,8 +389,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertWarnsRegex(Warning,
                                    'No {}-read sequences'.format(
                                        empty_seq_type)):
-            _write_empty_casava(
-                empty_seq_type, casava_out_single, self.fake_logger)
+            _write_empty_casava(empty_seq_type, casava_out_single)
             exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
             exp_casava_fpath = os.path.join(str(casava_out_single),
                                             exp_filename)
@@ -402,8 +401,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         with self.assertWarnsRegex(Warning,
                                    'No {}-read sequences'.format(
                                        empty_seq_type)):
-            _write_empty_casava(
-                empty_seq_type, casava_out_paired, self.fake_logger)
+            _write_empty_casava(empty_seq_type, casava_out_paired)
 
             for exp_filename in ['xxx_00_L001_R1_001.fastq.gz',
                                  'xxx_00_L001_R2_001.fastq.gz']:
@@ -557,7 +555,7 @@ class TestSequenceFetching(SequenceTests):
             mock_proc.assert_has_calls([
                 call(target=_run_fasterq_dump_for_all, args=(
                     [acc_id], mock_tmpdir.return_value.name, 1, 0,
-                    ANY, ANY, ANY), daemon=True),
+                    ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
             ])
@@ -598,7 +596,7 @@ class TestSequenceFetching(SequenceTests):
             mock_proc.assert_has_calls([
                 call(target=_run_fasterq_dump_for_all, args=(
                     [acc_id], mock_tmpdir.return_value.name, 1, 0,
-                    ANY, ANY, ANY), daemon=True),
+                    ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
             ])
@@ -637,7 +635,7 @@ class TestSequenceFetching(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
-                0, ANY, ANY, ANY), daemon=True),
+                0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
@@ -671,7 +669,7 @@ class TestSequenceFetching(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 ['SRR123456'], mock_tmpdir.return_value.name, 1,
-                0, ANY, ANY, ANY), daemon=True),
+                0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
@@ -708,7 +706,7 @@ class TestSequenceFetching(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
-                0, ANY, ANY, ANY), daemon=True),
+                0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
@@ -737,7 +735,7 @@ class TestSequenceFetching(SequenceTests):
                 call(target=_run_fasterq_dump_for_all, args=(
                     ['SRR123456'], mock_tmpdir.return_value.name,
                     1,
-                    0, ANY, ANY, ANY), daemon=True),
+                    0, ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
             ])
