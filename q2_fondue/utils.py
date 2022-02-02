@@ -62,6 +62,7 @@ def handle_threaded_exception(args):
         msg += 'EntrezPy failed to connect to NCBI. Please check your ' \
                'internet connection and try again. It may help to wait ' \
                'a few minutes before retrying.'
+    # silence threads exiting correctly
     elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '0':
         return
     else:
