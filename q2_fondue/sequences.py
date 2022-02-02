@@ -80,6 +80,10 @@ def _run_fasterq_dump_for_all(
         tmpdirname (str): Name of temporary directory to store the data.
         threads (int, default=1): Number of threads to be used in parallel.
         retries (int, default=2): Number of retries to fetch sequences.
+        fetched_queue (multiprocessing.Queue): Queue communicating IDs
+            that were successfully fetched.
+        done_queue (SyncManager.Queue): Queue communicating filenames
+            that were completely processed.
 
     Returns:
         failed_ids (dict): Failed run IDs with corresponding errors.
