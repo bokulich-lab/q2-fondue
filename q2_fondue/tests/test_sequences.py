@@ -105,7 +105,9 @@ class TestUtils4SequenceFetching(SequenceTests):
                                                    'testaccA.sra'])
 
         ls_acc_ids = ['testaccA']
-        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_prefetch = [
+            'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
+        ]
         exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
@@ -130,7 +132,9 @@ class TestUtils4SequenceFetching(SequenceTests):
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
         ls_acc_ids = ['testaccA']
-        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_prefetch = [
+            'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
+        ]
         exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         _run_fasterq_dump_for_all(
@@ -154,7 +158,9 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA']
-        exp_prefetch = ['prefetch', '-O', ls_acc_ids[0], ls_acc_ids[0]]
+        exp_prefetch = [
+            'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
+        ]
         exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
