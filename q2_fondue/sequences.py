@@ -40,7 +40,7 @@ LOGGER = set_up_logger('INFO', logger_name=__name__)
 def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int):
     """Runs fasterq-dump command on a single accession."""
-    cmd_prefetch = ['prefetch', '-O', acc, acc]
+    cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc, acc]
     cmd_fasterq = ['fasterq-dump', '-e', str(threads), acc]
 
     result = subprocess.run(
