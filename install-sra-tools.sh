@@ -4,20 +4,18 @@ TOOLKIT_VER="3.0.0"
 
 if [[ "$OSTYPE" == "linux"* ]]; then
   LINUX_VER=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-  if [[ "$LINUX_VER" == 'Ubuntu"' ]]; then
+  if [[ "$LINUX_VER" == '"Ubuntu"' ]]; then
     OS_VER="ubuntu64"
   elif [[ "$LINUX_VER" == '"CentOS Linux"' ]]; then
     OS_VER="centos_linux64"
   else
     echo "Detected OS version (${LINUX_VER}) is not supported. Aborting."
-    unset_vars
     exit 1
   fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   OS_VER="mac64"
 else
   echo "Detected OS version (${OSTYPE}) is not supported. Aborting."
-  unset_vars
   exit 1
 fi
 
@@ -38,10 +36,8 @@ rm -r sratoolkit
 
 echo "Testing installation..."
 if [[ $(which prefetch) == "$CONDA_PREFIX/bin"* ]]; then
-  unset_vars
   echo "Success!"
 else
   echo "Installation failed."
-  unset_vars
   exit 1
 fi
