@@ -10,10 +10,17 @@ Before q2-fondue is available *via* conda, you can use the following instruction
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "sra-tools>=2.11.0" \
-  "tqdm>=4.62.3" xmltodict
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict
 
 conda activate fondue
+```
+* Install sra-tools using the script provided in this repo.
+```shell
+curl -sL https://github.com/bokulich-lab/q2-fondue/blob/main/install-sra-tools.sh > install-sra-tools.sh
+
+chmod +x install-sra-tools.sh
+
+bash install-sra-tools.sh
 ```
 * Install q2-fondue and refresh the QIIME 2 CLI cache. 
 ```shell
