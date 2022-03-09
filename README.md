@@ -16,11 +16,12 @@ conda activate fondue
 ```
 * Install sra-tools using the script provided in this repo.
 ```shell
-curl -sL https://github.com/bokulich-lab/q2-fondue/blob/main/install-sra-tools.sh > install-sra-tools.sh
+curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/install-sra-tools.sh > install-sra-tools.sh
 
 chmod +x install-sra-tools.sh
-
 bash install-sra-tools.sh
+
+rm install-sra-tools.sh
 ```
 * Install q2-fondue and refresh the QIIME 2 CLI cache. 
 ```shell
@@ -29,19 +30,10 @@ pip install git+https://github.com/bokulich-lab/q2-fondue.git
 qiime dev refresh-cache
 ```
 
-* Correctly configure the wrapped SRA Toolkit functions from NCBI:
-  - by setting the location of the user-repository to an empty folder (below indicated with `<your cache location>`):
-  ```shell
-  vdb-config -s "/repository/user/main/public/root=<your cache location>"
-  ```
-  - by indicating that prefetches should be stored in the user repository:
-  ```shell
-  vdb-config --prefetch-to-user-repo
-  ```
-  - by adding a proxy (if needed):
-  ```shell
-  vdb-config --proxy <your proxy URL> --proxy-disable no
-  ```
+* Configuration of the wrapped SRA Toolkit should be automatically performed by the installation script executed above. In case you need to configure a proxy server run:
+```shell
+vdb-config --proxy <your proxy URL> --proxy-disable no
+```
 
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.

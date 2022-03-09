@@ -41,3 +41,12 @@ else
   echo "Installation failed."
   exit 1
 fi
+
+echo "Configuring SRA Toolkit:"
+SRA_CACHE_LOC="$HOME/.prefetch_cache"
+echo "Creating prefetch cache directory under $SRA_CACHE_LOC..."
+mkdir "$SRA_CACHE_LOC"
+echo "Running vdb-config..."
+vdb-config -s "/repository/user/main/public/root=$SRA_CACHE_LOC"
+vdb-config --prefetch-to-user-repo
+echo "Configuration completed."
