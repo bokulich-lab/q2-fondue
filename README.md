@@ -89,7 +89,7 @@ where:
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
-- --o-failed-runs`is the list of all run IDs for which fetching metadata failed, with their corresponding error messages
+- `--o-failed-runs` is the list of all run IDs for which fetching metadata failed, with their corresponding error messages
 
 The resulting artifact will contain a TSV file with all the available metadata fields
 for all of the requested runs.
