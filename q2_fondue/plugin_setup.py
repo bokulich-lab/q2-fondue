@@ -20,6 +20,7 @@ from q2_fondue import __version__
 from q2_fondue.get_all import get_all
 from q2_fondue.metadata import get_metadata, merge_metadata
 from q2_fondue.sequences import get_sequences, combine_seqs
+from q2_fondue.scraper import scrape_collection
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
     SRAFailedIDsFormat, SRAFailedIDsDirFmt,
@@ -193,6 +194,40 @@ plugin.methods.register_function(
                 'artifacts, for example obtained by re-fetching failed '
                 'downloads.',
     citations=[]
+)
+
+plugin.methods.register_function(
+    function=scrape_collection,
+    inputs={},
+    parameters={
+        'library_type': Str % Choices(['user', 'group']),
+        'library_id': Int,
+        'api_key': Str,
+        'collection_name': Str
+    },
+    outputs=[('accession_ids', NCBIAccessionIDs)],
+    input_descriptions={},
+    parameter_descriptions={
+        'library_type': 'Zotero API library type',
+        'library_id': 'Valid Zotero API userID (for library_type \'user\' '
+                      'extract from https://www.zotero.org/settings/keys, '
+                      'for \'group\' extract by hovering over group name '
+                      'in https://www.zotero.org/groups/)',
+        'api_key': 'Valid Zotero API user key (retrieve from '
+                   'https://www.zotero.org/settings/keys/new checking '
+                   '"Allow library access").',
+        'collection_name': 'Name of the collection to be scraped.'
+    },
+    output_descriptions={
+        'accession_ids': 'Artifact containing run or BioProject IDs scraped '
+                         'from Zotero collection'
+    },
+    name='Scrape Zotero collection for run and Bioproject IDs.',
+    description=(
+        'Scrape html and pdf files of a Zotero collection for run and '
+        'Bioproject IDs.'
+    ),
+    citations=[citations['stephan_hugel_2019_2917290']]
 )
 
 plugin.register_formats(

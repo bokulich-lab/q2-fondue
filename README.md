@@ -10,7 +10,7 @@ Before q2-fondue is available *via* conda, you can use the following instruction
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero
 
 conda activate fondue
 ```
@@ -80,8 +80,7 @@ qiime fondue get-metadata \
               --i-accession-ids ids.qza \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
-              --o-metadata output_metadata.qza \
-              --o-failed-runs failed_IDs.qza
+              --o-metadata output_metadata.qza
 ```
 
 where:
@@ -89,7 +88,6 @@ where:
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
-- `--o-failed-runs` is the list of all run IDs for which fetching metadata failed, with their corresponding error messages
 
 The resulting artifact will contain a TSV file with all the available metadata fields
 for all of the requested runs.
