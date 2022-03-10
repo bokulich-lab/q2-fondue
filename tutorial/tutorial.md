@@ -338,8 +338,6 @@ Instead of working with multiple raw sequencing data (semantic type `SampleData[
       --o-combined-seqs combined_seqs.qza
 ```
 
-> *Note:* Please **only** combine sequencing data from individual studies! 
-
 ### Merging metadata files 
 With *q2-fondue* we can also easily merge multiple metadata files into a single one! 
 
