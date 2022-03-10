@@ -69,35 +69,38 @@ First, activate your QIIME 2 environment and install relevant dependencies:
 conda activate qiime2
 
 conda install -c conda-forge -c bioconda -c defaults \
- "entrezpy>=2.1.2" "sra-tools==2.11.0" "tqdm>=4.62.3" xmltodict
+ "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict
 ```
 
-Then install _q2-fondue_ and update your QIIME 2 libraries:
+Then, we are installing and configuring the wrapped SRA Toolkit with the script provided in this repo:
+```shell
+curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/install-sra-tools.sh > install-sra-tools.sh
+
+chmod +x install-sra-tools.sh
+bash install-sra-tools.sh
+
+rm install-sra-tools.sh
+```
+
+Finally, install _q2-fondue_ and update your QIIME 2 libraries:
 ```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 
 qiime dev refresh-cache
 ```
 
-Finally, we have to correctly configure the wrapped SRA Toolkit functions from NCBI by setting the location of the user-repository to an empty folder (`<your cache location>`) where temporary files can be stored.
-```shell
-vdb-config -s "/repository/user/main/public/root=<your cache location>"
-
-vdb-config --prefetch-to-user-repo
-``` 
-
 Done! :muscle:
  
 ## Getting started
 
-First, let's move to the tutorial directory.
+First, let's move to the tutorial directory. 
 
 ```shell
 cd tutorial
 ```
 
 To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs or BioProjects. 
-This metadata file has to contain a header QIIME 2 can recognize! We can for example put *id* as the column name. 
+This metadata file has to contain a header QIIME 2 can recognize and we can for example put *id* as the column name. 
 To learn more about other options for identifiers used in QIIME 2 or learn about metadata in general, check out 
 the [QIIME 2 metadata documentation](docs.qiime2.org).
 
@@ -111,7 +114,7 @@ The *metadata_file.tsv* contains the BioProject accession number (PRJEB14186) an
 
 ## Fetching sequences and corresponding metadata together
 
-We first have to convert our metadata_file_runs.tsv file to a QIIME2 artifact of semantic type `NCBIAccessionIDs`. 
+We first have to convert our *metadata_file_runs.tsv* file to a QIIME2 artifact of semantic type `NCBIAccessionIDs`. 
 
 ```shell
 qiime tools import \
@@ -120,7 +123,7 @@ qiime tools import \
       --output-path metadata_file_runs.qza
 ```
 
-Then, to download the raw sequencing data and associated metadata  of the entire project we simply pass the metadata_file_runs.qza to `qiime fondue get-all` and specify the output directory. 
+Then, to download the raw sequencing data and associated metadata  of the entire project we simply pass the *metadata_file_runs.qza* to `qiime fondue get-all` and specify the output directory. 
 
 To not overload their servers, NCBI recommends to avoid posting more than 3 URL requests per second 
 and to run requests for very large jobs on the weekend (find more info on this in their 
@@ -167,17 +170,25 @@ In this case we will therefore [continue](#what-now) with the *single_reads.qza*
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
-Also for this action we can provide a TSV file with accession number of BioProject or 
+Also for this action we can start with TSV a file with accession number of BioProject or 
 individual Runs. 
 
 ```shell
+qiime tools import \
+      --type NCBIAccessionIDs \
+      --input-path metadata_file.tsv \
+      --output-path metadata_file.qza
+
 qiime fondue get-metadata \
-      --m-accession-ids-file metadata_file.tsv \
+      --i-accession-ids metadata_file.qza \
       --p-n-jobs 1 \
       --p-email your_email@somewhere.com \
-      --o-metadata output_metadata.qza
+      --o-metadata output_metadata.qza \
+      --o-failed-runs failed_metadata.qza
 ```
 > *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to 1.
+
+The output file *output_metadata.qza* now contains all the metadata for the requested IDs. And *failed_metadata.qza* list all IDs where fetching metadata failed, with their corresponding error messages. 
 
 
 ### Fetching **only** sequencing data
@@ -185,10 +196,12 @@ qiime fondue get-metadata \
 In contrast, to only get the raw sequences associated with a number of runs, execute this command:
 ```shell
 qiime fondue get-sequences \
-      --m-accession-ids-file metadata_file.tsv \
+      --i-accession-ids metadata_file.qza \
       --verbose \
-      --o-single-reads output_dir_single \
-      --o-paired-reads output_dir_paired
+      --p-email your_email@somewhere.com \
+      --o-single-reads single_reads.qza \
+      --o-paired-reads paired_reads.qza \
+      --o-failed-runs failed_ids.qza
 ```
 
 > *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).  
@@ -237,7 +250,7 @@ qiime dada2 denoise-single \
       --o-denoising-stats fondue-output/dada2_stats.qza
 ```
 
-As mentioned above, the *metadata.qza* file can be used directly in the following analyis! :muscle:
+As mentioned above, the *metadata.qza* file can be used directly in the following analysis! :muscle:
 
 ```shell
 qiime feature-table summarize \
@@ -258,10 +271,12 @@ Similarly to the `get-all` action, `get-metadata` also requires a TSV file with 
 
 ```shell
 qiime fondue get-metadata \
-              --m-accession-ids-file metadata_file.tsv \
-              --p-n-jobs 1 \
-              --p-email your_email@somewhere.com \
-              --o-metadata output_metadata.qza
+      --i-accession-ids metadata_file_runs.qza \
+      --p-n-jobs 1 \
+      --p-email your_email@somewhere.com \
+      --o-metadata output_metadata.qza \
+      --o-failed-runs failed_metadata.qza \
+      --verbose
 ```
 > *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and a high value is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to a value of 1. 
 
@@ -272,10 +287,10 @@ qiime fondue get-metadata \
 In contrast, to only get the raw sequences associated with a number of runs, execute this command:
 ```shell
 qiime fondue get-sequences \
-              --m-accession-ids-file metadata_file.tsv \
-              --o-single-reads output_dir_single \
-              --o-paired-reads output_dir_paired \
-              --o-failed-ids output_failed_ids
+      --i-accession-ids metadata_file_runs.qza \
+      --p-email your_email@somewhere.com \
+      --output-dir get-seq-output \
+      --verbose
 ```
 
 ## Extracting the metadata or sequences artifacts 
@@ -303,13 +318,35 @@ Similarly, when extracting the sequencing data, we find the individual *fastq.gz
 
 ## Troubleshooting 
 ### Manually refetching missing sequencing data
-Occasionally sequencing data is not completely downloaded due to, for example, server timeouts from NCBI. In this case one can simply use the generated *output_failed_ids.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download the missing sequencing data. 
+Occasionally sequencing data is not completely downloaded due to, for example, server timeouts from NCBI. In this case one can simply use the generated *failed_runs.qza* file of semantic type `SRAFailedIDs` containing the IDs that failed to download the missing sequencing data. 
 
 ```shell
 qiime fondue get-sequences \
-      --m-accession-ids-file output_failed_ids.qza \
+      --i-accession-ids fondue-output/failed_ids.qza \
+      --p-email your_email@somewhere.com \
       --o-single-reads refetched_single \
-      --o-paired-reads refetched_paired
+      --o-paired-reads refetched_paired \
+      --o-failed-runs refetched_failed
+```
+
+### Combining sequence data from multiple into a sinlge artifact 
+Instead of working with multiple raw sequencing data (semantic type `SampleData[SequencesWithQuality]`), for example after refetching IDs that failed to download at first, we can use this powerful action to merge them into a single artifact. 
+
+```shell
+ qiime fondue combine-seqs \
+      --i-seqs single_reads.qza refetched_single.qza \
+      --o-combined-seqs combined_seqs.qza
+```
+
+> *Note:* Please **only** combine sequencing data from individual studies! 
+
+### Merging metadata files 
+With *q2-fondue* we can also easily merge multiple metadata files into a single one! 
+
+```shell
+qiime fondue merge-metadata \
+      --i-metadata output_metadata_1.qza output_metadata_2.qza \
+      --o-merged-metadata merged_metadata.qza
 ```
 
 ## References 
