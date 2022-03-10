@@ -21,23 +21,23 @@ class DownloadError(Exception):
 
 
 def _validate_esearch_result(
-        esearcher: es.Esearcher, run_ids: List[str]) -> bool:
+        esearcher: es.Esearcher, run_ids: List[str], log_level: str) -> dict:
     """Validates provided accession IDs using ESearch.
 
     Args:
         esearcher (es.Esearcher): A valid instance of an Entrezpy Esearcher.
         run_ids (List[str]): List of all the run IDs to be validated.
+        log_level (str): Logging level.
 
     Returns:
-        bool: True if all the IDs are valid.
-
+        dict: Dictionary of invalid IDs (as keys) with a description.
     """
     esearch_response = esearcher.inquire(
         {
             'db': 'sra',
             'term': " OR ".join(run_ids),
             'usehistory': False
-        }, analyzer=ESearchAnalyzer(run_ids)
+        }, analyzer=ESearchAnalyzer(run_ids, log_level)
     )
 
     return esearch_response.result.validate_result()
@@ -62,6 +62,9 @@ def handle_threaded_exception(args):
         msg += 'EntrezPy failed to connect to NCBI. Please check your ' \
                'internet connection and try again. It may help to wait ' \
                'a few minutes before retrying.'
+    # silence threads exiting correctly
+    elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '0':
+        return
     else:
         msg += f'Caught {args.exc_type} with value "{args.exc_value}" ' \
                f'in thread {args.thread}'

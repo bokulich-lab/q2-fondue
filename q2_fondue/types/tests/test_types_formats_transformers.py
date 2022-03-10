@@ -15,7 +15,8 @@ from qiime2.plugin.testing import TestPluginBase
 
 from q2_fondue.types import (
     SRAMetadata, SRAMetadataDirFmt, SRAMetadataFormat,
-    SRAFailedIDs, SRAFailedIDsDirFmt, SRAFailedIDsFormat
+    SRAFailedIDs, SRAFailedIDsDirFmt, SRAFailedIDsFormat,
+    NCBIAccessionIDsFormat, NCBIAccessionIDs, NCBIAccessionIDsDirFmt
 )
 
 
@@ -67,6 +68,39 @@ class TestFormats(TestPluginBase):
         ):
             format.validate()
 
+    def test_ncbi_accession_ids_fmt_runs(self):
+        meta_path = self.get_data_path('ncbi-ids-runs.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        format.validate()
+
+    def test_ncbi_accession_ids_fmt_projects(self):
+        meta_path = self.get_data_path('ncbi-ids-bioprojects.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        format.validate()
+
+    def test_ncbi_accession_ids_fmt_empty(self):
+        meta_path = self.get_data_path('sra-failed-ids-empty.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        format.validate()
+
+    def test_ncbi_accession_ids_fmt_many_columns(self):
+        meta_path = self.get_data_path('sra-metadata.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        with self.assertRaisesRegexp(
+                ValidationError,
+                'NCBI Accession IDs artifact should only contain'
+        ):
+            format.validate()
+
+    def test_ncbi_accession_ids_fmt_wrong_ids(self):
+        meta_path = self.get_data_path('ncbi-ids-wrong.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        with self.assertRaisesRegexp(
+                ValidationError,
+                'Some of the provided IDs are invalid'
+        ):
+            format.validate()
+
 
 class TestTypes(TestPluginBase):
     package = 'q2_fondue.types.tests'
@@ -77,6 +111,9 @@ class TestTypes(TestPluginBase):
     def test_sra_failed_ids_semantic_type_registration(self):
         self.assertRegisteredSemanticType(SRAFailedIDs)
 
+    def test_ncbi_accession_ids_semantic_type_registration(self):
+        self.assertRegisteredSemanticType(NCBIAccessionIDs)
+
     def test_sra_metadata_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             SRAMetadata, SRAMetadataDirFmt)
@@ -84,6 +121,10 @@ class TestTypes(TestPluginBase):
     def test_sra_failed_ids_to_format_registration(self):
         self.assertSemanticTypeRegisteredToFormat(
             SRAFailedIDs, SRAFailedIDsDirFmt)
+
+    def test_ncbi_accession_ids_to_format_registration(self):
+        self.assertSemanticTypeRegisteredToFormat(
+            NCBIAccessionIDs, NCBIAccessionIDsDirFmt)
 
 
 class TestTransformers(TestPluginBase):
@@ -98,8 +139,13 @@ class TestTransformers(TestPluginBase):
         )
         failed_ids_path = self.get_data_path('sra-failed-ids.tsv')
         self.sra_failed = SRAFailedIDsFormat(failed_ids_path, mode='r')
-        self.sra_failed_ser = pd.read_csv(
-            failed_ids_path, header=0, dtype='str', squeeze=True
+        self.sra_failed_df = pd.read_csv(
+            failed_ids_path, sep='\t', header=0, index_col=0, dtype='str'
+        )
+        ncbi_ids_path = self.get_data_path('ncbi-ids-runs.tsv')
+        self.ncbi_ids = NCBIAccessionIDsFormat(ncbi_ids_path, mode='r')
+        self.ncbi_ids_ser = pd.read_csv(
+            ncbi_ids_path, header=0, dtype='str', squeeze=True
         )
 
     def test_dataframe_to_sra_metadata(self):
@@ -125,29 +171,66 @@ class TestTransformers(TestPluginBase):
         exp = qiime2.Metadata(self.sra_meta_df)
         self.assertEqual(obs, exp)
 
-    def test_series_to_sra_failed_ids(self):
-        transformer = self.get_transformer(pd.Series, SRAFailedIDsFormat)
-        obs = transformer(self.sra_failed_ser)
+    def test_dataframe_to_sra_failed_ids(self):
+        transformer = self.get_transformer(pd.DataFrame, SRAFailedIDsFormat)
+        obs = transformer(self.sra_failed_df)
         self.assertIsInstance(obs, SRAFailedIDsFormat)
 
         obs = pd.read_csv(
-            str(obs), header=0, dtype='str', squeeze=True)
-        pd.testing.assert_series_equal(obs, self.sra_failed_ser)
+            str(obs), sep='\t', header=0, index_col=0, dtype='str')
+        pd.testing.assert_frame_equal(obs, self.sra_failed_df)
 
-    def test_sra_failed_ids_to_series(self):
+    def test_sra_failed_ids_to_dataframe(self):
         _, obs = self.transform_format(
-            SRAFailedIDsFormat, pd.Series, 'sra-failed-ids.tsv'
+            SRAFailedIDsFormat, pd.DataFrame, 'sra-failed-ids.tsv'
         )
-        self.assertIsInstance(obs, pd.Series)
-        pd.testing.assert_series_equal(obs, self.sra_failed_ser)
+        self.assertIsInstance(obs, pd.DataFrame)
+        pd.testing.assert_frame_equal(obs, self.sra_failed_df)
 
     def test_sra_failed_ids_to_q2_metadata(self):
         _, obs = self.transform_format(
             SRAFailedIDsFormat, qiime2.Metadata, 'sra-failed-ids.tsv'
         )
-        exp = qiime2.Metadata(
-            pd.DataFrame([], index=self.sra_failed_ser))
+        exp = qiime2.Metadata(self.sra_failed_df)
         self.assertEqual(obs, exp)
+
+    def test_series_to_ncbi_accession_ids(self):
+        transformer = self.get_transformer(pd.Series, NCBIAccessionIDsFormat)
+        obs = transformer(self.ncbi_ids_ser)
+        self.assertIsInstance(obs, NCBIAccessionIDsFormat)
+
+        obs = pd.read_csv(
+            str(obs), header=0, dtype='str', squeeze=True
+        )
+        pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
+
+    def test_ncbi_accession_ids_to_series(self):
+        _, obs = self.transform_format(
+            NCBIAccessionIDsFormat, pd.Series, 'ncbi-ids-runs.tsv'
+        )
+        self.assertIsInstance(obs, pd.Series)
+        pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
+
+    def test_ncbi_accession_ids_to_q2_metadata(self):
+        _, obs = self.transform_format(
+            NCBIAccessionIDsFormat, qiime2.Metadata, 'ncbi-ids-runs.tsv'
+        )
+        exp = qiime2.Metadata(
+            pd.DataFrame([], index=self.ncbi_ids_ser)
+        )
+        self.assertEqual(obs, exp)
+
+    def test_sra_metadata_to_ncbi_accession_ids(self):
+        transformer = self.get_transformer(
+            SRAMetadataFormat, NCBIAccessionIDsFormat
+        )
+        obs = transformer(self.sra_meta)
+        self.assertIsInstance(obs, NCBIAccessionIDsFormat)
+
+        obs = pd.read_csv(
+            str(obs), header=0, dtype='str', squeeze=True
+        )
+        pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
 
 
 if __name__ == "__main__":

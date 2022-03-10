@@ -261,13 +261,16 @@ class EFetchResult(EutilsResult):
         if exp_id not in self.experiments.keys():
             platform = list(exp_meta['PLATFORM'].keys())[0]
             instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
+            custom_meta = self._extract_custom_attributes(
+                exp_meta, 'experiment'
+            )
             self.experiments[exp_id] = SRAExperiment(
                 id=exp_id,
                 instrument=instrument,
                 platform=platform,
                 sample_id=sample_id,
                 library=self._extract_library_info(attributes),
-                custom_meta=None
+                custom_meta=custom_meta
             )
             # append experiment to sample
             self.samples[sample_id].experiments.append(
@@ -388,7 +391,7 @@ class EFetchResult(EutilsResult):
         for i, tag in enumerate(tags):
             total, count = tags.count(tag), tags[:i].count(tag)
             if total > 1:
-                self.logger.warning(
+                self.logger.debug(
                     f'One of the metadata keys ({tag}) is duplicated. '
                     f'It will be retained with a numeric suffix.'
                 ) if count == 0 else False

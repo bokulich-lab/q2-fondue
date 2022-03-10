@@ -12,19 +12,20 @@ from typing import List
 import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
-from q2_fondue.entrezpy_clients._utils import InvalidIDs
+from q2_fondue.entrezpy_clients._utils import set_up_logger
 
 
 class ESearchResult(EutilsResult):
     """Entrezpy client for ESearch utility used to search for or validate
         provided accession IDs.
     """
-    def __init__(self, response, request):
+    def __init__(self, response, request, log_level):
         super().__init__(request.eutil, request.query_id, request.db)
         self.result_raw = None
         self.result = None
         self.query_key = None
         self.webenv = None
+        self.logger = set_up_logger(log_level, self)
 
     def size(self):
         return self.result.shape[0]
@@ -45,7 +46,7 @@ class ESearchResult(EutilsResult):
             'query_key': self.query_key, 'cmd': 'neighbor_history'
         }
 
-    def validate_result(self):
+    def validate_result(self) -> dict:
         """Validates hit counts obtained for all the provided UIDs.
 
         As the expected hit count for a valid SRA accession ID is 1, all the
@@ -62,17 +63,20 @@ class ESearchResult(EutilsResult):
         # correct id should have count == 1
         leftover_ids = self.result[self.result != 1]
         if leftover_ids.shape[0] == 0:
-            return True
+            return {}
         ambigous_ids = leftover_ids[leftover_ids > 0]
         invalid_ids = leftover_ids[leftover_ids == 0]
 
-        error_msg = 'Some of the IDs are invalid or ambiugous:'
+        error_msg = 'Some of the IDs are invalid or ambiguous:'
         if ambigous_ids.shape[0] > 0:
             error_msg += f'\n Ambiguous IDs: {", ".join(ambigous_ids.index)}'
         if invalid_ids.shape[0] > 0:
             error_msg += f'\n Invalid IDs: {", ".join(invalid_ids.index)}'
-        error_msg += '\nPlease check your accession IDs and try again.'
-        raise InvalidIDs(error_msg)
+        self.logger.warning(error_msg)
+        return {
+            **{_id: 'ID is ambiguous.' for _id in ambigous_ids.index},
+            **{_id: 'ID is invalid.' for _id in invalid_ids.index}
+        }
 
     def parse_search_results(self, response, uids: List[str]):
         """Parses response received from Esearch as a pandas Series object.
@@ -113,13 +117,14 @@ class ESearchResult(EutilsResult):
 
 
 class ESearchAnalyzer(EutilsAnalyzer):
-    def __init__(self, uids):
+    def __init__(self, uids, log_level):
         super().__init__()
         self.uids = uids
+        self.log_level = log_level
 
     def init_result(self, response, request):
         if not self.result:
-            self.result = ESearchResult(response, request)
+            self.result = ESearchResult(response, request, self.log_level)
 
     def analyze_error(self, response, request):
         print(json.dumps({

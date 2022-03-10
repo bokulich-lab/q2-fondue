@@ -1,17 +1,27 @@
 # q2-fondue 
 ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
 
+ <p align="left"><img src="logo.png" height="150" /></p>
+
 ## Installation
-Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment:
+Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
 * Create and activate a conda environment with the required dependencies:
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "sra-tools>=2.11.0" \
-  "tqdm>=4.62.3" xmltodict
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict
 
 conda activate fondue
+```
+* Install sra-tools using the script provided in this repo.
+```shell
+curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/install-sra-tools.sh > install-sra-tools.sh
+
+chmod +x install-sra-tools.sh
+bash install-sra-tools.sh
+
+rm install-sra-tools.sh
 ```
 * Install q2-fondue and refresh the QIIME 2 CLI cache. 
 ```shell
@@ -20,8 +30,10 @@ pip install git+https://github.com/bokulich-lab/q2-fondue.git
 qiime dev refresh-cache
 ```
 
-The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
-
+* Configuration of the wrapped SRA Toolkit should be automatically performed by the installation script executed above. In case you need to configure a proxy server run:
+```shell
+vdb-config --proxy <your proxy URL> --proxy-disable no
+```
 
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.
@@ -42,19 +54,37 @@ q2-fondue provides a couple of actions to fetch and manipulate SRA data. Below y
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
 
 
+### Import run/BioProject accession IDs
+All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to 
+be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. To import a list of IDs 
+into that type simply run:
+
+```shell
+qiime tools import \
+              --type NCBIAccessionIDs \
+              --input-path ids.tsv \
+              --output-path ids.qza
+```
+
+where:
+- `--input-path` is a path to the TSV file containing run or project IDs
+- `--output-path` is the output artifact
+
+__Note:__ the input TSV file needs to consist of a single column named "ID".
+
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
 
 ```shell
 qiime fondue get-metadata \
-              --m-accession-ids-file metadata_file.tsv \
+              --i-accession-ids ids.qza \
               --p-n-jobs 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza
 ```
 
 where:
-- `--m-accession-ids-file` is a TSV containing run or project IDs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
@@ -66,7 +96,7 @@ for all of the requested runs.
 To get single-read and paired-end sequences associated with a number of run or project IDs, execute this command:
 ```shell
 qiime fondue get-sequences \
-              --m-accession-ids-file metadata_file.tsv \
+              --i-accession-ids ids.qza \
               --p-email your_email@somewhere.com \
               --o-single-reads output_dir_single \
               --o-paired-reads output_dir_paired \
@@ -74,7 +104,7 @@ qiime fondue get-sequences \
 ```
 
 where:
-- `--m-accession-ids-file` is a TSV containing run or project IDs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--o-single-reads` is the output artifact containing single-read sequences
 - `--o-paired-reads` is the output artifact containing paired-end sequences
@@ -92,12 +122,12 @@ To fetch both sequence-associated metadata and sequences associated with the pro
 
 ```shell
 qiime fondue get-all \
-              --m-accession-ids-file metadata_file.tsv \ 
+              --i-accession-ids ids.qza \
               --p-email your_email@somewhere.com \
               --output-dir output-dir-name
 ```
 where:
-- `--m-accession-ids-file` is a TSV containing accession numbers for all the runs
+- `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 

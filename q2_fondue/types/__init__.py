@@ -8,12 +8,14 @@
 
 from ._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
 )
-from ._type import SRAMetadata, SRAFailedIDs
+from ._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
 
 __all__ = [
     'SRAMetadataFormat', 'SRAMetadataDirFmt', 'SRAMetadata',
-    'SRAFailedIDsFormat', 'SRAFailedIDsDirFmt', 'SRAFailedIDs'
+    'SRAFailedIDsFormat', 'SRAFailedIDsDirFmt', 'SRAFailedIDs',
+    'NCBIAccessionIDsFormat', 'NCBIAccessionIDsDirFmt', 'NCBIAccessionIDs'
 ]

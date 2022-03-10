@@ -7,14 +7,13 @@
 # ----------------------------------------------------------------------------
 
 import importlib
-
 from q2_types.per_sample_sequences import (
     SequencesWithQuality, PairedEndSequencesWithQuality
 )
 from q2_types.sample_data import SampleData
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, List, Range, Metadata
+    Plugin, Citations, Choices, Str, Int, List, Range
 )
 
 from q2_fondue import __version__
@@ -23,24 +22,30 @@ from q2_fondue.metadata import get_metadata, merge_metadata
 from q2_fondue.sequences import get_sequences, combine_seqs
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
 )
-from q2_fondue.types._type import SRAMetadata, SRAFailedIDs
+from q2_fondue.types._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
-common_param_descr = {
-    'accession_ids': 'Path to file containing run or BioProject IDs for '
-                     'which the metadata and/or sequences should be fetched. '
-                     'Should conform to QIIME Metadata format.',
-    'email': 'Your e-mail address (required by NCBI).',
-    'n_jobs': 'Number of concurrent download jobs (default: 1).',
-    'log_level': 'Logging level.'
+common_inputs = {
+    'accession_ids': NCBIAccessionIDs | SRAMetadata | SRAFailedIDs
+}
+
+common_input_descriptions = {
+    'accession_ids': 'Artifact containing run or BioProject IDs for '
+                     'which the metadata and/or sequences should be fetched.',
 }
 
 common_params = {
-    'accession_ids': Metadata,
     'email': Str,
     'n_jobs': Int % Range(1, None),
     'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR']),
+}
+
+common_param_descr = {
+    'email': 'Your e-mail address (required by NCBI).',
+    'n_jobs': 'Number of concurrent download jobs (default: 1).',
+    'log_level': 'Logging level.'
 }
 
 output_descriptions = {
@@ -49,8 +54,8 @@ output_descriptions = {
                     'for all the requested IDs.',
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
                     'for all the requested IDs.',
-    'failed_runs': 'List of all run IDs for which fetching sequence '
-                   'data failed.'
+    'failed_runs': 'List of all run IDs for which fetching {} failed, '
+                   'with their corresponding error messages.'
 }
 
 citations = Citations.load('citations.bib', package='q2_fondue')
@@ -69,12 +74,15 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=get_metadata,
-    inputs={},
+    inputs={**common_inputs},
     parameters=common_params,
-    outputs=[('metadata', SRAMetadata)],
-    input_descriptions={},
+    outputs=[('metadata', SRAMetadata), ('failed_runs', SRAFailedIDs)],
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions=common_param_descr,
-    output_descriptions={'metadata': output_descriptions['metadata']},
+    output_descriptions={
+        'metadata': output_descriptions['metadata'],
+        'failed_runs': output_descriptions['failed_runs'].format('metadata')
+    },
     name='Fetch sequence-related metadata based on run or BioProject ID.',
     description=(
         'Fetch sequence-related metadata based on run or BioProject ID '
@@ -85,7 +93,7 @@ plugin.methods.register_function(
 
 plugin.methods.register_function(
     function=get_sequences,
-    inputs={},
+    inputs={**common_inputs},
     parameters={
         **common_params,
         'retries': Int % Range(0, None)
@@ -95,7 +103,7 @@ plugin.methods.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={},
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).',
@@ -103,7 +111,7 @@ plugin.methods.register_function(
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
         'paired_reads': output_descriptions['paired_reads'],
-        'failed_runs': output_descriptions['failed_runs']
+        'failed_runs': output_descriptions['failed_runs'].format('sequences')
     },
     name='Fetch sequences based on run ID.',
     description='Fetch sequence data of all run IDs.',
@@ -112,7 +120,7 @@ plugin.methods.register_function(
 
 plugin.pipelines.register_function(
     function=get_all,
-    inputs={},
+    inputs={**common_inputs},
     parameters={
         **common_params,
         'retries': Int % Range(0, None)
@@ -123,12 +131,18 @@ plugin.pipelines.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={},
+    input_descriptions={**common_input_descriptions},
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).'
     },
-    output_descriptions=output_descriptions,
+    output_descriptions={
+        'metadata': output_descriptions['metadata'],
+        'single_reads': output_descriptions['single_reads'],
+        'paired_reads': output_descriptions['paired_reads'],
+        'failed_runs': output_descriptions['failed_runs'].format(
+            'sequences and/or metadata ')
+    },
     name='Fetch sequence-related metadata and sequences of all run or '
          'BioProject IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
@@ -145,7 +159,8 @@ plugin.methods.register_function(
     parameter_descriptions={},
     output_descriptions={
         'merged_metadata': 'Merged metadata containing all rows and columns '
-                           '(without duplicates).'},
+                           '(without duplicates).'
+    },
     name='Merge several metadata files into a single metadata object.',
     description=(
         'Merge multiple sequence-related metadata from different q2-fondue '
@@ -182,14 +197,18 @@ plugin.methods.register_function(
 
 plugin.register_formats(
     SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt
+    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
 )
-plugin.register_semantic_types(SRAMetadata, SRAFailedIDs)
+plugin.register_semantic_types(SRAMetadata, SRAFailedIDs, NCBIAccessionIDs)
 plugin.register_semantic_type_to_format(
     SRAMetadata, artifact_format=SRAMetadataDirFmt
 )
 plugin.register_semantic_type_to_format(
     SRAFailedIDs, artifact_format=SRAFailedIDsDirFmt
+)
+plugin.register_semantic_type_to_format(
+    NCBIAccessionIDs, artifact_format=NCBIAccessionIDsDirFmt
 )
 
 importlib.import_module('q2_fondue.types._transformer')
