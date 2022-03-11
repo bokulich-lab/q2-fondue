@@ -30,8 +30,8 @@ rm sratoolkit.tar.gz
 mv "sratoolkit.${TOOLKIT_VER}-${OS_VER}/" "sratoolkit/"
 
 echo "Installing SRA Tools in $CONDA_PREFIX..."
-find sratoolkit/bin/ -maxdepth 1 -type f -exec mv -i {} $CONDA_PREFIX/bin/ \;
-find sratoolkit/bin/ -maxdepth 1 -type l -exec mv -i {} $CONDA_PREFIX/bin/ \;
+find sratoolkit/bin/ -maxdepth 1 -type f -exec mv -f {} $CONDA_PREFIX/bin/ \;
+find sratoolkit/bin/ -maxdepth 1 -type l -exec mv -f {} $CONDA_PREFIX/bin/ \;
 rm -r sratoolkit
 
 echo "Testing installation..."
