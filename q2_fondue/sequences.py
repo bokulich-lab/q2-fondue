@@ -29,8 +29,10 @@ from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
 from q2_fondue.entrezpy_clients._utils import set_up_logger
-from q2_fondue.utils import (_determine_id_type, handle_threaded_exception,
-                             DownloadError)
+from q2_fondue.utils import (
+    _determine_id_type, handle_threaded_exception, DownloadError,
+    _has_enough_space, _find_next_id
+)
 
 threading.excepthook = handle_threaded_exception
 
@@ -41,7 +43,9 @@ def _run_cmd_fasterq(
         acc: str, output_dir: str, threads: int):
     """Runs fasterq-dump command on a single accession."""
     cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc, acc]
-    cmd_fasterq = ['fasterq-dump', '-e', str(threads), acc]
+    cmd_fasterq = [
+        'fasterq-dump', '-e', str(threads), '--size-check', 'on', '-x', acc
+    ]
 
     result = subprocess.run(
         cmd_prefetch, text=True, capture_output=True, cwd=output_dir)
@@ -56,6 +60,10 @@ def _run_cmd_fasterq(
                 shutil.rmtree(sra_path)
             elif os.path.isfile(f'{sra_path}.sra'):
                 os.remove(f'{sra_path}.sra')
+        elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
+            LOGGER.error(
+                'Not enough space for fasterq-dump to process ID=%s.', acc
+            )
     return result
 
 
@@ -116,22 +124,26 @@ def _run_fasterq_dump_for_all(
             used_seq_space = init_free_space - free_space
             # current space threshold: 35% of fetched seq space as evaluated
             # from 6 random run and ProjectIDs
-            if free_space < (0.35 * used_seq_space):
+            if free_space < (0.35 * used_seq_space) and not \
+                    _has_enough_space(
+                        _find_next_id(acc, pbar), tmpdirname, free_space
+                    ):
                 failed_ids.update(
                     _get_remaining_ids_with_storage_error(acc, pbar))
                 LOGGER.warning(
                     'Available storage was exhausted - there will be no '
-                    'more retries.')
+                    'more retries.'
+                )
                 retries = -1
                 break
 
         if len(failed_ids.keys()) > 0 and retries > 0:
             # log & add time buffer if we retry
-            sleep_lag = (1/(retries+1))*180
+            sleep_lag = (1 / (retries + 1)) * 180
             ls_failed_ids = list(failed_ids.keys())
             LOGGER.info(
                 f'Retrying to download the following failed accession IDs in '
-                f'{round(sleep_lag/60,1)} min: {ls_failed_ids}'
+                f'{round(sleep_lag / 60, 1)} min: {ls_failed_ids}'
             )
             time.sleep(sleep_lag)
 

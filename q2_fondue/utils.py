@@ -8,12 +8,16 @@
 
 import os
 import signal
+import subprocess
 from typing import List
 
 from entrezpy.esearch import esearcher as es
+from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs, set_up_logger
+
+LOGGER = set_up_logger('INFO', logger_name=__name__)
 
 
 class DownloadError(Exception):
@@ -74,3 +78,62 @@ def handle_threaded_exception(args):
     # This will send a SIGINT to the main thread, which will gracefully
     # kill the running Q2 action. No artifacts will be saved.
     os.kill(os.getpid(), signal.SIGINT)
+
+
+def _has_enough_space(acc_id: str, output_dir: str, free_space: int) -> bool:
+    """Checks whether there is enough storage available for fasterq-dump
+        to process sequences for a given ID.
+
+    vdb-dump will be used to check the amount of space required for the final
+    data. Required space is estimated as 10x that of the final data (as per
+    NCBI's documentation).
+
+    Args:
+        acc_id (str): The accession ID to be processed.
+        output_dir (str): Location where the output would be saved.
+        free_space (int): The amount of free space available on the disk.
+
+    Return
+        bool: Whether there is enough space available for fasterq-dump tool.
+    """
+    if acc_id is None:
+        return True
+
+    cmd_vdb = ['vdb-dump', '--info', acc_id]
+    result = subprocess.run(
+        cmd_vdb, text=True, capture_output=True, cwd=output_dir
+    )
+
+    if result.returncode == 0:
+        # convert into dict, should we ever need that in the future
+        stdout = result.stdout.split('\n')
+        acc_info = {
+            k.strip(): v.strip() for
+            [k, v] in [
+                x.split(':', maxsplit=1) for x in stdout if ':' in x
+            ]
+        }
+        # as per the docs:
+        # https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump
+        req_space = 10 * int(acc_info.get('size').replace(',', ''))
+        LOGGER.debug(
+            'Space required for %s: %sMB (space available: %sMB)',
+            acc_id, round(req_space/10**6, 1), round(free_space/10**6, 1)
+        )
+        return True if req_space < free_space else False
+    else:
+        LOGGER.error(
+            'vdb-dump exited with a "%s" error code (the message was: "%s"). '
+            'We will try to fetch the next accession ID.',
+            result.returncode, result.stderr
+        )
+        return True
+
+
+def _find_next_id(acc_id: str, progress_bar: tqdm):
+    pbar_content = list(progress_bar)
+    index_next_acc = pbar_content.index(acc_id) + 1
+    if index_next_acc >= len(pbar_content):
+        return None
+    else:
+        return pbar_content[index_next_acc]
