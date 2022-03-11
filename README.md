@@ -16,7 +16,7 @@ conda activate fondue
 ```
 * Install sra-tools using the script provided in this repo.
 ```shell
-curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/install-sra-tools.sh > install-sra-tools.sh
+curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/contents/install-sra-tools.sh > install-sra-tools.sh
 
 chmod +x install-sra-tools.sh
 bash install-sra-tools.sh
