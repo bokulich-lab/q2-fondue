@@ -13,6 +13,10 @@ from q2_fondue.entrezpy_clients._utils import set_up_logger
 LOGGER = set_up_logger('INFO', logger_name=__name__)
 
 
+class NoAccessionIDs(Exception):
+    pass
+
+
 def _get_collection_id(
         zot: zotero.Zotero, col_name: str):
     """
@@ -21,6 +25,8 @@ def _get_collection_id(
     Args:
         zot (zotero.Zotero): Zotero instance
         col_name (str): Name of collection
+    Returns:
+        str: Collection ID.
     """
 
     # get all collections in this zot instance
@@ -36,9 +42,29 @@ def _get_collection_id(
     except KeyError:
         raise KeyError(
             f'Provided collection name {col_name} does not '
-            f'exist in this libary')
+            f'exist in this library')
 
     return col_id
+
+
+def _get_attachment_keys(zot, coll_id):
+    """Retrieves attachment keys of attachments in provided collection.
+
+    Args:
+        zot (zotero.Zotero): Zotero instance
+        coll_id (_type_): Collection ID.
+
+    Returns:
+        list: List of attachment keys.
+    """
+    ls_attach = zot.everything(
+        zot.collection_items(coll_id, itemType='attachment'))
+    if len(ls_attach) == 0:
+        raise KeyError(
+            'No attachments exist in this collection')
+    else:
+        ls_attach_keys = list(set([x['key'] for x in ls_attach]))
+        return ls_attach_keys
 
 
 def _find_accessionIDs(txt):
@@ -62,14 +88,14 @@ def _find_accessionIDs(txt):
 
 
 def scrape_collection(
-    library_type: str, library_id: int, api_key: str, collection_name: str
+    library_type: str, library_id: str, api_key: str, collection_name: str
 ) -> pd.Series:
     """
     Scrapes Zotero collection for run and BioProject IDs.
 
     Args:
         library_type (str): Zotero API library type
-        library_id (int): Valid Zotero API userID (for library_type 'user'
+        library_id (str): Valid Zotero API userID (for library_type 'user'
             extract from https://www.zotero.org/settings/keys, for 'group'
             extract by hovering over group name in
             https://www.zotero.org/groups/)
@@ -81,6 +107,7 @@ def scrape_collection(
     Returns:
         pd.Series: Series with run and Bioproject IDs scraped from collection.
     """
+    # TODO: add proper logger & test for it
     LOGGER.info(
         f'Scraping accession IDs for collection "{collection_name}" in '
         f'{library_type} library with library ID {library_id}...'
@@ -93,16 +120,13 @@ def scrape_collection(
         api_key)
 
     # get collection id
-    # todo: raise error if it fails: LOGGER.info(msg)
     coll_id = _get_collection_id(zot, collection_name)
 
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
-    ls_attach = zot.everything(
-        zot.collection_items(coll_id, itemType='attachment'))
-    ls_attach_keys = list(set([x['key'] for x in ls_attach]))
+    ls_attach_keys = _get_attachment_keys(zot, coll_id)
     LOGGER.info(
-        f'Found {len(ls_attach_keys)} attachements to scrape through...'
+        f'Found {len(ls_attach_keys)} attachments to scrape through...'
     )
 
     # extract IDs from text of attachment items
@@ -111,6 +135,10 @@ def scrape_collection(
         # get text
         str_text = zot.fulltext_item(attach_key)['content']
         # find accession IDs
-        ls_ids.append(_find_accessionIDs(str_text))
+        ls_ids += _find_accessionIDs(str_text)
 
-    return pd.Series({'id': ls_ids})
+    if len(ls_ids) == 0:
+        raise NoAccessionIDs(f'The provided collection {collection_name} '
+                             f'does not contain any run or Bioproject IDs')
+    else:
+        return pd.Series({'id': ls_ids})

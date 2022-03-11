@@ -201,7 +201,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'library_type': Str % Choices(['user', 'group']),
-        'library_id': Int,
+        'library_id': Str,
         'api_key': Str,
         'collection_name': Str
     },
