@@ -31,7 +31,14 @@ def _get_collection_id(
     dic_name_key = {x['data']['name']: x['key'] for x in ls_all_col}
 
     # return col_name's key
-    return dic_name_key[col_name]
+    try:
+        col_id = dic_name_key[col_name]
+    except KeyError:
+        raise KeyError(
+            f'Provided collection name {col_name} does not '
+            f'exist in this libary')
+
+    return col_id
 
 
 def _find_accessionIDs(txt):
@@ -94,8 +101,11 @@ def scrape_collection(
     ls_attach = zot.everything(
         zot.collection_items(coll_id, itemType='attachment'))
     ls_attach_keys = list(set([x['key'] for x in ls_attach]))
+    LOGGER.info(
+        f'Found {len(ls_attach_keys)} attachements to scrape through...'
+    )
 
-    # extract raw text for all attachment items
+    # extract IDs from text of attachment items
     ls_ids = []
     for attach_key in ls_attach_keys:
         # get text
