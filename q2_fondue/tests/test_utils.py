@@ -14,8 +14,10 @@ from threading import Thread
 from unittest.mock import patch, MagicMock
 
 from qiime2.plugin.testing import TestPluginBase
+from tqdm import tqdm
 
-from q2_fondue.utils import handle_threaded_exception, _has_enough_space
+from q2_fondue.utils import (handle_threaded_exception, _has_enough_space,
+                             _find_next_id)
 
 
 class TestExceptHooks(unittest.TestCase):
@@ -96,6 +98,16 @@ class TestSRAUtils(TestPluginBase):
              'accession ID.']
         )
         self.assertTrue(obs)
+
+    def test_find_next_id(self):
+        pbar = tqdm(['A', 'B', 'C'])
+        obs = _find_next_id('B', pbar)
+        self.assertEqual(obs, 'C')
+
+    def test_find_next_id_last(self):
+        pbar = tqdm(['A', 'B', 'C'])
+        obs = _find_next_id('C', pbar)
+        self.assertIsNone(obs)
 
 
 if __name__ == "__main__":
