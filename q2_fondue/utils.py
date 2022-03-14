@@ -106,7 +106,7 @@ def _has_enough_space(acc_id: str, output_dir: str) -> bool:
     if result.returncode == 0:
         return True
     elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
-        LOGGER.warning('Not enough space to fetch ID %s.', acc_id)
+        LOGGER.warning('Not enough space to fetch run %s.', acc_id)
         return False
     else:
         LOGGER.error(
