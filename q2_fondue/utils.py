@@ -8,12 +8,16 @@
 
 import os
 import signal
+import subprocess
 from typing import List
 
 from entrezpy.esearch import esearcher as es
+from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs, set_up_logger
+
+LOGGER = set_up_logger('INFO', logger_name=__name__)
 
 
 class DownloadError(Exception):
@@ -74,3 +78,49 @@ def handle_threaded_exception(args):
     # This will send a SIGINT to the main thread, which will gracefully
     # kill the running Q2 action. No artifacts will be saved.
     os.kill(os.getpid(), signal.SIGINT)
+
+
+def _has_enough_space(acc_id: str, output_dir: str) -> bool:
+    """Checks whether there is enough storage available for fasterq-dump
+        to process sequences for a given ID.
+
+    fasterq-dump will be used to check the amount of space required for the
+    final data. Required space is estimated as 10x that of the final data
+    (as per NCBI's documentation).
+
+    Args:
+        acc_id (str): The accession ID to be processed.
+        output_dir (str): Location where the output would be saved.
+
+    Return
+        bool: Whether there is enough space available for fasterq-dump tool.
+    """
+    if acc_id is None:
+        return True
+
+    cmd_fasterq = ['fasterq-dump', '--size-check', 'only', '-x', acc_id]
+    result = subprocess.run(
+        cmd_fasterq, text=True, capture_output=True, cwd=output_dir
+    )
+
+    if result.returncode == 0:
+        return True
+    elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
+        LOGGER.warning('Not enough space to fetch run %s.', acc_id)
+        return False
+    else:
+        LOGGER.error(
+            'fasterq-dump exited with a "%s" error code (the message '
+            'was: "%s"). We will try to fetch the next accession ID.',
+            result.returncode, result.stderr
+        )
+        return True
+
+
+def _find_next_id(acc_id: str, progress_bar: tqdm):
+    pbar_content = list(progress_bar)
+    index_next_acc = pbar_content.index(acc_id) + 1
+    if index_next_acc >= len(pbar_content):
+        return None
+    else:
+        return pbar_content[index_next_acc]
