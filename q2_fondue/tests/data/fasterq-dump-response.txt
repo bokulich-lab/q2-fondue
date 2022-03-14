@@ -1,0 +1,47 @@
+cursor-cache : 5,242,880 bytes
+buf-size     : 1,048,576 bytes
+mem-limit    : 52,428,800 bytes
+threads      : 6
+scratch-path : '/private/var/folders/7f/7nw_x13n5q965rss_qz6061m0000gq/T/tmpf0d7oy6a/fasterq.tmp.MacBook-Pro.35899/'
+total ram    : 17,179,869,184 bytes
+output-format: FASTQ split 3
+check-mode   : only
+output-file  : '/private/var/folders/7f/7nw_x13n5q965rss_qz6061m0000gq/T/tmpf0d7oy6a/ERR2750829.fastq'
+output-dir   : '.'
+output       : '/private/var/folders/7f/7nw_x13n5q965rss_qz6061m0000gq/T/tmpf0d7oy6a/ERR2750829.fastq'
+append-mode  : 'NO'
+stdout-mode  : 'NO'
+seq-defline  : '@$ac.$si $sn length=$rl'
+qual-defline  : '+$ac.$si $sn length=$rl'
+only-unaligned : 'NO'
+only-aligned   : 'NO'
+accession     : 'ERR2750829'
+accession-path: 'ERR2750829'
+est. output          : 44,926,989,570 bytes
+disk-limit (OS)      : 9,149,612,032 bytes
+disk-limit-tmp (OS)  : 9,149,612,032 bytes
+out/tmp on same fs   : 'NO'
+
+ERR2750829 is remote
+... has a size of 12,459,034,417 bytes
+... is cSRA without alignments
+... SEQ has NAME column = YES
+... SEQ has SPOT_GROUP column = YES
+... uses 'SEQUENCE' as sequence-table
+SEQ.first_row = 1
+SEQ.row_count = 84,543,740
+SEQ.spot_count = 84,543,740
+SEQ.total_base_count = 16,545,432,985
+SEQ.bio_base_count = 16,545,432,985
+SEQ.avg_name_len = 1
+SEQ.avg_spot_group_len = 0
+SEQ.avg_bio_reads_per_spot = 2
+SEQ.avg_tech_reads_per_spot = 0
+ALIGN.first_row = 0
+ALIGN.row_count = 0
+ALIGN.spot_count = 0
+ALIGN.total_base_count = 0
+ALIGN.bio_base_count = 0
+
+disk-limit exeeded!
+fasterq-dump quit with error code 3

@@ -304,7 +304,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
             )
             mock_space_check.assert_called_once_with(
-                ls_acc_ids[1], test_temp_dir.name, 2
+                ls_acc_ids[1], test_temp_dir.name
             )
             obs_failed = self.processed_q.get()
             self.assertDictEqual(
@@ -339,9 +339,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
             )
-            mock_space_check.assert_called_once_with(
-                None, test_temp_dir.name, 2
-            )
+            mock_space_check.assert_called_once_with(None, test_temp_dir.name)
             obs_failed = self.processed_q.get()
             self.assertDictEqual(obs_failed, {'failed_ids': {}})
 
@@ -391,7 +389,7 @@ class TestUtils4SequenceFetching(SequenceTests):
                 os.path.join(test_temp_dir.name, 'testaccF')
             )
             mock_space_check.assert_called_once_with(
-                ls_acc_ids[-1], test_temp_dir.name, 2
+                ls_acc_ids[-1], test_temp_dir.name
             )
             obs_failed = self.processed_q.get()
             self.assertDictEqual(

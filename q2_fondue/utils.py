@@ -80,18 +80,17 @@ def handle_threaded_exception(args):
     os.kill(os.getpid(), signal.SIGINT)
 
 
-def _has_enough_space(acc_id: str, output_dir: str, free_space: int) -> bool:
+def _has_enough_space(acc_id: str, output_dir: str) -> bool:
     """Checks whether there is enough storage available for fasterq-dump
         to process sequences for a given ID.
 
-    vdb-dump will be used to check the amount of space required for the final
-    data. Required space is estimated as 10x that of the final data (as per
-    NCBI's documentation).
+    fasterq-dump will be used to check the amount of space required for the
+    final data. Required space is estimated as 10x that of the final data
+    (as per NCBI's documentation).
 
     Args:
         acc_id (str): The accession ID to be processed.
         output_dir (str): Location where the output would be saved.
-        free_space (int): The amount of free space available on the disk.
 
     Return
         bool: Whether there is enough space available for fasterq-dump tool.
@@ -99,32 +98,20 @@ def _has_enough_space(acc_id: str, output_dir: str, free_space: int) -> bool:
     if acc_id is None:
         return True
 
-    cmd_vdb = ['vdb-dump', '--info', acc_id]
+    cmd_fasterq = ['fasterq-dump', '--size-check', 'only', '-x', acc_id]
     result = subprocess.run(
-        cmd_vdb, text=True, capture_output=True, cwd=output_dir
+        cmd_fasterq, text=True, capture_output=True, cwd=output_dir
     )
 
     if result.returncode == 0:
-        # convert into dict, should we ever need that in the future
-        stdout = result.stdout.split('\n')
-        acc_info = {
-            k.strip(): v.strip() for
-            [k, v] in [
-                x.split(':', maxsplit=1) for x in stdout if ':' in x
-            ]
-        }
-        # as per the docs:
-        # https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump
-        req_space = 10 * int(acc_info.get('size').replace(',', ''))
-        LOGGER.debug(
-            'Space required for %s: %sMB (space available: %sMB)',
-            acc_id, round(req_space/10**6, 1), round(free_space/10**6, 1)
-        )
-        return True if req_space < free_space else False
+        return True
+    elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
+        LOGGER.warning('Not enough space to fetch ID %s.', acc_id)
+        return False
     else:
         LOGGER.error(
-            'vdb-dump exited with a "%s" error code (the message was: "%s"). '
-            'We will try to fetch the next accession ID.',
+            'fasterq-dump exited with a "%s" error code (the message '
+            'was: "%s"). We will try to fetch the next accession ID.',
             result.returncode, result.stderr
         )
         return True

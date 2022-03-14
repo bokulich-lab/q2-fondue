@@ -125,9 +125,7 @@ def _run_fasterq_dump_for_all(
             # current space threshold: 35% of fetched seq space as evaluated
             # from 6 random run and ProjectIDs
             if free_space < (0.35 * used_seq_space) and not \
-                    _has_enough_space(
-                        _find_next_id(acc, pbar), tmpdirname, free_space
-                    ):
+                    _has_enough_space(_find_next_id(acc, pbar), tmpdirname):
                 failed_ids.update(
                     _get_remaining_ids_with_storage_error(acc, pbar))
                 LOGGER.warning(

@@ -66,23 +66,29 @@ class TestSRAUtils(TestPluginBase):
 
     @patch('subprocess.run')
     def test_has_enough_space(self, patched_run):
-        with open(self.get_data_path('vdb-dump-response.txt')) as f:
-            response = ''.join(f.readlines())
-        patched_run.return_value = MagicMock(stdout=response, returncode=0)
+        patched_run.return_value = MagicMock(returncode=0)
 
         acc, test_dir = 'ABC123', 'some/where'
-        obs = _has_enough_space(acc, test_dir, 24 * 10**10)
+        obs = _has_enough_space(acc, test_dir)
         self.assertTrue(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
 
     @patch('subprocess.run')
     def test_has_enough_space_not(self, patched_run):
-        with open(self.get_data_path('vdb-dump-response.txt')) as f:
+        with open(self.get_data_path('fasterq-dump-response.txt')) as f:
             response = ''.join(f.readlines())
-        patched_run.return_value = MagicMock(stdout=response, returncode=0)
+        patched_run.return_value = MagicMock(stderr=response, returncode=3)
 
         acc, test_dir = 'ABC123', 'some/where'
-        obs = _has_enough_space(acc, test_dir, 23 * 10**10)
+        obs = _has_enough_space(acc, test_dir)
         self.assertFalse(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
 
     @patch('subprocess.run')
     def test_has_enough_space_error(self, patched_run):
@@ -90,14 +96,18 @@ class TestSRAUtils(TestPluginBase):
 
         acc, test_dir = 'ABC123', 'some/where'
         with self.assertLogs('q2_fondue.utils', level='ERROR') as cm:
-            obs = _has_enough_space(acc, test_dir, 23 * 10**10)
+            obs = _has_enough_space(acc, test_dir)
         self.assertEqual(
             cm.output,
-            ['ERROR:q2_fondue.utils:vdb-dump exited with a "8" error code '
+            ['ERROR:q2_fondue.utils:fasterq-dump exited with a "8" error code '
              '(the message was: "errorX"). We will try to fetch the next '
              'accession ID.']
         )
         self.assertTrue(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
 
     def test_find_next_id(self):
         pbar = tqdm(['A', 'B', 'C'])
