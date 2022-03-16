@@ -65,7 +65,7 @@ def _get_attachment_keys(zot, coll_id):
         return ls_attach_keys
 
 
-def _find_accessionIDs(txt, runID_type):
+def _find_accessionIDs(txt, ID_type):
     """Returns list of run or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
@@ -75,17 +75,45 @@ def _find_accessionIDs(txt, runID_type):
 
     Args:
         txt (str): Some text to search
-        runID_type (str): Type of ID to search for ('run' or 'bioproject')
+        ID_type (str): Type of ID to search for ('run' or 'bioproject')
 
     Returns:
         list: List of run or BioProject IDs found.
     """
-    if runID_type == 'run':
-        pattern = r'[EDS]RR\d*'
-    elif runID_type == 'bioproject':
-        pattern = r'PRJ[EDN][A-Z]\d*'
-    ls_ids = re.findall(f'({pattern})', txt)
+    # find plain accession ID: PREFIX12345 or PREFIX 12345
+    if ID_type == 'run':
+        prefix = r'[EDS]RR'
+    elif ID_type == 'bioproject':
+        prefix = r'PRJ[EDN][A-Z]'
+    pattern = prefix + r'\s?\d+'
 
+    ls_ids = re.findall(f'({pattern})', txt)
+    # remove potential whitespace
+    ls_ids = [x.replace(' ', '') for x in ls_ids]
+
+    # todo: clean up special cases
+    # SPECIAL case 1: get IDs after comma: "PREFIX12345, 56789"
+    for nb_comma in range(1, 11):
+        pattern_comma = pattern + nb_comma * r',\s\d+'
+        ls_ids_after_comma = re.findall(f'({pattern_comma})', txt)
+        if len(ls_ids_after_comma) != 0:
+            for id in ls_ids_after_comma:
+                split_by_comma = id.split(',')
+                prefix = re.findall("[A-Z]+", split_by_comma[0])[0]
+                number = split_by_comma[-1].strip()
+                ls_ids += [prefix + number]
+        else:
+            pattern_comma = pattern + (nb_comma - 1) * r',\s\d*'
+            break
+    # SPECIAL case 2: get IDs after and: "PREFIX12345, 56789 and 67899"
+    pattern_and = pattern_comma + r'\sand\s\d+'
+    ls_ids_after_and = re.findall(f'({pattern_and})', txt)
+    if len(ls_ids_after_and) != 0:
+        for id in ls_ids_after_and:
+            split_by_and = id.split('and')
+            prefix = re.findall("[A-Z]+", split_by_and[0])[0]
+            number = split_by_and[-1].strip()
+            ls_ids += [prefix + number]
     return list(set(ls_ids))
 
 
@@ -147,8 +175,6 @@ def scrape_collection(
         ls_run_ids += _find_accessionIDs(str_text, 'run')
         # find bioproject IDs
         ls_bioproject_ids += _find_accessionIDs(str_text, 'bioproject')
-
-        # todo: quick fix IDs that aren't valid & return others to user
 
     # remove duplicate entries in both lists
     ls_run_ids = list(set(ls_run_ids))

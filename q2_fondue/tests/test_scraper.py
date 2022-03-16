@@ -92,6 +92,25 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_ls_run = _find_accessionIDs(txt_w_2ids, 'run')
         self.assertListEqual(exp_ls_run, obs_ls_run)
 
+    def test_find_accessionIDs_special_cases_one_comma(self):
+        # example inspired by this publication:
+        # https://doi.org/10.1038/s41467-021-26215-w
+        txt_diff = 'under accession numbers PRJEB11895, 12577 and '\
+                   '41427'
+        exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB41427']
+        obs_ls_proj = _find_accessionIDs(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
+
+    def test_find_accessionIDs_special_cases_three_comma(self):
+        # example inspired by this publication:
+        # https://doi.org/10.1038/s41467-021-26215-w
+        txt_diff = 'under accession numbers PRJEB11895, 12577, 34555, '\
+                   '89765 and 41427'
+        exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB34555',
+                       'PRJEB89765', 'PRJEB41427']
+        obs_ls_proj = _find_accessionIDs(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
+
     def test_find_accessionIDs_no_ids(self):
         txt = 'this text has no run ids and no bioproject ids.'
         exp_ls = []
