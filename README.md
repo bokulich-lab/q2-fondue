@@ -94,6 +94,8 @@ where:
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
 
+__Note:__ To retrieve all required IDs from Zotero, you must be logged in. 
+
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
 
