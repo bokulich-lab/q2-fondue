@@ -87,6 +87,14 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_ids = _find_special_id(txt, pattern, ':')
         self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
 
+    def test_find_special_id_no_match(self):
+        txt = 'How about another study?'
+        pattern = r'PRJ[EDN][A-Z]\s?\d+:\s\d+'
+
+        exp_ids = []
+        obs_ids = _find_special_id(txt, pattern, ':')
+        self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
+
     def test_find_runIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_ID = ['ERR2765209']
@@ -111,7 +119,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertListEqual(exp_ls_run, obs_ls_run)
 
     def test_find_accessionIDs_special_cases_one_comma(self):
-        # example inspired by this publication:5
+        # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577 and '\
                    '41427'
@@ -119,7 +127,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_ls_proj = _find_accessionIDs(txt_diff, 'bioproject')
         self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
 
-    def test_find_accessionIDs_special_cases_three_comma(self):
+    def test_find_accessionIDs_special_cases_three_commas(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577, 34555, '\
