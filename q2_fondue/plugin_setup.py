@@ -209,8 +209,9 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'library_type': 'Zotero API library type',
-        'library_id': 'Valid Zotero API userID (for library_type \'user\' '
-                      'extract from https://www.zotero.org/settings/keys, '
+        'library_id': 'Valid Zotero library ID (for library_type \'user\' '
+                      'extract from \'your userID for use in API calls\' in '
+                      'https://www.zotero.org/settings/keys, '
                       'for \'group\' extract by hovering over group name '
                       'in https://www.zotero.org/groups/)',
         'api_key': 'Valid Zotero API user key (retrieve from '
