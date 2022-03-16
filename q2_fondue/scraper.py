@@ -65,6 +65,27 @@ def _get_attachment_keys(zot, coll_id):
         return ls_attach_keys
 
 
+def _find_special_id(txt, pattern, split_str):
+    """Creates an accession ID from starting characters in `pattern` and
+    digits following `split_str` in `txt`.
+
+    Args:
+        txt (str): Text to search for ID
+        pattern (str): Pattern containing at the start the character prefix and
+                       at the end the remaining digits of the accession ID
+        split_str (str): String separating the digit part of the ID
+    """
+    ls_match = re.findall(f'({pattern})', txt)
+    ls_ids = []
+    if len(ls_match) != 0:
+        for match in ls_match:
+            split_match = match.split(split_str)
+            prefix = re.findall("[A-Z]+", split_match[0])[0]
+            number = split_match[-1].strip()
+            ls_ids += [prefix + number]
+    return ls_ids
+
+
 def _find_accessionIDs(txt, ID_type):
     """Returns list of run or BioProject IDs found in `txt`.
 
@@ -80,40 +101,32 @@ def _find_accessionIDs(txt, ID_type):
     Returns:
         list: List of run or BioProject IDs found.
     """
-    # find plain accession ID: PREFIX12345 or PREFIX 12345
+    # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
     if ID_type == 'run':
         prefix = r'[EDS]RR'
     elif ID_type == 'bioproject':
         prefix = r'PRJ[EDN][A-Z]'
     pattern = prefix + r'\s?\d+'
-
     ls_ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
     ls_ids = [x.replace(' ', '') for x in ls_ids]
 
-    # todo: clean up special cases
-    # SPECIAL case 1: get IDs after comma: "PREFIX12345, 56789"
+    # SPECIAL case 1: get IDs after comma:
+    # "PREFIX12345, 56789" yields "PREFIX56789"
     for nb_comma in range(1, 11):
         pattern_comma = pattern + nb_comma * r',\s\d+'
-        ls_ids_after_comma = re.findall(f'({pattern_comma})', txt)
-        if len(ls_ids_after_comma) != 0:
-            for id in ls_ids_after_comma:
-                split_by_comma = id.split(',')
-                prefix = re.findall("[A-Z]+", split_by_comma[0])[0]
-                number = split_by_comma[-1].strip()
-                ls_ids += [prefix + number]
-        else:
+        ls_ids_match = _find_special_id(txt, pattern_comma, ',')
+        if len(ls_ids_match) == 0:
             pattern_comma = pattern + (nb_comma - 1) * r',\s\d*'
             break
-    # SPECIAL case 2: get IDs after and: "PREFIX12345, 56789 and 67899"
+        else:
+            ls_ids += ls_ids_match
+
+    # SPECIAL case 2: get IDs after and:
+    # "PREFIX12345, 56789 and 67899" yields "PREFIX67899"
     pattern_and = pattern_comma + r'\sand\s\d+'
-    ls_ids_after_and = re.findall(f'({pattern_and})', txt)
-    if len(ls_ids_after_and) != 0:
-        for id in ls_ids_after_and:
-            split_by_and = id.split('and')
-            prefix = re.findall("[A-Z]+", split_by_and[0])[0]
-            number = split_by_and[-1].strip()
-            ls_ids += [prefix + number]
+    ls_ids += _find_special_id(txt, pattern_and, 'and')
+
     return list(set(ls_ids))
 
 

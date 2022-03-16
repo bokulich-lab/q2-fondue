@@ -12,6 +12,7 @@ from pandas._testing import assert_series_equal
 from unittest.mock import patch
 from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
+    _find_special_id,
     _get_collection_id, _find_accessionIDs,
     _get_attachment_keys, scrape_collection,
     NoAccessionIDs
@@ -69,6 +70,23 @@ class TestUtils4CollectionScraping(TestPluginBase):
                 KeyError, 'No attachments exist'):
             _get_attachment_keys(self.zot, 'testID')
 
+    def test_find_special_id_one_match(self):
+        txt = 'PRJDB1234: 2345 and 4567. How about another study?'
+        pattern = r'PRJ[EDN][A-Z]\s?\d+:\s\d+'
+
+        exp_ids = ['PRJDB2345']
+        obs_ids = _find_special_id(txt, pattern, ':')
+        self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
+
+    def test_find_special_id_two_matches(self):
+        txt = 'PRJDB1234: 2345 and 4567. How about another study? ' \
+              'PRJEA9876: 8765.'
+        pattern = r'PRJ[EDN][A-Z]\s?\d+:\s\d+'
+
+        exp_ids = ['PRJDB2345', 'PRJEA8765']
+        obs_ids = _find_special_id(txt, pattern, ':')
+        self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
+
     def test_find_runIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_ID = ['ERR2765209']
@@ -93,7 +111,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertListEqual(exp_ls_run, obs_ls_run)
 
     def test_find_accessionIDs_special_cases_one_comma(self):
-        # example inspired by this publication:
+        # example inspired by this publication:5
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577 and '\
                    '41427'
