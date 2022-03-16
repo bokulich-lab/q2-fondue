@@ -7,10 +7,8 @@
 # ----------------------------------------------------------------------------
 import re
 import pandas as pd
-from pyzotero import zotero
+from pyzotero import zotero, zotero_errors
 from q2_fondue.entrezpy_clients._utils import set_up_logger
-
-LOGGER = set_up_logger('INFO', logger_name=__name__)
 
 
 class NoAccessionIDs(Exception):
@@ -84,6 +82,9 @@ def _find_accessionIDs(txt):
     str_runid = r'[EDS]RR\d*'
     str_projectid = r'PRJ[EDN][A-Z]\d*'
     ls_ids = re.findall(f'({str_runid}|{str_projectid})', txt)
+
+    # todo: make sure they scraped IDs are valid:
+    # todo: removing blank space, removing links, ...
     return list(set(ls_ids))
 
 
@@ -107,8 +108,9 @@ def scrape_collection(
     Returns:
         pd.Series: Series with run and Bioproject IDs scraped from collection.
     """
-    # TODO: add proper logger & test for it
-    LOGGER.info(
+    logger = set_up_logger('INFO', logger_name=__name__)
+
+    logger.info(
         f'Scraping accession IDs for collection "{collection_name}" in '
         f'{library_type} library with library ID {library_id}...'
     )
@@ -125,7 +127,7 @@ def scrape_collection(
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
     ls_attach_keys = _get_attachment_keys(zot, coll_id)
-    LOGGER.info(
+    logger.info(
         f'Found {len(ls_attach_keys)} attachments to scrape through...'
     )
 
@@ -133,7 +135,13 @@ def scrape_collection(
     ls_ids = []
     for attach_key in ls_attach_keys:
         # get text
-        str_text = zot.fulltext_item(attach_key)['content']
+        try:
+            str_text = zot.fulltext_item(attach_key)['content']
+        except zotero_errors.ResourceNotFound:
+            str_text = ''
+            logger.warning(f'Item {attach_key} doesn\'t contain any '
+                           f'full-text content')
+
         # find accession IDs
         ls_ids += _find_accessionIDs(str_text)
 

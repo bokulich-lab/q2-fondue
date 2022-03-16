@@ -5,13 +5,12 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-# import logging
 import json
 import pandas as pd
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_series_equal
 from unittest.mock import patch
-from pyzotero import zotero
+from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
     _get_collection_id, _find_accessionIDs,
     _get_attachment_keys, scrape_collection,
@@ -107,7 +106,7 @@ class TestCollectionScraping(TestPluginBase):
         }
         # check
         exp_out = pd.Series({'id': ['PRJEB4519']})
-        obs_out = scrape_collection("12345", "user",
+        obs_out = scrape_collection("user", "12345",
                                     "myuserkey", "test_collection")
         assert_series_equal(exp_out, obs_out)
 
@@ -128,5 +127,31 @@ class TestCollectionScraping(TestPluginBase):
         with self.assertRaisesRegex(
             NoAccessionIDs, f'collection {col_name} does not'
         ):
-            scrape_collection("12345", "user",
+            scrape_collection("user", "12345",
                               "myuserkey", col_name)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_nofulltext(
+            self, patch_zot_txt,
+            patch_get_attach, patch_get_col_id):
+        # define patched outputs
+        patch_get_attach.return_value = ['attach_key1', 'attach_key2']
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+                                     {
+                                         "content":
+                                         "This is full-text with PRJEB4519.",
+                                         "indexedPages": 50,
+                                         "totalPages": 50
+                                     }]
+        exp_out = pd.Series({'id': ['PRJEB4519']})
+        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
+            obs_out = scrape_collection("user", "12345",
+                                        "myuserkey", "test_collection")
+            self.assertIn(
+                "WARNING:q2_fondue.scraper:Item attach_key1 doesn't contain "
+                "any full-text content",
+                cm.output
+            )
+            assert_series_equal(obs_out, exp_out)
