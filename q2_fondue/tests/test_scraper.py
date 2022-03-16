@@ -82,8 +82,8 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
 
     def test_find_accessionIDs_no_double(self):
-        txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also in '\
-                     'ERR2765209 and ERR2765209.'
+        txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also '\
+                     'in ERR2765209 and ERR2765209.'
         exp_ls_proj = ['PRJEB4519']
         obs_ls_proj = _find_accessionIDs(txt_w_2ids, 'bioproject')
         self.assertListEqual(exp_ls_proj, obs_ls_proj)
@@ -120,10 +120,62 @@ class TestCollectionScraping(TestPluginBase):
         # check
         exp_out_run = pd.Series(['ERR2765209'], name='ID')
         exp_out_proj = pd.Series(['PRJEB4519'], name='ID')
-        obs_out_run, obs_out_proj = scrape_collection("user", "12345",
-                                                      "myuserkey", "test_collection")
+        obs_out_run, obs_out_proj = scrape_collection(
+            "user", "12345", "myuserkey", "test_collection")
         assert_series_equal(exp_out_proj, obs_out_proj)
         assert_series_equal(exp_out_run, obs_out_run)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_onlyRunIDs(
+            self, patch_zot_txt,
+            patch_get_attach, patch_get_col_id):
+        # define patched outputs
+        patch_get_attach.return_value = ['attach_key']
+        patch_zot_txt.return_value = {
+            "content": "This is full-text with ERR2765209.",
+            "indexedPages": 50,
+            "totalPages": 50
+        }
+        # check
+        exp_out = pd.Series(['ERR2765209'], name='ID')
+
+        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
+            obs_out, _ = scrape_collection("user", "12345",
+                                           "myuserkey", "test_collection")
+            self.assertIn(
+                "WARNING:q2_fondue.scraper:The provided collection "
+                "test_collection does not contain any Bioproject IDs",
+                cm.output
+            )
+            assert_series_equal(obs_out, exp_out)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_onlyProjectIDs(
+            self, patch_zot_txt,
+            patch_get_attach, patch_get_col_id):
+        # define patched outputs
+        patch_get_attach.return_value = ['attach_key']
+        patch_zot_txt.return_value = {
+            "content": "This is full-text with PRJEB4519.",
+            "indexedPages": 50,
+            "totalPages": 50
+        }
+        # check
+        exp_out = pd.Series(['PRJEB4519'], name='ID')
+
+        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
+            _, obs_out = scrape_collection("user", "12345",
+                                           "myuserkey", "test_collection")
+            self.assertIn(
+                "WARNING:q2_fondue.scraper:The provided collection "
+                "test_collection does not contain any run IDs",
+                cm.output
+            )
+            assert_series_equal(obs_out, exp_out)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')

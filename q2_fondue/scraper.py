@@ -149,7 +149,7 @@ def scrape_collection(
         ls_bioproject_ids += _find_accessionIDs(str_text, 'bioproject')
 
         # todo: quick fix IDs that aren't valid & return others to user
-    
+
     # remove duplicate entries in both lists
     ls_run_ids = list(set(ls_run_ids))
     ls_bioproject_ids = list(set(ls_bioproject_ids))
@@ -157,7 +157,11 @@ def scrape_collection(
     if (len(ls_run_ids) == 0) & (len(ls_bioproject_ids) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '
                              f'does not contain any run or Bioproject IDs')
-        # todo: add warning if only run or only bioproject IDs found
-    else:
-        return (pd.Series(ls_run_ids, name='ID'),
-                pd.Series(ls_bioproject_ids, name='ID'))
+    elif (len(ls_run_ids) == 0):
+        logger.warning(f'The provided collection {collection_name} '
+                       f'does not contain any run IDs')
+    elif (len(ls_bioproject_ids) == 0):
+        logger.warning(f'The provided collection {collection_name} '
+                       f'does not contain any Bioproject IDs')
+    return (pd.Series(ls_run_ids, name='ID'),
+            pd.Series(ls_bioproject_ids, name='ID'))
