@@ -75,7 +75,7 @@ where:
 
 __Note:__ the input TSV file needs to consist of a single column named "ID".
 
-2) To scrape all accession IDs from an existing web Zotero library collection into a `NCBIAccessionIDs`
+2) To scrape all run and BioProject IDs from an existing web Zotero library collection into a `NCBIAccessionIDs`
 artifact run:
 ```shell
 qiime fondue scrape-collection \
@@ -89,7 +89,7 @@ qiime fondue scrape-collection \
 where:
 - `--p-library-type` is the Zotero API library type 'user' or 'group'.
 - `--p-library-id` is a vaild Zotero library ID. If `--p-library-type` is 'user' it can be retrieved from section 'your userID for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
-- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access").
+- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 - `--p-collection-name` is the name of the collection to be scraped. 
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.

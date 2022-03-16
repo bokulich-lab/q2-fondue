@@ -217,7 +217,8 @@ plugin.methods.register_function(
                       'in https://www.zotero.org/groups/)',
         'api_key': 'Valid Zotero API user key (retrieve from '
                    'https://www.zotero.org/settings/keys/new checking '
-                   '"Allow library access").',
+                   '"Allow library access" and for \'group\' library '
+                   '"Read/Write" permissions ).',
         'collection_name': 'Name of the collection to be scraped.'
     },
     output_descriptions={
