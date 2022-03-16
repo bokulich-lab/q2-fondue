@@ -18,6 +18,7 @@ from q2_fondue.types import (
     SRAFailedIDs, SRAFailedIDsDirFmt, SRAFailedIDsFormat,
     NCBIAccessionIDsFormat, NCBIAccessionIDs, NCBIAccessionIDsDirFmt
 )
+from q2_fondue.entrezpy_clients._utils import InvalidIDs
 
 
 class TestFormats(TestPluginBase):
@@ -98,6 +99,15 @@ class TestFormats(TestPluginBase):
         with self.assertRaisesRegexp(
                 ValidationError,
                 'Some of the provided IDs are invalid'
+        ):
+            format.validate()
+
+    def test_ncbi_accession_ids_fmt_mixed_ids(self):
+        meta_path = self.get_data_path('ncbi-ids-mixed.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        with self.assertRaisesRegexp(
+                InvalidIDs,
+                'IDs of mixed types were provided'
         ):
             format.validate()
 

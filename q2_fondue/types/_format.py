@@ -13,6 +13,7 @@ from qiime2.plugin import ValidationError
 from qiime2.plugin import model
 
 from q2_fondue.entrezpy_clients._utils import PREFIX
+from q2_fondue.utils import _determine_id_type
 
 
 class SRAMetadataFormat(model.TextFileFormat):
@@ -108,6 +109,7 @@ class NCBIAccessionIDsFormat(model.TextFileFormat):
             )
 
         df.iloc[:, 0].apply(self._validate_id)
+        _determine_id_type(df.iloc[:, 0].values)
 
 
 NCBIAccessionIDsDirFmt = model.SingleFileDirectoryFormat(
