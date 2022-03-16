@@ -11,12 +11,16 @@ import signal
 import threading
 import unittest
 from threading import Thread
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
-from q2_fondue.utils import handle_threaded_exception
+from qiime2.plugin.testing import TestPluginBase
+from tqdm import tqdm
+
+from q2_fondue.utils import (handle_threaded_exception, _has_enough_space,
+                             _find_next_id)
 
 
-class TestUtils(unittest.TestCase):
+class TestExceptHooks(unittest.TestCase):
     package = 'q2_fondue.tests'
 
     def do_something_with_error(self, msg):
@@ -55,6 +59,65 @@ class TestUtils(unittest.TestCase):
 
             pid = os.getpid()
             patch_kill.assert_called_once_with(pid, signal.SIGINT)
+
+
+class TestSRAUtils(TestPluginBase):
+    package = 'q2_fondue.tests'
+
+    @patch('subprocess.run')
+    def test_has_enough_space(self, patched_run):
+        patched_run.return_value = MagicMock(returncode=0)
+
+        acc, test_dir = 'ABC123', 'some/where'
+        obs = _has_enough_space(acc, test_dir)
+        self.assertTrue(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
+
+    @patch('subprocess.run')
+    def test_has_enough_space_not(self, patched_run):
+        with open(self.get_data_path('fasterq-dump-response.txt')) as f:
+            response = ''.join(f.readlines())
+        patched_run.return_value = MagicMock(stderr=response, returncode=3)
+
+        acc, test_dir = 'ABC123', 'some/where'
+        obs = _has_enough_space(acc, test_dir)
+        self.assertFalse(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
+
+    @patch('subprocess.run')
+    def test_has_enough_space_error(self, patched_run):
+        patched_run.return_value = MagicMock(stderr='errorX', returncode=8)
+
+        acc, test_dir = 'ABC123', 'some/where'
+        with self.assertLogs('q2_fondue.utils', level='ERROR') as cm:
+            obs = _has_enough_space(acc, test_dir)
+        self.assertEqual(
+            cm.output,
+            ['ERROR:q2_fondue.utils:fasterq-dump exited with a "8" error code '
+             '(the message was: "errorX"). We will try to fetch the next '
+             'accession ID.']
+        )
+        self.assertTrue(obs)
+        patched_run.assert_called_once_with(
+            ['fasterq-dump', '--size-check', 'only', '-x', acc],
+            text=True, capture_output=True, cwd=test_dir
+        )
+
+    def test_find_next_id(self):
+        pbar = tqdm(['A', 'B', 'C'])
+        obs = _find_next_id('B', pbar)
+        self.assertEqual(obs, 'C')
+
+    def test_find_next_id_last(self):
+        pbar = tqdm(['A', 'B', 'C'])
+        obs = _find_next_id('C', pbar)
+        self.assertIsNone(obs)
 
 
 if __name__ == "__main__":

@@ -100,7 +100,10 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_file(self, mock_subprocess, mock_rm):
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
+    def test_run_cmd_fasterq_sra_file(
+            self, mock_space_check, mock_subprocess, mock_rm
+    ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
 
@@ -108,7 +111,10 @@ class TestUtils4SequenceFetching(SequenceTests):
         exp_prefetch = [
             'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
         ]
-        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
+        exp_fasterq = [
+            'fasterq-dump', '-e', str(6), '--size-check', 'on', '-x',
+            ls_acc_ids[0]
+        ]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
@@ -124,10 +130,14 @@ class TestUtils4SequenceFetching(SequenceTests):
         mock_rm.assert_called_with(
             os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
         )
+        mock_space_check.assert_not_called()
 
     @patch('shutil.rmtree')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_cmd_fasterq_sra_directory(self, mock_subprocess, mock_rm):
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
+    def test_run_cmd_fasterq_sra_directory(
+            self, mock_space_check, mock_subprocess, mock_rm
+    ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
@@ -135,7 +145,10 @@ class TestUtils4SequenceFetching(SequenceTests):
         exp_prefetch = [
             'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
         ]
-        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
+        exp_fasterq = [
+            'fasterq-dump', '-e', str(6), '--size-check', 'on', '-x',
+            ls_acc_ids[0]
+        ]
 
         _run_fasterq_dump_for_all(
             ls_acc_ids, test_temp_dir.name, threads=6,
@@ -151,17 +164,24 @@ class TestUtils4SequenceFetching(SequenceTests):
         mock_rm.assert_called_with(
             os.path.join(test_temp_dir.name, ls_acc_ids[0])
         )
+        mock_space_check.assert_not_called()
 
     @patch('os.remove')
     @patch('subprocess.run', return_value=MagicMock(returncode=0))
-    def test_run_fasterq_dump_for_all(self, mock_subprocess, mock_rm):
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
+    def test_run_fasterq_dump_for_all(
+            self, mock_space_check, mock_subprocess, mock_rm
+    ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
         ls_acc_ids = ['testaccA']
         exp_prefetch = [
             'prefetch', '-X', 'u', '-O', ls_acc_ids[0], ls_acc_ids[0]
         ]
-        exp_fasterq = ['fasterq-dump', '-e', str(6), ls_acc_ids[0]]
+        exp_fasterq = [
+            'fasterq-dump', '-e', str(6), '--size-check', 'on', '-x',
+            ls_acc_ids[0]
+        ]
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
@@ -178,6 +198,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
             )
+            mock_space_check.assert_not_called()
             self.assertIn(
                 'INFO:q2_fondue.sequences:Download finished.', cm.output
             )
@@ -187,7 +208,10 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('time.sleep')
     @patch('subprocess.run',
            return_value=MagicMock(stderr='Some error', returncode=1))
-    def test_run_fasterq_dump_for_all_error(self, mock_subprocess, mock_sleep):
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
+    def test_run_fasterq_dump_for_all_error(
+            self, mock_space_check, mock_subprocess, mock_sleep
+    ):
         test_temp_dir = MockTempDir()
         ls_acc_ids = ['test_accERROR']
 
@@ -199,6 +223,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             # check retry procedure:
             self.assertEqual(mock_subprocess.call_count, 2)
+            mock_space_check.assert_not_called()
             self.assertIn(
                 'INFO:q2_fondue.sequences:Download finished. 1 out of 1 '
                 'runs failed to fetch. Below are the error messages of the '
@@ -213,8 +238,9 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('os.remove')
     @patch('time.sleep')
     @patch('subprocess.run')
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
     def test_run_fasterq_dump_for_all_error_twoids(
-            self, mock_subprocess, mock_sleep, mock_rm
+            self, mock_space_check, mock_subprocess, mock_sleep, mock_rm
     ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
@@ -242,6 +268,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0] + '.sra')
             )
+            mock_space_check.assert_not_called()
             obs_failed = self.processed_q.get()
             self.assertDictEqual(
                 obs_failed, {'failed_ids': {'testaccERROR': 'Error 2'}}
@@ -250,8 +277,9 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('shutil.rmtree')
     @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
     @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    @patch('q2_fondue.sequences._has_enough_space', return_value=False)
     def test_run_fasterq_dump_for_all_space_error(
-            self, mock_subprocess, mock_disk_usage, mock_rm
+            self, mock_space_check, mock_subprocess, mock_disk_usage, mock_rm
     ):
         # test checking that space availability break procedure works
         test_temp_dir = MockTempDir()
@@ -275,6 +303,9 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
             )
+            mock_space_check.assert_called_once_with(
+                ls_acc_ids[1], test_temp_dir.name
+            )
             obs_failed = self.processed_q.get()
             self.assertDictEqual(
                 obs_failed,
@@ -284,8 +315,9 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('shutil.rmtree')
     @patch('shutil.disk_usage', side_effect=[(0, 0, 10), (0, 0, 2)])
     @patch('subprocess.run', side_effect=[MagicMock(returncode=0)] * 2)
+    @patch('q2_fondue.sequences._has_enough_space', return_value=False)
     def test_run_fasterq_dump_for_all_no_last_space_error(
-            self, mock_subprocess, mock_disk_usage, mock_rm
+            self, mock_space_check, mock_subprocess, mock_disk_usage, mock_rm
     ):
         # test checking that space availability break procedure does not cause
         # issues when triggered after last run ID
@@ -307,6 +339,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             mock_rm.assert_called_with(
                 os.path.join(test_temp_dir.name, ls_acc_ids[0])
             )
+            mock_space_check.assert_called_once_with(None, test_temp_dir.name)
             obs_failed = self.processed_q.get()
             self.assertDictEqual(obs_failed, {'failed_ids': {}})
 
@@ -315,9 +348,10 @@ class TestUtils4SequenceFetching(SequenceTests):
     @patch('shutil.disk_usage')
     @patch('time.sleep')
     @patch('subprocess.run')
+    @patch('q2_fondue.sequences._has_enough_space', return_value=False)
     def test_run_fasterq_dump_for_all_error_and_storage_exhausted(
-            self, mock_subprocess, mock_sleep, mock_disk_usage,
-            mock_rm, mock_rmtree
+            self, mock_space_check, mock_subprocess, mock_sleep,
+            mock_disk_usage, mock_rm, mock_rmtree
     ):
         test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq',
                                                    'testaccA.sra'])
@@ -353,6 +387,9 @@ class TestUtils4SequenceFetching(SequenceTests):
             )
             mock_rmtree.assert_called_with(
                 os.path.join(test_temp_dir.name, 'testaccF')
+            )
+            mock_space_check.assert_called_once_with(
+                ls_acc_ids[-1], test_temp_dir.name
             )
             obs_failed = self.processed_q.get()
             self.assertDictEqual(
