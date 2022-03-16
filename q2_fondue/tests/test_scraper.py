@@ -105,7 +105,7 @@ class TestCollectionScraping(TestPluginBase):
             "totalPages": 50
         }
         # check
-        exp_out = pd.Series({'id': ['PRJEB4519']})
+        exp_out = pd.Series(['PRJEB4519'], name='ID')
         obs_out = scrape_collection("user", "12345",
                                     "myuserkey", "test_collection")
         assert_series_equal(exp_out, obs_out)
@@ -145,7 +145,7 @@ class TestCollectionScraping(TestPluginBase):
                                          "indexedPages": 50,
                                          "totalPages": 50
                                      }]
-        exp_out = pd.Series({'id': ['PRJEB4519']})
+        exp_out = pd.Series(['PRJEB4519'], name='ID')
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             obs_out = scrape_collection("user", "12345",
                                         "myuserkey", "test_collection")

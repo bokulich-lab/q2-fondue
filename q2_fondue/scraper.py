@@ -83,8 +83,6 @@ def _find_accessionIDs(txt):
     str_projectid = r'PRJ[EDN][A-Z]\d*'
     ls_ids = re.findall(f'({str_runid}|{str_projectid})', txt)
 
-    # todo: make sure they scraped IDs are valid:
-    # todo: removing blank space, removing links, ...
     return list(set(ls_ids))
 
 
@@ -145,8 +143,12 @@ def scrape_collection(
         # find accession IDs
         ls_ids += _find_accessionIDs(str_text)
 
+        # todo: quick fix IDs that aren't valid & return others to user
+    # remove duplicate entries in ls_ids
+    ls_ids = list(set(ls_ids))
+
     if len(ls_ids) == 0:
         raise NoAccessionIDs(f'The provided collection {collection_name} '
                              f'does not contain any run or Bioproject IDs')
     else:
-        return pd.Series({'id': ls_ids})
+        return pd.Series(ls_ids, name='ID')
