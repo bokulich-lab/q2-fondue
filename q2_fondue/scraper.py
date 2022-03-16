@@ -65,30 +65,33 @@ def _get_attachment_keys(zot, coll_id):
         return ls_attach_keys
 
 
-def _find_accessionIDs(txt):
-    """Returns list of run and BioProject IDs found in `txt`.
+def _find_accessionIDs(txt, runID_type):
+    """Returns list of run or BioProject IDs found in `txt`.
 
-        Searching for these patterns of accession IDs as they are
-        currently supported by q2fondue:
-        ProjectID: PRJ(E|D|N)[A-Z][0-9]+
-        runID: (E|D|S)RR[0-9]{6,}
+    Searching for these patterns of accession IDs as they are
+    currently supported by q2fondue:
+    ProjectID: PRJ(E|D|N)[A-Z][0-9]+
+    runID: (E|D|S)RR[0-9]{6,}
 
-        Args:
-            txt (str): Some text to search
+    Args:
+        txt (str): Some text to search
+        runID_type (str): Type of ID to search for ('run' or 'bioproject')
 
-        Returns:
-            list: List of run and BioProject IDs found.
-        """
-    str_runid = r'[EDS]RR\d*'
-    str_projectid = r'PRJ[EDN][A-Z]\d*'
-    ls_ids = re.findall(f'({str_runid}|{str_projectid})', txt)
+    Returns:
+        list: List of run or BioProject IDs found.
+    """
+    if runID_type == 'run':
+        pattern = r'[EDS]RR\d*'
+    elif runID_type == 'bioproject':
+        pattern = r'PRJ[EDN][A-Z]\d*'
+    ls_ids = re.findall(f'({pattern})', txt)
 
     return list(set(ls_ids))
 
 
 def scrape_collection(
     library_type: str, library_id: str, api_key: str, collection_name: str
-) -> pd.Series:
+) -> (pd.Series, pd.Series):
     """
     Scrapes Zotero collection for run and BioProject IDs.
 
@@ -130,7 +133,7 @@ def scrape_collection(
     )
 
     # extract IDs from text of attachment items
-    ls_ids = []
+    ls_run_ids, ls_bioproject_ids = [], []
     for attach_key in ls_attach_keys:
         # get text
         try:
@@ -140,15 +143,21 @@ def scrape_collection(
             logger.warning(f'Item {attach_key} doesn\'t contain any '
                            f'full-text content')
 
-        # find accession IDs
-        ls_ids += _find_accessionIDs(str_text)
+        # find run IDs
+        ls_run_ids += _find_accessionIDs(str_text, 'run')
+        # find bioproject IDs
+        ls_bioproject_ids += _find_accessionIDs(str_text, 'bioproject')
 
         # todo: quick fix IDs that aren't valid & return others to user
-    # remove duplicate entries in ls_ids
-    ls_ids = list(set(ls_ids))
+    
+    # remove duplicate entries in both lists
+    ls_run_ids = list(set(ls_run_ids))
+    ls_bioproject_ids = list(set(ls_bioproject_ids))
 
-    if len(ls_ids) == 0:
+    if (len(ls_run_ids) == 0) & (len(ls_bioproject_ids) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '
                              f'does not contain any run or Bioproject IDs')
+        # todo: add warning if only run or only bioproject IDs found
     else:
-        return pd.Series(ls_ids, name='ID')
+        return (pd.Series(ls_run_ids, name='ID'),
+                pd.Series(ls_bioproject_ids, name='ID'))

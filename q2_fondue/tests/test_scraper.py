@@ -69,23 +69,36 @@ class TestUtils4CollectionScraping(TestPluginBase):
                 KeyError, 'No attachments exist'):
             _get_attachment_keys(self.zot, 'testID')
 
-    def test_find_accessionIDs(self):
+    def test_find_runIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
-        exp_ls = ['PRJEB4519', 'ERR2765209']
-        obs_ls = _find_accessionIDs(txt_w_2ids)
-        self.assertListEqual(sorted(exp_ls), sorted(obs_ls))
+        exp_ID = ['ERR2765209']
+        obs_ID = _find_accessionIDs(txt_w_2ids, 'run')
+        self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
+
+    def test_find_bioprojectIDs(self):
+        txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
+        exp_ID = ['PRJEB4519']
+        obs_ID = _find_accessionIDs(txt_w_2ids, 'bioproject')
+        self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
 
     def test_find_accessionIDs_no_double(self):
-        txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519'
-        exp_ls = ['PRJEB4519']
-        obs_ls = _find_accessionIDs(txt_w_2ids)
-        self.assertListEqual(exp_ls, obs_ls)
+        txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also in '\
+                     'ERR2765209 and ERR2765209.'
+        exp_ls_proj = ['PRJEB4519']
+        obs_ls_proj = _find_accessionIDs(txt_w_2ids, 'bioproject')
+        self.assertListEqual(exp_ls_proj, obs_ls_proj)
+
+        exp_ls_run = ['ERR2765209']
+        obs_ls_run = _find_accessionIDs(txt_w_2ids, 'run')
+        self.assertListEqual(exp_ls_run, obs_ls_run)
 
     def test_find_accessionIDs_no_ids(self):
-        txt = 'this text has no accession ids.'
+        txt = 'this text has no run ids and no bioproject ids.'
         exp_ls = []
-        obs_ls = _find_accessionIDs(txt)
-        self.assertListEqual(exp_ls, obs_ls)
+        obs_ls_run = _find_accessionIDs(txt, 'run')
+        obs_ls_proj = _find_accessionIDs(txt, 'bioproject')
+        self.assertListEqual(exp_ls, obs_ls_run)
+        self.assertListEqual(exp_ls, obs_ls_proj)
 
 
 class TestCollectionScraping(TestPluginBase):
@@ -94,21 +107,23 @@ class TestCollectionScraping(TestPluginBase):
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper(
+    def test_collection_scraper_bothIDs(
             self, patch_zot_txt,
             patch_get_attach, patch_get_col_id):
         # define patched outputs
         patch_get_attach.return_value = ['attach_key']
         patch_zot_txt.return_value = {
-            "content": "This is full-text with PRJEB4519.",
+            "content": "This is full-text with PRJEB4519 and ERR2765209.",
             "indexedPages": 50,
             "totalPages": 50
         }
         # check
-        exp_out = pd.Series(['PRJEB4519'], name='ID')
-        obs_out = scrape_collection("user", "12345",
-                                    "myuserkey", "test_collection")
-        assert_series_equal(exp_out, obs_out)
+        exp_out_run = pd.Series(['ERR2765209'], name='ID')
+        exp_out_proj = pd.Series(['PRJEB4519'], name='ID')
+        obs_out_run, obs_out_proj = scrape_collection("user", "12345",
+                                                      "myuserkey", "test_collection")
+        assert_series_equal(exp_out_proj, obs_out_proj)
+        assert_series_equal(exp_out_run, obs_out_run)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')
@@ -147,8 +162,8 @@ class TestCollectionScraping(TestPluginBase):
                                      }]
         exp_out = pd.Series(['PRJEB4519'], name='ID')
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection("user", "12345",
-                                        "myuserkey", "test_collection")
+            _, obs_out = scrape_collection("user", "12345",
+                                           "myuserkey", "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:Item attach_key1 doesn't contain "
                 "any full-text content",
