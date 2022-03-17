@@ -229,8 +229,8 @@ plugin.methods.register_function(
     },
     name='Scrape Zotero collection for run and BioProject IDs.',
     description=(
-        'Scrape html and pdf files of a Zotero collection for run and '
-        'Bioproject IDs.'
+        'Scrape HTML and PDF files of a Zotero collection for run and '
+        'BioProject IDs.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
