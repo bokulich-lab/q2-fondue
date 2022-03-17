@@ -141,7 +141,7 @@ def scrape_collection(
         library_id (str): Valid Zotero API userID (for library_type 'user'
             extract from https://www.zotero.org/settings/keys, for 'group'
             extract by hovering over group name in
-            https://www.zotero.org/groups/)
+            https://www.zotero.org/groups/).
         api_key (str): Valid Zotero API user key (retrieve from
             https://www.zotero.org/settings/keys/new checking
             'Allow library access').
