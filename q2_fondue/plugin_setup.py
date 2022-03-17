@@ -223,9 +223,9 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
-                   'from Zotero collection',
+                   'from a Zotero collection.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
-                          'from Zotero collection'
+                          'from a Zotero collection.'
     },
     name='Scrape Zotero collection for run and BioProject IDs.',
     description=(
