@@ -214,7 +214,7 @@ plugin.methods.register_function(
                       'extract from \'your userID for use in API calls\' in '
                       'https://www.zotero.org/settings/keys, '
                       'for \'group\' extract by hovering over group name '
-                      'in https://www.zotero.org/groups/)',
+                      'in https://www.zotero.org/groups/).',
         'api_key': 'Valid Zotero API user key (retrieve from '
                    'https://www.zotero.org/settings/keys/new checking '
                    '"Allow library access" and for \'group\' library '
