@@ -191,7 +191,7 @@ class TestCollectionScraping(TestPluginBase):
                                            "myuserkey", "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:The provided collection "
-                "test_collection does not contain any Bioproject IDs",
+                "test_collection does not contain any BioProject IDs",
                 cm.output
             )
             assert_series_equal(obs_out, exp_out)

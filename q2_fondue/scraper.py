@@ -15,8 +15,7 @@ class NoAccessionIDs(Exception):
     pass
 
 
-def _get_collection_id(
-        zot: zotero.Zotero, col_name: str):
+def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
     """
     Returns collection ID given the name of a Zotero collection
 
@@ -45,12 +44,12 @@ def _get_collection_id(
     return col_id
 
 
-def _get_attachment_keys(zot, coll_id):
+def _get_attachment_keys(zot, coll_id) -> list:
     """Retrieves attachment keys of attachments in provided collection.
 
     Args:
         zot (zotero.Zotero): Zotero instance
-        coll_id (_type_): Collection ID.
+        coll_id (str): Collection ID.
 
     Returns:
         list: List of attachment keys.
@@ -65,7 +64,7 @@ def _get_attachment_keys(zot, coll_id):
         return ls_attach_keys
 
 
-def _find_special_id(txt, pattern, split_str):
+def _find_special_id(txt, pattern, split_str) -> list:
     """Creates an accession ID from starting characters in `pattern` and
     digits following `split_str` in `txt`.
 
@@ -74,6 +73,9 @@ def _find_special_id(txt, pattern, split_str):
         pattern (str): Pattern containing at the start the character prefix and
                        at the end the remaining digits of the accession ID
         split_str (str): String separating the digit part of the ID
+    
+    Returns:
+        list: List with accession ID.
     """
     ls_match = re.findall(f'({pattern})', txt)
     ls_ids = []
@@ -86,7 +88,7 @@ def _find_special_id(txt, pattern, split_str):
     return ls_ids
 
 
-def _find_accessionIDs(txt, ID_type):
+def _find_accessionIDs(txt, ID_type) -> list:
     """Returns list of run or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
@@ -148,7 +150,7 @@ def scrape_collection(
         collection_name (str): Name of the collection to be scraped.
 
     Returns:
-        pd.Series: Series with run and Bioproject IDs scraped from collection.
+        pd.Series: Series with run and BioProject IDs scraped from collection.
     """
     logger = set_up_logger('INFO', logger_name=__name__)
 
@@ -195,12 +197,12 @@ def scrape_collection(
 
     if (len(ls_run_ids) == 0) & (len(ls_bioproject_ids) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '
-                             f'does not contain any run or Bioproject IDs')
-    elif (len(ls_run_ids) == 0):
+                             f'does not contain any run or BioProject IDs')
+    elif len(ls_run_ids) == 0:
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any run IDs')
-    elif (len(ls_bioproject_ids) == 0):
+    elif len(ls_bioproject_ids) == 0:
         logger.warning(f'The provided collection {collection_name} '
-                       f'does not contain any Bioproject IDs')
+                       f'does not contain any BioProject IDs')
     return (pd.Series(ls_run_ids, name='ID'),
             pd.Series(ls_bioproject_ids, name='ID'))
