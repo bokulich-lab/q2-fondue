@@ -73,7 +73,7 @@ def _find_special_id(txt, pattern, split_str) -> list:
         pattern (str): Pattern containing at the start the character prefix and
                        at the end the remaining digits of the accession ID
         split_str (str): String separating the digit part of the ID
-    
+
     Returns:
         list: List with accession ID.
     """

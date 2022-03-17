@@ -183,17 +183,18 @@ class TestCollectionScraping(TestPluginBase):
             "totalPages": 50
         }
         # check
-        exp_out = pd.Series(['ERR2765209'], name='ID')
-
+        exp_out_run = pd.Series(['ERR2765209'], name='ID')
+        obs_out_proj = pd.Series([], name='ID')
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out, _ = scrape_collection("user", "12345",
-                                           "myuserkey", "test_collection")
+            obs_out_run, obs_out_proj = scrape_collection(
+                "user", "12345", "myuserkey", "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:The provided collection "
                 "test_collection does not contain any BioProject IDs",
                 cm.output
             )
-            assert_series_equal(obs_out, exp_out)
+            assert_series_equal(obs_out_run, exp_out_run)
+            assert_series_equal(obs_out_proj, obs_out_proj)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')
