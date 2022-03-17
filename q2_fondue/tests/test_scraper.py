@@ -13,7 +13,7 @@ from unittest.mock import patch
 from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
     _find_special_id,
-    _get_collection_id, _find_accessionIDs,
+    _get_collection_id, _find_accession_ids,
     _get_attachment_keys, scrape_collection,
     NoAccessionIDs
 )
@@ -98,50 +98,50 @@ class TestUtils4CollectionScraping(TestPluginBase):
     def test_find_runIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_ID = ['ERR2765209']
-        obs_ID = _find_accessionIDs(txt_w_2ids, 'run')
+        obs_ID = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
 
     def test_find_bioprojectIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_ID = ['PRJEB4519']
-        obs_ID = _find_accessionIDs(txt_w_2ids, 'bioproject')
+        obs_ID = _find_accession_ids(txt_w_2ids, 'bioproject')
         self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
 
-    def test_find_accessionIDs_no_double(self):
+    def test_find_accession_ids_no_double(self):
         txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also '\
                      'in ERR2765209 and ERR2765209.'
         exp_ls_proj = ['PRJEB4519']
-        obs_ls_proj = _find_accessionIDs(txt_w_2ids, 'bioproject')
+        obs_ls_proj = _find_accession_ids(txt_w_2ids, 'bioproject')
         self.assertListEqual(exp_ls_proj, obs_ls_proj)
 
         exp_ls_run = ['ERR2765209']
-        obs_ls_run = _find_accessionIDs(txt_w_2ids, 'run')
+        obs_ls_run = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(exp_ls_run, obs_ls_run)
 
-    def test_find_accessionIDs_special_cases_one_comma(self):
+    def test_find_accession_ids_special_cases_one_comma(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577 and '\
                    '41427'
         exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB41427']
-        obs_ls_proj = _find_accessionIDs(txt_diff, 'bioproject')
+        obs_ls_proj = _find_accession_ids(txt_diff, 'bioproject')
         self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
 
-    def test_find_accessionIDs_special_cases_three_commas(self):
+    def test_find_accession_ids_special_cases_three_commas(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577, 34555, '\
                    '89765 and 41427'
         exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB34555',
                        'PRJEB89765', 'PRJEB41427']
-        obs_ls_proj = _find_accessionIDs(txt_diff, 'bioproject')
+        obs_ls_proj = _find_accession_ids(txt_diff, 'bioproject')
         self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
 
-    def test_find_accessionIDs_no_ids(self):
+    def test_find_accession_ids_no_ids(self):
         txt = 'this text has no run ids and no bioproject ids.'
         exp_ls = []
-        obs_ls_run = _find_accessionIDs(txt, 'run')
-        obs_ls_proj = _find_accessionIDs(txt, 'bioproject')
+        obs_ls_run = _find_accession_ids(txt, 'run')
+        obs_ls_proj = _find_accession_ids(txt, 'bioproject')
         self.assertListEqual(exp_ls, obs_ls_run)
         self.assertListEqual(exp_ls, obs_ls_proj)
 

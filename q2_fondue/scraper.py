@@ -88,7 +88,7 @@ def _find_special_id(txt, pattern, split_str) -> list:
     return ls_ids
 
 
-def _find_accessionIDs(txt, ID_type) -> list:
+def _find_accession_ids(txt, ID_type) -> list:
     """Returns list of run or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
@@ -187,9 +187,9 @@ def scrape_collection(
                            f'full-text content')
 
         # find run IDs
-        ls_run_ids += _find_accessionIDs(str_text, 'run')
+        ls_run_ids += _find_accession_ids(str_text, 'run')
         # find bioproject IDs
-        ls_bioproject_ids += _find_accessionIDs(str_text, 'bioproject')
+        ls_bioproject_ids += _find_accession_ids(str_text, 'bioproject')
 
     # remove duplicate entries in both lists
     ls_run_ids = list(set(ls_run_ids))
