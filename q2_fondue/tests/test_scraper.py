@@ -66,8 +66,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
     @patch.object(zotero.Zotero, 'collection_items')
     def test_get_attachment_keys_raiseError(self, patch_col, patch_ever):
         patch_ever.return_value = []
-        with self.assertRaisesRegex(
-                KeyError, 'No attachments exist'):
+        with self.assertRaisesRegex(KeyError, 'No attachments exist'):
             _get_attachment_keys(self.zot, 'testID')
 
     def test_find_special_id_one_match(self):
@@ -97,15 +96,15 @@ class TestUtils4CollectionScraping(TestPluginBase):
 
     def test_find_runIDs(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
-        exp_ID = ['ERR2765209']
-        obs_ID = _find_accession_ids(txt_w_2ids, 'run')
-        self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
+        exp_id = ['ERR2765209']
+        obs_id = _find_accession_ids(txt_w_2ids, 'run')
+        self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
-    def test_find_bioprojectIDs(self):
+    def test_find_bioproject_ids(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
-        exp_ID = ['PRJEB4519']
-        obs_ID = _find_accession_ids(txt_w_2ids, 'bioproject')
-        self.assertListEqual(sorted(obs_ID), sorted(exp_ID))
+        exp_id = ['PRJEB4519']
+        obs_id = _find_accession_ids(txt_w_2ids, 'bioproject')
+        self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
     def test_find_accession_ids_no_double(self):
         txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also '\
@@ -173,7 +172,7 @@ class TestCollectionScraping(TestPluginBase):
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_onlyRunIDs(
+    def test_collection_scraper_only_run_ids(
             self, patch_zot_txt,
             patch_get_attach, patch_get_col_id):
         # define patched outputs

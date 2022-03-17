@@ -105,10 +105,9 @@ def _find_accession_ids(txt, ID_type) -> list:
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
     if ID_type == 'run':
-        prefix = r'[EDS]RR'
+        pattern = r'[EDS]RR\s?\d+'
     elif ID_type == 'bioproject':
-        prefix = r'PRJ[EDN][A-Z]'
-    pattern = prefix + r'\s?\d+'
+        pattern = r'PRJ[EDN][A-Z]\s?\d+'
     ls_ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
     ls_ids = [x.replace(' ', '') for x in ls_ids]
