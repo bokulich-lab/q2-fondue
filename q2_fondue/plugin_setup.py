@@ -227,7 +227,7 @@ plugin.methods.register_function(
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
                           'from Zotero collection'
     },
-    name='Scrape Zotero collection for run and Bioproject IDs.',
+    name='Scrape Zotero collection for run and BioProject IDs.',
     description=(
         'Scrape html and pdf files of a Zotero collection for run and '
         'Bioproject IDs.'
