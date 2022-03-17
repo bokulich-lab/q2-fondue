@@ -209,7 +209,7 @@ plugin.methods.register_function(
              ('bioproject_ids', NCBIAccessionIDs), ],
     input_descriptions={},
     parameter_descriptions={
-        'library_type': 'Zotero API library type',
+        'library_type': 'Zotero API library type.',
         'library_id': 'Valid Zotero library ID (for library_type \'user\' '
                       'extract from \'your userID for use in API calls\' in '
                       'https://www.zotero.org/settings/keys, '
