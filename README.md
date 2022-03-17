@@ -80,9 +80,9 @@ artifact run:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
-              --p-library-id libraryID \
-              --p-api-key myKey \
-              --p-collection-name CollectionName \
+              --p-library-id library_id \
+              --p-api-key my_key \
+              --p-collection-name collection_name \
               --o-run-ids run_ids.qza \
               --o-bioproject-ids bioproject_ids.qza
 ```
