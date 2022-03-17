@@ -214,7 +214,7 @@ plugin.methods.register_function(
                       'extract from \'your userID for use in API calls\' in '
                       'https://www.zotero.org/settings/keys, '
                       'for \'group\' extract by hovering over group name '
-                      'in https://www.zotero.org/groups/)',
+                      'in https://www.zotero.org/groups/).',
         'api_key': 'Valid Zotero API user key (retrieve from '
                    'https://www.zotero.org/settings/keys/new checking '
                    '"Allow library access" and for \'group\' library '
@@ -223,14 +223,14 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
-                   'from Zotero collection',
+                   'from a Zotero collection.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
-                          'from Zotero collection'
+                          'from a Zotero collection.'
     },
-    name='Scrape Zotero collection for run and Bioproject IDs.',
+    name='Scrape Zotero collection for run and BioProject IDs.',
     description=(
-        'Scrape html and pdf files of a Zotero collection for run and '
-        'Bioproject IDs.'
+        'Scrape HTML and PDF files of a Zotero collection for run and '
+        'BioProject IDs.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
