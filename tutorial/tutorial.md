@@ -185,6 +185,7 @@ qiime fondue get-metadata \
       --p-email your_email@somewhere.com \
       --o-metadata output_metadata.qza \
       --o-failed-runs failed_metadata.qza
+      --verbose
 ```
 > *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to 1.
 
@@ -193,19 +194,54 @@ The output file *output_metadata.qza* now contains all the metadata for the requ
 
 ### Fetching **only** sequencing data
 
-In contrast, to only get the raw sequences associated with a number of runs, execute this command:
+In contrast, to only get the raw sequences associated with a number of runs, execute these commands:
 ```shell
+qiime tools import \
+      --type NCBIAccessionIDs \
+      --input-path metadata_file.tsv \
+      --output-path metadata_file.qza
+
 qiime fondue get-sequences \
       --i-accession-ids metadata_file.qza \
-      --verbose \
       --p-email your_email@somewhere.com \
       --o-single-reads single_reads.qza \
       --o-paired-reads paired_reads.qza \
-      --o-failed-runs failed_ids.qza
+      --o-failed-runs failed_ids.qza \
+      --verbose
 ```
 
 > *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).  
 
+### Scraping run and BioProject IDs from a Zotero web library collection
+
+For now we have assumed that a file exists with the accession IDs for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run and BioProject IDs from an existing Zotero web library collection, you can run the following command:
+```shell
+qiime fondue scrape-collection \
+              --p-library-type user \
+              --p-user-id user_id \
+              --p-api-key my_key \
+              --p-collection-name collection_name \
+              --o-run-ids fondue-output/run_ids.qza \
+              --o-bioproject-ids fondue-output/bioproject_ids.qza \
+              --verbose
+```
+where:
+- `--p-library-type` is the Zotero API library type 'user' or 'group'.
+- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
+- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+- `--p-collection-name` is the name of the collection to be scraped. 
+- `--o-run-ids` is the output artifact containing the scraped run IDs.
+- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
+
+To investigate which run and BioProject IDs were scraped from your collection, you can investigate the respective output artifacts with the commands:
+```shell
+qiime metadata tabulate \
+      --m-input-file fondue-output/run_ids.qza \
+      --o-visualization fondue-output/run_ids.qzv
+
+qiime tools view fondue-output/run_ids.qzv
+```
+> *Note:* make sure to have q2-metadata installed in your conda environment with `conda install -c qiime2 q2-metadata`.
 
 ## What now? 
 
@@ -264,35 +300,6 @@ qiime tools view fondue-output/dada2_table.qzv
 In summary, we showed how the artifacts fetched through q2-fondue enable an easy entry 
 to the QIIME 2 analysis pipeline, which is further described in other tutorials. 
 
-## Other q2-fondue functionalities
-### Fetching **only** metadata
-We might just want to gain more insight into the metadata of a specific study. 
-Similarly to the `get-all` action, `get-metadata` also requires a TSV file with accession number of BioProject or individual Runs as input. 
-
-```shell
-qiime fondue get-metadata \
-      --i-accession-ids metadata_file_runs.qza \
-      --p-n-jobs 1 \
-      --p-email your_email@somewhere.com \
-      --o-metadata output_metadata.qza \
-      --o-failed-runs failed_metadata.qza \
-      --verbose
-```
-> *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and a high value is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to a value of 1. 
-
-
-
-### Fetching **only** sequencing data
-
-In contrast, to only get the raw sequences associated with a number of runs, execute this command:
-```shell
-qiime fondue get-sequences \
-      --i-accession-ids metadata_file_runs.qza \
-      --p-email your_email@somewhere.com \
-      --output-dir get-seq-output \
-      --verbose
-```
-
 ## Extracting the metadata or sequences artifacts 
 All [QIIME 2 artifacts](docs.qiime2.org) fundamentally are zipped files, containing additional 
 information on the artifact's provenance, type and format. All this information can be exposed using 
@@ -329,7 +336,7 @@ qiime fondue get-sequences \
       --o-failed-runs refetched_failed
 ```
 
-### Combining sequence data from multiple into a sinlge artifact 
+### Combining sequence data from multiple into a single artifact 
 Instead of working with multiple raw sequencing data (semantic type `SampleData[SequencesWithQuality]`), for example after refetching IDs that failed to download at first, we can use this powerful action to merge them into a single artifact. 
 
 ```shell
