@@ -28,14 +28,14 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
 
     # get all collections in this zot instance
     # note w/o zot.everything only max. 100 items are retrieved
-    ls_all_col = zot.everything(zot.collections())
+    all_col = zot.everything(zot.collections())
 
     # retrieve name and key of all collections
-    dic_name_key = {x['data']['name']: x['key'] for x in ls_all_col}
+    name_key = {x['data']['name']: x['key'] for x in all_col}
 
     # return col_name's key
     try:
-        col_id = dic_name_key[col_name]
+        col_id = name_key[col_name]
     except KeyError:
         raise KeyError(
             f'Provided collection name {col_name} does not '
@@ -54,14 +54,14 @@ def _get_attachment_keys(zot, coll_id) -> list:
     Returns:
         list: List of attachment keys.
     """
-    ls_attach = zot.everything(
+    attach = zot.everything(
         zot.collection_items(coll_id, itemType='attachment'))
-    if len(ls_attach) == 0:
+    if len(attach) == 0:
         raise KeyError(
             'No attachments exist in this collection')
     else:
-        ls_attach_keys = list(set([x['key'] for x in ls_attach]))
-        return ls_attach_keys
+        attach_keys = list(set([x['key'] for x in attach]))
+        return attach_keys
 
 
 def _find_special_id(txt, pattern, split_str) -> list:
@@ -77,15 +77,15 @@ def _find_special_id(txt, pattern, split_str) -> list:
     Returns:
         list: List with accession ID.
     """
-    ls_match = re.findall(f'({pattern})', txt)
-    ls_ids = []
-    if len(ls_match) != 0:
-        for match in ls_match:
+    match = re.findall(f'({pattern})', txt)
+    ids = []
+    if len(match) != 0:
+        for match in match:
             split_match = match.split(split_str)
             prefix = re.findall("[A-Z]+", split_match[0])[0]
             number = split_match[-1].strip()
-            ls_ids += [prefix + number]
-    return ls_ids
+            ids += [prefix + number]
+    return ids
 
 
 def _find_accession_ids(txt, ID_type) -> list:
@@ -108,27 +108,27 @@ def _find_accession_ids(txt, ID_type) -> list:
         pattern = r'[EDS]RR\s?\d+'
     elif ID_type == 'bioproject':
         pattern = r'PRJ[EDN][A-Z]\s?\d+'
-    ls_ids = re.findall(f'({pattern})', txt)
+    ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
-    ls_ids = [x.replace(' ', '') for x in ls_ids]
+    ids = [x.replace(' ', '') for x in ids]
 
     # SPECIAL case 1: get IDs after comma:
     # "PREFIX12345, 56789" yields "PREFIX56789"
     for nb_comma in range(1, 11):
         pattern_comma = pattern + nb_comma * r',\s\d+'
-        ls_ids_match = _find_special_id(txt, pattern_comma, ',')
-        if len(ls_ids_match) == 0:
+        ids_match = _find_special_id(txt, pattern_comma, ',')
+        if len(ids_match) == 0:
             pattern_comma = pattern + (nb_comma - 1) * r',\s\d*'
             break
         else:
-            ls_ids += ls_ids_match
+            ids += ids_match
 
     # SPECIAL case 2: get IDs after and:
     # "PREFIX12345, 56789 and 67899" yields "PREFIX67899"
     pattern_and = pattern_comma + r'\sand\s\d+'
-    ls_ids += _find_special_id(txt, pattern_and, 'and')
+    ids += _find_special_id(txt, pattern_and, 'and')
 
-    return list(set(ls_ids))
+    return list(set(ids))
 
 
 def scrape_collection(
@@ -169,14 +169,14 @@ def scrape_collection(
 
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
-    ls_attach_keys = _get_attachment_keys(zot, coll_id)
+    attach_keys = _get_attachment_keys(zot, coll_id)
     logger.info(
-        f'Found {len(ls_attach_keys)} attachments to scrape through...'
+        f'Found {len(attach_keys)} attachments to scrape through...'
     )
 
     # extract IDs from text of attachment items
-    ls_run_ids, ls_bioproject_ids = [], []
-    for attach_key in ls_attach_keys:
+    run_ids, bioproject_ids = [], []
+    for attach_key in attach_keys:
         # get text
         try:
             str_text = zot.fulltext_item(attach_key)['content']
@@ -186,22 +186,22 @@ def scrape_collection(
                            f'full-text content')
 
         # find run IDs
-        ls_run_ids += _find_accession_ids(str_text, 'run')
+        run_ids += _find_accession_ids(str_text, 'run')
         # find bioproject IDs
-        ls_bioproject_ids += _find_accession_ids(str_text, 'bioproject')
+        bioproject_ids += _find_accession_ids(str_text, 'bioproject')
 
     # remove duplicate entries in both lists
-    ls_run_ids = list(set(ls_run_ids))
-    ls_bioproject_ids = list(set(ls_bioproject_ids))
+    run_ids = list(set(run_ids))
+    bioproject_ids = list(set(bioproject_ids))
 
-    if (len(ls_run_ids) == 0) & (len(ls_bioproject_ids) == 0):
+    if (len(run_ids) == 0) & (len(bioproject_ids) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '
                              f'does not contain any run or BioProject IDs')
-    elif len(ls_run_ids) == 0:
+    elif len(run_ids) == 0:
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any run IDs')
-    elif len(ls_bioproject_ids) == 0:
+    elif len(bioproject_ids) == 0:
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any BioProject IDs')
-    return (pd.Series(ls_run_ids, name='ID'),
-            pd.Series(ls_bioproject_ids, name='ID'))
+    return (pd.Series(run_ids, name='ID'),
+            pd.Series(bioproject_ids, name='ID'))

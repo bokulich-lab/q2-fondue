@@ -109,40 +109,40 @@ class TestUtils4CollectionScraping(TestPluginBase):
     def test_find_accession_ids_no_double(self):
         txt_w_2ids = 'this data available in PRJEB4519 and PRJEB4519. Also '\
                      'in ERR2765209 and ERR2765209.'
-        exp_ls_proj = ['PRJEB4519']
-        obs_ls_proj = _find_accession_ids(txt_w_2ids, 'bioproject')
-        self.assertListEqual(exp_ls_proj, obs_ls_proj)
+        exp_proj = ['PRJEB4519']
+        obs_proj = _find_accession_ids(txt_w_2ids, 'bioproject')
+        self.assertListEqual(exp_proj, obs_proj)
 
-        exp_ls_run = ['ERR2765209']
-        obs_ls_run = _find_accession_ids(txt_w_2ids, 'run')
-        self.assertListEqual(exp_ls_run, obs_ls_run)
+        exp_run = ['ERR2765209']
+        obs_run = _find_accession_ids(txt_w_2ids, 'run')
+        self.assertListEqual(exp_run, obs_run)
 
     def test_find_accession_ids_special_cases_one_comma(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577 and '\
                    '41427'
-        exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB41427']
-        obs_ls_proj = _find_accession_ids(txt_diff, 'bioproject')
-        self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
+        exp_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB41427']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
 
     def test_find_accession_ids_special_cases_three_commas(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
         txt_diff = 'under accession numbers PRJEB11895, 12577, 34555, '\
                    '89765 and 41427'
-        exp_ls_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB34555',
-                       'PRJEB89765', 'PRJEB41427']
-        obs_ls_proj = _find_accession_ids(txt_diff, 'bioproject')
-        self.assertListEqual(sorted(exp_ls_proj), sorted(obs_ls_proj))
+        exp_proj = ['PRJEB11895', 'PRJEB12577', 'PRJEB34555',
+                    'PRJEB89765', 'PRJEB41427']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
 
     def test_find_accession_ids_no_ids(self):
         txt = 'this text has no run ids and no bioproject ids.'
         exp_ls = []
-        obs_ls_run = _find_accession_ids(txt, 'run')
-        obs_ls_proj = _find_accession_ids(txt, 'bioproject')
-        self.assertListEqual(exp_ls, obs_ls_run)
-        self.assertListEqual(exp_ls, obs_ls_proj)
+        obs_run = _find_accession_ids(txt, 'run')
+        obs_proj = _find_accession_ids(txt, 'bioproject')
+        self.assertListEqual(exp_ls, obs_run)
+        self.assertListEqual(exp_ls, obs_proj)
 
 
 class TestCollectionScraping(TestPluginBase):
