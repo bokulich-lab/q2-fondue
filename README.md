@@ -10,7 +10,7 @@ Before q2-fondue is available *via* conda, you can use the following instruction
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero
 
 conda activate fondue
 ```
@@ -43,7 +43,7 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 
 ## Usage
 ### Available actions
-q2-fondue provides a couple of actions to fetch and manipulate SRA data. Below you will find a list of available actions and their short descriptions.
+q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run or BioProject IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
 
 | Action           | Description                                                              |
 |------------------|--------------------------------------------------------------------------|
@@ -52,12 +52,15 @@ q2-fondue provides a couple of actions to fetch and manipulate SRA data. Below y
 | `get-all`        | Fetch sequences and metadata by run or BioProject IDs from the SRA repo. |
 | `merge-metadata` | Merge several metadata files into a single metadata object.              |
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
+| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs.                   |
 
 
 ### Import run/BioProject accession IDs
 All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to 
-be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. To import a list of IDs 
-into that type simply run:
+be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing 
+list of IDs (1.) or scrape a Zotero web library collection to obtain these IDs (2.).
+
+1) To import an existing list of IDs into a `NCBIAccessionIDs` artifact simply run:
 
 ```shell
 qiime tools import \
@@ -67,10 +70,31 @@ qiime tools import \
 ```
 
 where:
-- `--input-path` is a path to the TSV file containing run or project IDs
-- `--output-path` is the output artifact
+- `--input-path` is a path to the TSV file containing run or project IDs.
+- `--output-path` is the output artifact.
 
 __Note:__ the input TSV file needs to consist of a single column named "ID".
+
+2) To scrape all run and BioProject IDs from an existing web Zotero library collection into a `NCBIAccessionIDs`
+artifact run:
+```shell
+qiime fondue scrape-collection \
+              --p-library-type user \
+              --p-user-id user_id \
+              --p-api-key my_key \
+              --p-collection-name collection_name \
+              --o-run-ids run_ids.qza \
+              --o-bioproject-ids bioproject_ids.qza
+```
+where:
+- `--p-library-type` is the Zotero API library type 'user' or 'group'.
+- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
+- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+- `--p-collection-name` is the name of the collection to be scraped. 
+- `--o-run-ids` is the output artifact containing the scraped run IDs.
+- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
+
+__Note:__ To retrieve all required IDs from Zotero, you must be logged in. 
 
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
