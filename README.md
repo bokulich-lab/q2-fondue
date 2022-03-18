@@ -60,7 +60,7 @@ All _q2-fondue_ actions which fetch data from SRA require the list of run or Bio
 be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing 
 list of IDs (1.) or scrape a Zotero web library collection to obtain these IDs (2.).
 
-1) To import an existing list of IDs into a `NCBIAccessionIDs` type simply run:
+1) To import an existing list of IDs into a `NCBIAccessionIDs` artifact simply run:
 
 ```shell
 qiime tools import \
