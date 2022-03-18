@@ -184,7 +184,7 @@ qiime fondue get-metadata \
       --p-n-jobs 1 \
       --p-email your_email@somewhere.com \
       --o-metadata output_metadata.qza \
-      --o-failed-runs failed_metadata.qza
+      --o-failed-runs failed_metadata.qza \
       --verbose
 ```
 > *Note:* The parameter `--p-n-jobs` is the number of parallel download jobs and the default is 1. Since this specifies the number of threads, there are hardly any CPU limitations and the more is better until you run out of bandwidth. However, this action is fairly quick so feel free to stick to 1.
@@ -214,7 +214,7 @@ qiime fondue get-sequences \
 
 ### Scraping run and BioProject IDs from a Zotero web library collection
 
-For now we have assumed that a file exists with the accession IDs for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run and BioProject IDs from an existing Zotero web library collection, you can run the following command:
+For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the Run and BioProject IDs from an existing Zotero web library collection, you can run the following command:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
@@ -233,7 +233,7 @@ where:
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
 
-To investigate which run and BioProject IDs were scraped from your collection, you can investigate the respective output artifacts with the commands:
+To investigate which run and BioProject IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
 ```shell
 qiime metadata tabulate \
       --m-input-file fondue-output/run_ids.qza \
