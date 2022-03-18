@@ -132,14 +132,14 @@ def _find_accession_ids(txt, ID_type) -> list:
 
 
 def scrape_collection(
-    library_type: str, library_id: str, api_key: str, collection_name: str
+    library_type: str, user_id: str, api_key: str, collection_name: str
 ) -> (pd.Series, pd.Series):
     """
     Scrapes Zotero collection for run and BioProject IDs.
 
     Args:
         library_type (str): Zotero API library type
-        library_id (str): Valid Zotero API userID (for library_type 'user'
+        user_id (str): Valid Zotero API userID (for library_type 'user'
             extract from https://www.zotero.org/settings/keys, for 'group'
             extract by hovering over group name in
             https://www.zotero.org/groups/).
@@ -155,12 +155,12 @@ def scrape_collection(
 
     logger.info(
         f'Scraping accession IDs for collection "{collection_name}" in '
-        f'{library_type} library with library ID {library_id}...'
+        f'{library_type} library with user ID {user_id}...'
     )
 
     # initialise Zotero instance
     zot = zotero.Zotero(
-        library_id,
+        user_id,
         library_type,
         api_key)
 

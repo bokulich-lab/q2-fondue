@@ -201,7 +201,7 @@ plugin.methods.register_function(
     inputs={},
     parameters={
         'library_type': Str % Choices(['user', 'group']),
-        'library_id': Str,
+        'user_id': Str,
         'api_key': Str,
         'collection_name': Str
     },
@@ -210,11 +210,11 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'library_type': 'Zotero API library type.',
-        'library_id': 'Valid Zotero library ID (for library_type \'user\' '
-                      'extract from \'your userID for use in API calls\' in '
-                      'https://www.zotero.org/settings/keys, '
-                      'for \'group\' extract by hovering over group name '
-                      'in https://www.zotero.org/groups/).',
+        'user_id': 'Valid Zotero user ID (for library_type \'user\' '
+                   'extract from \'your userID for use in API calls\' in '
+                   'https://www.zotero.org/settings/keys, '
+                   'for \'group\' extract by hovering over group name '
+                   'in https://www.zotero.org/groups/).',
         'api_key': 'Valid Zotero API user key (retrieve from '
                    'https://www.zotero.org/settings/keys/new checking '
                    '"Allow library access" and for \'group\' library '

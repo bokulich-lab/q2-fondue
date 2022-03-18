@@ -80,7 +80,7 @@ artifact run:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
-              --p-library-id library_id \
+              --p-user-id user_id \
               --p-api-key my_key \
               --p-collection-name collection_name \
               --o-run-ids run_ids.qza \
@@ -88,7 +88,7 @@ qiime fondue scrape-collection \
 ```
 where:
 - `--p-library-type` is the Zotero API library type 'user' or 'group'.
-- `--p-library-id` is a vaild Zotero library ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
+- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
 - `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 - `--p-collection-name` is the name of the collection to be scraped. 
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
