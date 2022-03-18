@@ -10,6 +10,8 @@ import pandas as pd
 from pyzotero import zotero, zotero_errors
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 
+logger = set_up_logger('INFO', logger_name=__name__)
+
 
 class NoAccessionIDs(Exception):
     pass
@@ -132,7 +134,8 @@ def _find_accession_ids(txt, ID_type) -> list:
 
 
 def scrape_collection(
-    library_type: str, user_id: str, api_key: str, collection_name: str
+    library_type: str, user_id: str, api_key: str, collection_name: str,
+    log_level: str = 'INFO'
 ) -> (pd.Series, pd.Series):
     """
     Scrapes Zotero collection for run and BioProject IDs.
@@ -147,11 +150,12 @@ def scrape_collection(
             https://www.zotero.org/settings/keys/new checking
             'Allow library access').
         collection_name (str): Name of the collection to be scraped.
+        log_level (str, default='INFO'): Logging level.
 
     Returns:
         pd.Series: Series with run and BioProject IDs scraped from collection.
     """
-    logger = set_up_logger('INFO', logger_name=__name__)
+    logger.setLevel(log_level.upper())
 
     logger.info(
         f'Scraping accession IDs for collection "{collection_name}" in '

@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 import json
 import pandas as pd
+import logging
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_series_equal
 from unittest.mock import patch
@@ -147,6 +148,10 @@ class TestUtils4CollectionScraping(TestPluginBase):
 
 class TestCollectionScraping(TestPluginBase):
     package = 'q2_fondue.tests'
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.fake_logger = logging.getLogger('test_log')
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')

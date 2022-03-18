@@ -203,7 +203,8 @@ plugin.methods.register_function(
         'library_type': Str % Choices(['user', 'group']),
         'user_id': Str,
         'api_key': Str,
-        'collection_name': Str
+        'collection_name': Str,
+        'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     },
     outputs=[('run_ids', NCBIAccessionIDs),
              ('bioproject_ids', NCBIAccessionIDs), ],
@@ -219,7 +220,8 @@ plugin.methods.register_function(
                    'https://www.zotero.org/settings/keys/new checking '
                    '"Allow library access" and for \'group\' library '
                    '"Read/Write" permissions ).',
-        'collection_name': 'Name of the collection to be scraped.'
+        'collection_name': 'Name of the collection to be scraped.',
+        'log_level': 'Logging level.'
     },
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
