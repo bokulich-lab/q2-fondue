@@ -3,7 +3,7 @@
 
  <p align="left"><img src="logo.png" height="150" /></p>
 
-`q2-fondue` is a [QIIME 2](https://qiime2.org/) plugin for programmatic access to sequences and metadata from NCBI Sequence Read Archive (SRA). It enables user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles. 
+`q2-fondue` is a [QIIME 2](https://qiime2.org/) plugin for programmatic access to sequences and metadata from NCBI Sequence Read Archive (SRA). It enables user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles.
 
 ## Installation
 Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
@@ -158,6 +158,9 @@ where:
 - `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
+
+## Getting Help
+Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
 
 ## Citation
 
