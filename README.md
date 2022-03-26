@@ -1,4 +1,4 @@
-# q2-fondue 
+# q2-fondue
 ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
 
  <p align="left"><img src="logo.png" height="150" /></p>
@@ -23,7 +23,7 @@ bash install-sra-tools.sh
 
 rm install-sra-tools.sh
 ```
-* Install q2-fondue and refresh the QIIME 2 CLI cache. 
+* Install q2-fondue and refresh the QIIME 2 CLI cache.
 ```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 
@@ -38,7 +38,7 @@ vdb-config --proxy <your proxy URL> --proxy-disable no
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.
 
-To find out which temporary directory is used by Qiime 2, you can run `echo $TMPDIR` in your terminal. If this command returns an empty string, the assigned temporary directory equals the OS's default temporary directory (usually `/tmp`) . To re-assign your temporary directory to a location of choice, run `export TMPDIR=Location/of/choice`. 
+To find out which temporary directory is used by Qiime 2, you can run `echo $TMPDIR` in your terminal. If this command returns an empty string, the assigned temporary directory equals the OS's default temporary directory (usually `/tmp`) . To re-assign your temporary directory to a location of choice, run `export TMPDIR=Location/of/choice`.
 
 
 ## Usage
@@ -56,8 +56,8 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 
 
 ### Import run/BioProject accession IDs
-All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to 
-be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing 
+All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to
+be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing
 list of IDs (1.) or scrape a Zotero web library collection to obtain these IDs (2.).
 
 1) To import an existing list of IDs into a `NCBIAccessionIDs` artifact simply run:
@@ -88,13 +88,13 @@ qiime fondue scrape-collection \
 ```
 where:
 - `--p-library-type` is the Zotero API library type 'user' or 'group'.
-- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
+- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
 - `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
-- `--p-collection-name` is the name of the collection to be scraped. 
+- `--p-collection-name` is the name of the collection to be scraped.
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
 
-__Note:__ To retrieve all required IDs from Zotero, you must be logged in. 
+__Note:__ To retrieve all required IDs from Zotero, you must be logged in.
 
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
@@ -136,12 +136,12 @@ where:
 - `--o-paired-reads` is the output artifact containing paired-end sequences
 - `--o-failed-runs` is the output artifact containing run IDs that failed to download
 
-The resulting sequence artifacts (`--o-single-reads` and `--o-paired-reads`) will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files. 
-If one of the provided IDs only contains sequences of one type (e.g. single-read sequences) then the other artifact 
-(e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`. Similarly, 
+The resulting sequence artifacts (`--o-single-reads` and `--o-paired-reads`) will contain the `fastq.gz` files of the sequences, `metadata.yml` and `MANIFEST` files.
+If one of the provided IDs only contains sequences of one type (e.g. single-read sequences) then the other artifact
+(e.g. artifact with paired-end sequences) contains empty sequence files with dummy ID starting with `xxx_`. Similarly,
 if none of the requested sequences failed to download, the corresponding artifact will be empty.
 
-If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as an `--m-accession-ids-file` to a subsequent `get-sequence` command. 
+If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as an `--m-accession-ids-file` to a subsequent `get-sequence` command.
 
 ### Fetching metadata and sequences
 To fetch both sequence-associated metadata and sequences associated with the provided run or project IDs, execute this command:
@@ -156,6 +156,14 @@ where:
 - `--i-accession-ids` is an artifact containing run or project IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
+
+## Citation
+
+If you use `fondue` in your research, please cite the following:
+
+Michal Ziemski, Anja Adamov, Lina Kim, Lena Flörl, Nicholas A. Bokulich. 2022. Reproducible acquisition, management, and meta-analysis of nucleotide sequence (meta)data using q2-fondue.
+bioRxiv 2022.03.22.485322; doi: https://doi.org/10.1101/2022.03.22.485322
+
 
 ## License
 q2-fondue is released under a BSD-3-Clause license. See LICENSE for more details.

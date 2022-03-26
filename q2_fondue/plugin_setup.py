@@ -71,6 +71,7 @@ plugin = Plugin(
         'its associated metadata from data archives like SRA.'
     ),
     short_description='Plugin for fetching sequences and metadata.',
+    citations=[citations['Ziemski2022']]
 )
 
 plugin.methods.register_function(
