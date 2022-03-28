@@ -1,7 +1,9 @@
 # q2-fondue
 ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6388476.svg)](https://doi.org/10.5281/zenodo.6388476)
+[![DOI](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1101/2022.03.22.485322)
 
- <p align="left"><img src="logo.png" height="150" /></p>
+<p align="left"><img src="logo.png" height="150" /></p>
 
 `q2-fondue` is a [QIIME 2](https://qiime2.org/) plugin for programmatic access to sequences and metadata from NCBI Sequence Read Archive (SRA). It enables user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles.
 
