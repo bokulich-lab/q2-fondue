@@ -46,23 +46,21 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
     return col_id
 
 
-def _get_attachment_keys(zot, coll_id) -> list:
-    """Retrieves attachment keys of attachments in provided collection.
+def _get_attachment_keys(items) -> list:
+    """Retrieves attachment keys of attachments in provided list of items.
 
     Args:
-        zot (zotero.Zotero): Zotero instance
-        coll_id (str): Collection ID.
+        items (list): List of Zotero items.
 
     Returns:
         list: List of attachment keys.
     """
-    attach = zot.everything(
-        zot.collection_items(coll_id, itemType='attachment'))
+    attach = [x for x in items if x['data']['itemType'] == 'attachment']
     if len(attach) == 0:
         raise KeyError(
             'No attachments exist in this collection')
     else:
-        attach_keys = list(set([x['key'] for x in attach]))
+        attach_keys = sorted(list(set([x['key'] for x in attach])))
         return attach_keys
 
 
@@ -171,9 +169,21 @@ def scrape_collection(
     # get collection id
     coll_id = _get_collection_id(zot, collection_name)
 
+    # get all items of this collection (required for DOI extraction)
+    items = zot.everything(zot.collection_items(coll_id))
+
+    # todo: input - items / output - parentitem_key_doi
+    # extract item_id and doi/isbn for all items in this collection with
+    # this key (items of type "attachment" don't have this key within)
+    parentitem_key_doi = {}
+    for key_token in ['DOI', 'ISBN']:
+        parentitem_key_doi.update({x['key']: x['data'][key_token]
+                                   for x in items
+                                   if key_token in x['data'].keys()})
+
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
-    attach_keys = _get_attachment_keys(zot, coll_id)
+    attach_keys = _get_attachment_keys(items)
     logger.info(
         f'Found {len(attach_keys)} attachments to scrape through...'
     )
@@ -181,6 +191,13 @@ def scrape_collection(
     # extract IDs from text of attachment items
     run_ids, bioproject_ids = [], []
     for attach_key in attach_keys:
+        # todo: create function _find_doi() & test it
+        # # get doi/isbn linked with this attachment
+        # attach_item = [x for x in items if x['key'] == attach_key]
+        # # note: assumption 1 attach has only 1 parent item
+        # parent_item = attach_item[0]['data']['parentItem']
+        # doi_isbn = parentitem_key_doi[parent_item]
+
         # get text
         try:
             str_text = zot.fulltext_item(attach_key)['content']
@@ -190,6 +207,7 @@ def scrape_collection(
                            f'full-text content')
 
         # find run IDs
+        # todo: create 2 dict with key being doi & update if it already exists
         run_ids += _find_accession_ids(str_text, 'run')
         # find bioproject IDs
         bioproject_ids += _find_accession_ids(str_text, 'bioproject')

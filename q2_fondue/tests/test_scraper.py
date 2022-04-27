@@ -32,6 +32,11 @@ class TestUtils4CollectionScraping(TestPluginBase):
         file = open(path2col)
         return json.load(file)
 
+    def _open_txt_file(self, filename):
+        path2file = self.get_data_path(filename)
+        txt_file = open(path2file, "r")
+        return json.loads(txt_file.read())
+
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collections')
     def test_get_correct_collectionID(self, patch_col, patch_ever):
@@ -54,21 +59,16 @@ class TestUtils4CollectionScraping(TestPluginBase):
         ):
             _get_collection_id(self.zot, col_name)
 
-    @patch.object(zotero.Zotero, 'everything')
-    @patch.object(zotero.Zotero, 'collection_items')
-    def test_get_attachment_keys(self, patch_col, patch_ever):
-        patch_ever.return_value = self._open_json_file(
-            'scraper_collection_items.json')
-        exp_keys = ['XSE8Y2GR', 'PAWLP4NQ']
-        returned_keys = _get_attachment_keys(self.zot, 'testID')
+    def test_get_attachment_keys(self):
+        items = self._open_txt_file('scraper_items.txt')
+        exp_keys = ['DMJ4AQ48', 'WZV4HG8X']
+        returned_keys = _get_attachment_keys(items)
         self.assertEqual(sorted(exp_keys), sorted(returned_keys))
 
-    @patch.object(zotero.Zotero, 'everything')
-    @patch.object(zotero.Zotero, 'collection_items')
-    def test_get_attachment_keys_raiseError(self, patch_col, patch_ever):
-        patch_ever.return_value = []
+    def test_get_attachment_keys_raiseError(self):
+        items = self._open_txt_file('scraper_items_no_attach.txt')
         with self.assertRaisesRegex(KeyError, 'No attachments exist'):
-            _get_attachment_keys(self.zot, 'testID')
+            _get_attachment_keys(items)
 
     def test_find_special_id_one_match(self):
         txt = 'PRJDB1234: 2345 and 4567. How about another study?'
@@ -146,7 +146,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertListEqual(exp_ls, obs_proj)
 
 
-class TestCollectionScraping(TestPluginBase):
+class TestCollectionScraping(TestUtils4CollectionScraping):
     package = 'q2_fondue.tests'
 
     @classmethod
@@ -154,13 +154,15 @@ class TestCollectionScraping(TestPluginBase):
         cls.fake_logger = logging.getLogger('test_log')
 
     @patch('q2_fondue.scraper._get_collection_id')
-    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
     def test_collection_scraper_bothIDs(
             self, patch_zot_txt,
-            patch_get_attach, patch_get_col_id):
+            patch_col, patch_items, patch_get_col_id):
         # define patched outputs
-        patch_get_attach.return_value = ['attach_key']
+        patch_items.return_value = self._open_txt_file(
+            'scraper_items.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with PRJEB4519 and ERR2765209.",
             "indexedPages": 50,
@@ -175,13 +177,15 @@ class TestCollectionScraping(TestPluginBase):
         assert_series_equal(exp_out_run, obs_out_run)
 
     @patch('q2_fondue.scraper._get_collection_id')
-    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
     def test_collection_scraper_only_run_ids(
             self, patch_zot_txt,
-            patch_get_attach, patch_get_col_id):
+            patch_col, patch_items, patch_get_col_id):
         # define patched outputs
-        patch_get_attach.return_value = ['attach_key']
+        patch_items.return_value = self._open_txt_file(
+            'scraper_items.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with ERR2765209.",
             "indexedPages": 50,
@@ -202,13 +206,15 @@ class TestCollectionScraping(TestPluginBase):
             assert_series_equal(obs_out_proj, obs_out_proj)
 
     @patch('q2_fondue.scraper._get_collection_id')
-    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
     def test_collection_scraper_onlyProjectIDs(
             self, patch_zot_txt,
-            patch_get_attach, patch_get_col_id):
+            patch_col, patch_items, patch_get_col_id):
         # define patched outputs
-        patch_get_attach.return_value = ['attach_key']
+        patch_items.return_value = self._open_txt_file(
+            'scraper_items.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with PRJEB4519.",
             "indexedPages": 50,
@@ -228,13 +234,15 @@ class TestCollectionScraping(TestPluginBase):
             assert_series_equal(obs_out, exp_out)
 
     @patch('q2_fondue.scraper._get_collection_id')
-    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
     def test_collection_scraper_noIDs(
             self, patch_zot_txt,
-            patch_get_attach, patch_get_col_id):
+            patch_col, patch_items, patch_get_col_id):
         # define patched outputs
-        patch_get_attach.return_value = ['attach_key']
+        patch_items.return_value = self._open_txt_file(
+            'scraper_items.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text without any IDs.",
             "indexedPages": 50,
@@ -248,13 +256,15 @@ class TestCollectionScraping(TestPluginBase):
                               "myuserkey", col_name)
 
     @patch('q2_fondue.scraper._get_collection_id')
-    @patch('q2_fondue.scraper._get_attachment_keys')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
     def test_collection_scraper_nofulltext(
             self, patch_zot_txt,
-            patch_get_attach, patch_get_col_id):
+            patch_col, patch_items, patch_get_col_id):
         # define patched outputs
-        patch_get_attach.return_value = ['attach_key1', 'attach_key2']
+        patch_items.return_value = self._open_txt_file(
+            'scraper_items.txt')
         patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
                                      {
                                          "content":
@@ -267,7 +277,7 @@ class TestCollectionScraping(TestPluginBase):
             _, obs_out = scrape_collection("user", "12345",
                                            "myuserkey", "test_collection")
             self.assertIn(
-                "WARNING:q2_fondue.scraper:Item attach_key1 doesn't contain "
+                "WARNING:q2_fondue.scraper:Item DMJ4AQ48 doesn't contain "
                 "any full-text content",
                 cm.output
             )
