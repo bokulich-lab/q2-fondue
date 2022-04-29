@@ -11,7 +11,7 @@ import itertools
 import pandas as pd
 from qiime2.plugin import ValidationError
 from qiime2.plugin import model
-
+from qiime2.metadata.base import is_id_header, FORMATTED_ID_HEADERS
 from q2_fondue.entrezpy_clients._utils import PREFIX
 
 
@@ -100,11 +100,26 @@ class NCBIAccessionIDsFormat(model.TextFileFormat):
 
     def _validate_(self, level):
         df = pd.read_csv(str(self), sep='\t')
+        cols_df = df.columns.tolist()
 
-        if df.shape[1] > 1:
+        if df.shape[1] > 2:
+            print(df.columns.tolist())
             raise ValidationError(
                 'NCBI Accession IDs artifact should only contain a single '
-                'column with IDs of the SRA runs or NCBI\'s BioProjects.'
+                'column with IDs of the SRA runs or NCBI\'s BioProjects and '
+                'an optional column with associated DOIs.'
+            )
+        elif df.shape[1] == 2 and 'DOI' not in cols_df:
+            raise ValidationError(
+                'NCBI Accession IDs artifact with two columns '
+                'must contain the column \'DOI\'.'
+            )
+
+        # check that there is a valid ID header:
+        if not max([is_id_header(x) for x in cols_df]):
+            raise ValidationError(
+                f'NCBI Accession IDs artifact must contain a valid '
+                f'ID header from {FORMATTED_ID_HEADERS}.'
             )
 
         df.iloc[:, 0].apply(self._validate_id)

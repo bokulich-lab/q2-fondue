@@ -46,7 +46,29 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
     return col_id
 
 
-def _get_attachment_keys(items) -> list:
+def _get_parent_and_doi(items: list) -> dict:
+    """
+    Extract parent keys and DOI/ISBN for all `items` containing
+    this information (note: items of type \"attachment\" don't have this key)
+
+    Args:
+        items (list): List of Zotero items.
+
+    Returns:
+        dict: Dictionary with parent keys and DOI/ISBN as corresponding values.
+    """
+    parent_doi = {}
+    for key_token in ['DOI', 'ISBN']:
+        parent_doi.update({x['key']: x['data'][key_token]
+                           for x in items
+                           if key_token in x['data'].keys()})
+    if len(parent_doi) == 0:
+        raise KeyError(
+            'This collection has no items with associated DOI/ISBN names.')
+    return parent_doi
+
+
+def _get_attachment_keys(items: list) -> list:
     """Retrieves attachment keys of attachments in provided list of items.
 
     Args:
@@ -64,7 +86,73 @@ def _get_attachment_keys(items) -> list:
         return attach_keys
 
 
-def _find_special_id(txt, pattern, split_str) -> list:
+def _link_attach_and_doi(
+        items: list, attach_key: str, parent_doi: dict) -> str:
+    """
+    Matches given `attach_key` in `items` to corresponding DOI/ISBN name
+    linked via parent ID in `parent_doi` dictionary.
+
+    Args:
+        items (list): List of Zotero items.
+        attach_key (str): Key of attachment to be matched.
+        parent_doi (dict): Known parent ID and DOI/ISBN matches.
+
+    Returns:
+        str: Matching DOI/ISBN name
+    """
+    attach_item = [x for x in items if x['key'] == attach_key]
+    parent_key = attach_item[0]['data']['parentItem']
+    if parent_key not in parent_doi:
+        raise KeyError(
+            f'Attachment {attach_key} does not contain a matching DOI/ISBN '
+            f'parent in this collection')
+    else:
+        return parent_doi[parent_key]
+
+
+def _merge2dict(id_dict: dict, keys: list, value2link: str) -> dict:
+    """
+    Creates new entries with key from `keys` and associated
+    `value2link` in existing dictionary `id_dict`.
+
+    Args:
+        id_dict (dict): Existing dictionary with some keys and values.
+        keys (list): List of keys to be added individually to `id_dict`.
+        value2link (str): Value to assign to each of the `keys`.
+
+    Returns:
+        dict: Dictionary extended with new keys and associated value.
+    """
+    for key in keys:
+        if key in id_dict:
+            # attach to already scraped accession IDs
+            id_dict[key].append(value2link)
+            # remove duplicate values & sort
+            id_dict[key] = sorted(list(set(id_dict[key])))
+        else:
+            id_dict[key] = [value2link]
+    return id_dict
+
+
+def _transform_dict_to_df(orig_dict: dict) -> pd.DataFrame:
+    """Transforms provided `orig_dict` to a dataframe with indices being
+    keys of `orig_dict`` and corresponding column entries being its values.
+
+    Args:
+        orig_dict (dict): Dictionary with accession IDs as keys and
+        DOI/ISBN as values.
+
+    Returns:
+        pd.DataFrame: dataframe with indices being keys of `orig_dict`
+        and corresponding column entries being its values.
+    """
+    new_df = pd.DataFrame.from_dict(
+        orig_dict, orient='index', columns=['DOI'])
+    new_df.index.name = 'ID'
+    return new_df
+
+
+def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
     """Creates an accession ID from starting characters in `pattern` and
     digits following `split_str` in `txt`.
 
@@ -88,7 +176,7 @@ def _find_special_id(txt, pattern, split_str) -> list:
     return ids
 
 
-def _find_accession_ids(txt, ID_type) -> list:
+def _find_accession_ids(txt: str, ID_type: str) -> list:
     """Returns list of run or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
@@ -172,14 +260,8 @@ def scrape_collection(
     # get all items of this collection (required for DOI extraction)
     items = zot.everything(zot.collection_items(coll_id))
 
-    # todo: input - items / output - parentitem_key_doi
-    # extract item_id and doi/isbn for all items in this collection with
-    # this key (items of type "attachment" don't have this key within)
-    parentitem_key_doi = {}
-    for key_token in ['DOI', 'ISBN']:
-        parentitem_key_doi.update({x['key']: x['data'][key_token]
-                                   for x in items
-                                   if key_token in x['data'].keys()})
+    # get parent keys and corresponding DOI/ISBN
+    parent_doi = _get_parent_and_doi(items)
 
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
@@ -189,14 +271,11 @@ def scrape_collection(
     )
 
     # extract IDs from text of attachment items
-    run_ids, bioproject_ids = [], []
+    run_doi, bioproject_doi = {}, {}
+
     for attach_key in attach_keys:
-        # todo: create function _find_doi() & test it
-        # # get doi/isbn linked with this attachment
-        # attach_item = [x for x in items if x['key'] == attach_key]
-        # # note: assumption 1 attach has only 1 parent item
-        # parent_item = attach_item[0]['data']['parentItem']
-        # doi_isbn = parentitem_key_doi[parent_item]
+        # get doi/isbn linked with this attachment key
+        doi_isbn = _link_attach_and_doi(items, attach_key, parent_doi)
 
         # get text
         try:
@@ -206,24 +285,25 @@ def scrape_collection(
             logger.warning(f'Item {attach_key} doesn\'t contain any '
                            f'full-text content')
 
-        # find run IDs
-        # todo: create 2 dict with key being doi & update if it already exists
-        run_ids += _find_accession_ids(str_text, 'run')
-        # find bioproject IDs
-        bioproject_ids += _find_accession_ids(str_text, 'bioproject')
+        # find accession (run and bioproject) IDs
+        run_ids = _find_accession_ids(str_text, 'run')
+        bioproject_ids = _find_accession_ids(str_text, 'bioproject')
 
-    # remove duplicate entries in both lists
-    run_ids = list(set(run_ids))
-    bioproject_ids = list(set(bioproject_ids))
+        # match found accession IDs with DOI
+        run_doi = _merge2dict(run_doi, run_ids, doi_isbn)
+        bioproject_doi = _merge2dict(
+            bioproject_doi, bioproject_ids, doi_isbn)
 
-    if (len(run_ids) == 0) & (len(bioproject_ids) == 0):
+    if (len(run_doi) == 0) & (len(bioproject_doi) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '
                              f'does not contain any run or BioProject IDs')
-    elif len(run_ids) == 0:
+    elif len(run_doi) == 0:
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any run IDs')
-    elif len(bioproject_ids) == 0:
+    elif len(bioproject_doi) == 0:
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any BioProject IDs')
-    return (pd.Series(run_ids, name='ID'),
-            pd.Series(bioproject_ids, name='ID'))
+
+    # transform dict to dataframe & return
+    return (_transform_dict_to_df(run_doi),
+            _transform_dict_to_df(bioproject_doi))

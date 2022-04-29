@@ -140,6 +140,7 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
         pd.DataFrame: DataFrame with invalid IDs and their descriptions.
     """
+    # todo: add passing on of DOI information if available in `accession_ids`
     logger = set_up_logger(log_level, logger_name=__name__)
 
     # Retrieve input IDs

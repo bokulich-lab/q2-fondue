@@ -9,12 +9,15 @@ import json
 import pandas as pd
 import logging
 from qiime2.plugin.testing import TestPluginBase
-from pandas._testing import assert_series_equal
+from pandas._testing import assert_frame_equal
 from unittest.mock import patch
 from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
     _find_special_id,
     _get_collection_id, _find_accession_ids,
+    _get_parent_and_doi, _merge2dict,
+    _transform_dict_to_df,
+    _link_attach_and_doi,
     _get_attachment_keys, scrape_collection,
     NoAccessionIDs
 )
@@ -36,6 +39,12 @@ class TestUtils4CollectionScraping(TestPluginBase):
         path2file = self.get_data_path(filename)
         txt_file = open(path2file, "r")
         return json.loads(txt_file.read())
+
+    def _create_doi_id_dataframe(self, id_ls, doi_ls):
+        df = pd.DataFrame(columns=['DOI'], data=doi_ls,
+                          index=id_ls)
+        df.index.name = 'ID'
+        return df
 
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collections')
@@ -59,6 +68,17 @@ class TestUtils4CollectionScraping(TestPluginBase):
         ):
             _get_collection_id(self.zot, col_name)
 
+    def test_get_parent_and_doi(self):
+        items = self._open_txt_file('scraper_items.txt')
+        exp_out = {'CP4ED2CY': '10.1038/s41467-021-26215-w'}
+        obs_out = _get_parent_and_doi(items)
+        self.assertEqual(exp_out, obs_out)
+
+    def test_get_parent_and_doi_no_doi(self):
+        items = self._open_txt_file('scraper_items_no_doi.txt')
+        with self.assertRaisesRegex(KeyError, 'no items with associated DOI'):
+            _get_parent_and_doi(items)
+
     def test_get_attachment_keys(self):
         items = self._open_txt_file('scraper_items.txt')
         exp_keys = ['DMJ4AQ48', 'WZV4HG8X']
@@ -69,6 +89,19 @@ class TestUtils4CollectionScraping(TestPluginBase):
         items = self._open_txt_file('scraper_items_no_attach.txt')
         with self.assertRaisesRegex(KeyError, 'No attachments exist'):
             _get_attachment_keys(items)
+
+    def test_link_attach_and_doi(self):
+        items = self._open_txt_file('scraper_items.txt')
+        parent_doi = {'CP4ED2CY': '10.1038/s41467-021-26215-w'}
+        exp_doi = '10.1038/s41467-021-26215-w'
+        obs_doi = _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
+        self.assertEqual(obs_doi, exp_doi)
+
+    def test_link_attach_and_doi_no_parent(self):
+        items = self._open_txt_file('scraper_items.txt')
+        parent_doi = {'other_parentID': '10.1038/s41467-021-26215-w'}
+        with self.assertRaisesRegex(KeyError, 'DMJ4AQ48 does not contain'):
+            _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
 
     def test_find_special_id_one_match(self):
         txt = 'PRJDB1234: 2345 and 4567. How about another study?'
@@ -145,6 +178,47 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertListEqual(exp_ls, obs_run)
         self.assertListEqual(exp_ls, obs_proj)
 
+    def test_merge2dict_new_items(self):
+        ext_dict = {'accID1': ['doi1']}
+
+        exp_out = {'accID1': ['doi1'],
+                   'accID2': ['new_doi'],
+                   'accID3': ['new_doi']}
+        obs_out = _merge2dict(ext_dict, ['accID2', 'accID3'], 'new_doi')
+        self.assertDictEqual(exp_out, obs_out)
+
+    def test_merge2dict_existing_item_extend(self):
+        ext_dict = {'accID1': ['doi1']}
+
+        exp_out = {'accID1': ['doi1', 'new_doi'],
+                   'accID3': ['new_doi']}
+        obs_out = _merge2dict(ext_dict, ['accID1', 'accID3'], 'new_doi')
+        self.assertDictEqual(exp_out, obs_out)
+
+    def test_merge2dict_no_duplicate_dois(self):
+        ext_dict = {'accID1': ['doi1']}
+
+        exp_out = {'accID1': ['doi1'],
+                   'accID3': ['doi1']}
+        obs_out = _merge2dict(ext_dict, ['accID1', 'accID3'], 'doi1')
+        self.assertDictEqual(exp_out, obs_out)
+
+    def test_transform_dict_to_df(self):
+        ext_dict = {'accID1': ['doi1'], 'accID2': ['doi2']}
+        exp_out = self._create_doi_id_dataframe(
+            ['accID1', 'accID2'], ['doi1', 'doi2'])
+
+        obs_out = _transform_dict_to_df(ext_dict)
+        assert_frame_equal(exp_out, obs_out)
+
+    def test_transform_dict_to_df_empty_dict(self):
+        ext_dict = {}
+        exp_out = self._create_doi_id_dataframe(
+            [], [])
+
+        obs_out = _transform_dict_to_df(ext_dict)
+        assert_frame_equal(exp_out, obs_out)
+
 
 class TestCollectionScraping(TestUtils4CollectionScraping):
     package = 'q2_fondue.tests'
@@ -169,12 +243,14 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             "totalPages": 50
         }
         # check
-        exp_out_run = pd.Series(['ERR2765209'], name='ID')
-        exp_out_proj = pd.Series(['PRJEB4519'], name='ID')
+        exp_out_run = self._create_doi_id_dataframe(
+            ['ERR2765209'], ['10.1038/s41467-021-26215-w'])
+        exp_out_proj = self._create_doi_id_dataframe(
+            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
         obs_out_run, obs_out_proj = scrape_collection(
             "user", "12345", "myuserkey", "test_collection")
-        assert_series_equal(exp_out_proj, obs_out_proj)
-        assert_series_equal(exp_out_run, obs_out_run)
+        assert_frame_equal(exp_out_proj, obs_out_proj)
+        assert_frame_equal(exp_out_run, obs_out_run)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -192,8 +268,10 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             "totalPages": 50
         }
         # check
-        exp_out_run = pd.Series(['ERR2765209'], name='ID')
-        obs_out_proj = pd.Series([], name='ID')
+        exp_out_run = self._create_doi_id_dataframe(
+            ['ERR2765209'], ['10.1038/s41467-021-26215-w'])
+        obs_out_proj = self._create_doi_id_dataframe(
+            [], [])
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             obs_out_run, obs_out_proj = scrape_collection(
                 "user", "12345", "myuserkey", "test_collection")
@@ -202,8 +280,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                 "test_collection does not contain any BioProject IDs",
                 cm.output
             )
-            assert_series_equal(obs_out_run, exp_out_run)
-            assert_series_equal(obs_out_proj, obs_out_proj)
+            assert_frame_equal(obs_out_run, exp_out_run)
+            assert_frame_equal(obs_out_proj, obs_out_proj)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -221,7 +299,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             "totalPages": 50
         }
         # check
-        exp_out = pd.Series(['PRJEB4519'], name='ID')
+        exp_out = self._create_doi_id_dataframe(
+            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             _, obs_out = scrape_collection("user", "12345",
@@ -231,7 +310,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                 "test_collection does not contain any run IDs",
                 cm.output
             )
-            assert_series_equal(obs_out, exp_out)
+            assert_frame_equal(obs_out, exp_out)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -272,7 +351,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                                          "indexedPages": 50,
                                          "totalPages": 50
                                      }]
-        exp_out = pd.Series(['PRJEB4519'], name='ID')
+        exp_out = self._create_doi_id_dataframe(
+            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             _, obs_out = scrape_collection("user", "12345",
                                            "myuserkey", "test_collection")
@@ -281,4 +361,4 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                 "any full-text content",
                 cm.output
             )
-            assert_series_equal(obs_out, exp_out)
+            assert_frame_equal(obs_out, exp_out)
