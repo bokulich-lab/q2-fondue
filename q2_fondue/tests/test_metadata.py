@@ -14,6 +14,7 @@ from entrezpy import conduit
 from entrezpy.esearch import esearcher
 from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal
+from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
 from unittest.mock import patch, MagicMock, ANY, call
 
@@ -345,6 +346,34 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'INFO', ANY
         )
         patched_get_run.assert_not_called()
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_project_meta')
+    def test_get_metadata_run_w_doi(
+            self, patched_get_project, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
+                              sep='\t', index_col=0)
+        patched_get_run.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path('run_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
+        self.assertTrue('DOI' in obs_meta.columns)
+        assert_frame_equal(obs_meta[['DOI']], ids_meta.to_dataframe())
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_project_meta')
+    def test_get_metadata_project_w_doi(
+            self, patched_get_project, patched_get_run):
+        meta_df = pd.read_csv(
+            self.get_data_path('sra-metadata-two-bioprojects.tsv'),
+            sep='\t', index_col=0)
+        patched_get_project.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path('project_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
+        self.assertTrue('DOI' in obs_meta.columns)
+        assert_array_equal(obs_meta[['Bioproject ID', 'DOI']].values,
+                           ids_meta.to_dataframe().reset_index().values)
 
     def test_merge_metadata_3dfs_nodupl(self):
         # Test merging metadata with no duplicated run IDs

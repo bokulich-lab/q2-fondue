@@ -109,7 +109,8 @@ class NCBIAccessionIDsFormat(model.TextFileFormat):
                 'column with IDs of the SRA runs or NCBI\'s BioProjects and '
                 'an optional column with associated DOIs.'
             )
-        elif df.shape[1] == 2 and 'DOI' not in cols_df:
+        elif df.shape[1] == 2 and (
+                'DOI' not in cols_df and 'doi' not in cols_df):
             raise ValidationError(
                 'NCBI Accession IDs artifact with two columns '
                 'must contain the column \'DOI\'.'

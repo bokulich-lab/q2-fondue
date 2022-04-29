@@ -140,8 +140,13 @@ def get_metadata(
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
         pd.DataFrame: DataFrame with invalid IDs and their descriptions.
     """
-    # todo: add passing on of DOI information if available in `accession_ids`
     logger = set_up_logger(log_level, logger_name=__name__)
+
+    # if present, save DOI to IDs mapping for later
+    if 'DOI' in accession_ids.columns or 'doi' in accession_ids.columns:
+        map_id2doi = accession_ids.to_dataframe().iloc[:, 0]
+    else:
+        map_id2doi = None
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
@@ -153,10 +158,17 @@ def get_metadata(
         meta, invalid_ids = _get_run_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+        # if available, join DOI to meta by run ID:
+        if map_id2doi is not None:
+            meta = meta.join(map_id2doi, how='left')
     elif id_type == 'bioproject':
         meta, invalid_ids = _get_project_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+        # if available, join DOI to meta by bioproject ID:
+        if map_id2doi is not None:
+            meta = meta.merge(map_id2doi, how='left', left_on='Bioproject ID',
+                              right_index=True)
 
     invalid_ids = pd.DataFrame(
         data={'Error message': invalid_ids.values()},
