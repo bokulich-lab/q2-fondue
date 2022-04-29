@@ -222,7 +222,7 @@ def _find_accession_ids(txt: str, ID_type: str) -> list:
 def scrape_collection(
     library_type: str, user_id: str, api_key: str, collection_name: str,
     log_level: str = 'INFO'
-) -> (pd.Series, pd.Series):
+) -> (pd.DataFrame, pd.DataFrame):
     """
     Scrapes Zotero collection for run and BioProject IDs.
 
