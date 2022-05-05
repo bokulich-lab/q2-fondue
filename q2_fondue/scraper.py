@@ -46,25 +46,112 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
     return col_id
 
 
+def _find_doi_in_doi(item: dict) -> str:
+    """Finds DOI in 'data' field of `item` or returns empty string.
+
+    Args:
+        item (dict): Zotero item.
+
+    Returns:
+        str: DOI
+    """
+    if 'DOI' in item['data'].keys():
+        return item['data']['DOI']
+    else:
+        return ''
+
+
+def _find_doi_in_extra(item: dict) -> str:
+    """Finds DOI in 'extra' field of `item` or returns empty string.
+
+    Args:
+        item (dict): Zotero item.
+
+    Returns:
+        str: DOI
+    """
+    doi_regex = r'10\.\d+/[-;()\w.]+'
+    if 'extra' in item['data'].keys():
+        doi_id = re.findall(doi_regex, item['data']['extra'])
+        if len(doi_id) > 0:
+            return doi_id[0]
+        else:
+            return ''
+    else:
+        return ''
+
+
+def _find_doi_in_arxiv_url(item: dict) -> str:
+    """Finds arXiv DOI in 'url' field of `item` or returns empty string.
+
+    Args:
+        item (dict): Zotero item.
+
+    Returns:
+        str: DOI
+    """
+    reg_arxiv_id = r'https*://arxiv.org/abs/(.*)'
+    if 'url' in item['data'].keys():
+        arxiv_id = re.findall(reg_arxiv_id, item['data']['url'])
+
+        if len(arxiv_id) > 0:
+            doi_prefix = '10.48550/arXiv.'
+            return [doi_prefix+x for x in arxiv_id][0]
+        else:
+            return ''
+    else:
+        return ''
+
+
+def _update_dict_w_values(dic: dict, key: str, value: str) -> dict:
+    """Update `dic` with key-value pair containing `key` and `value``
+
+    Args:
+        dic (dict): Dictionary to update.
+        key (str): Key to add.
+        value (str): Value to add to key.
+
+    Returns:
+        dict: Updated dictionary.
+    """
+    if len(value) > 0:
+        dic.update({key: value})
+    return dic
+
+
 def _get_parent_and_doi(items: list) -> dict:
     """
-    Extract parent keys and DOI/ISBN for all `items` containing
-    this information (note: items of type \"attachment\" don't have this key)
+    Extract parent keys and DOI for all `items` containing
+    this information.
 
     Args:
         items (list): List of Zotero items.
 
     Returns:
-        dict: Dictionary with parent keys and DOI/ISBN as corresponding values.
+        dict: Dictionary with parent keys and DOI as corresponding values.
     """
     parent_doi = {}
-    for key_token in ['DOI', 'ISBN']:
-        parent_doi.update({x['key']: x['data'][key_token]
-                           for x in items
-                           if key_token in x['data'].keys()})
+    for item in items:
+        item_key = item['key']
+
+        # fetch DOI for items with field DOI (e.g. JournalArticles)
+        doi_in_doi = _find_doi_in_doi(item)
+        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_doi)
+
+        # fetch DOI with "Extra" field and a DOI within (e.g. Reports from
+        # bioRxiv and medRxiv, Books)
+        doi_in_extra = _find_doi_in_extra(item)
+        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_extra)
+
+        # if arXiv ID present - create DOI from it as described in
+        # https://blog.arxiv.org/2022/02/17/new-arxiv-articles-are-
+        # now-automatically-assigned-dois/
+        doi_in_url = _find_doi_in_arxiv_url(item)
+        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_url)
+
     if len(parent_doi) == 0:
         raise KeyError(
-            'This collection has no items with associated DOI/ISBN names.')
+            'This collection has no items with associated DOI names.')
     return parent_doi
 
 
@@ -89,22 +176,22 @@ def _get_attachment_keys(items: list) -> list:
 def _link_attach_and_doi(
         items: list, attach_key: str, parent_doi: dict) -> str:
     """
-    Matches given `attach_key` in `items` to corresponding DOI/ISBN name
+    Matches given `attach_key` in `items` to corresponding DOI name
     linked via parent ID in `parent_doi` dictionary.
 
     Args:
         items (list): List of Zotero items.
         attach_key (str): Key of attachment to be matched.
-        parent_doi (dict): Known parent ID and DOI/ISBN matches.
+        parent_doi (dict): Known parent ID and DOI matches.
 
     Returns:
-        str: Matching DOI/ISBN name
+        str: Matching DOI name
     """
     attach_item = [x for x in items if x['key'] == attach_key]
     parent_key = attach_item[0]['data']['parentItem']
     if parent_key not in parent_doi:
         raise KeyError(
-            f'Attachment {attach_key} does not contain a matching DOI/ISBN '
+            f'Attachment {attach_key} does not contain a matching DOI '
             f'parent in this collection')
     else:
         return parent_doi[parent_key]
@@ -140,7 +227,7 @@ def _transform_dict_to_df(orig_dict: dict) -> pd.DataFrame:
 
     Args:
         orig_dict (dict): Dictionary with accession IDs as keys and
-        DOI/ISBN as values.
+        DOI as values.
 
     Returns:
         pd.DataFrame: dataframe with indices being keys of `orig_dict`
@@ -260,7 +347,7 @@ def scrape_collection(
     # get all items of this collection (required for DOI extraction)
     items = zot.everything(zot.collection_items(coll_id))
 
-    # get parent keys and corresponding DOI/ISBN
+    # get parent keys and corresponding DOI
     parent_doi = _get_parent_and_doi(items)
 
     # get all attachment items keys of this collection (where pdf/html
@@ -274,8 +361,8 @@ def scrape_collection(
     run_doi, bioproject_doi = {}, {}
 
     for attach_key in attach_keys:
-        # get doi/isbn linked with this attachment key
-        doi_isbn = _link_attach_and_doi(items, attach_key, parent_doi)
+        # get doi linked with this attachment key
+        doi = _link_attach_and_doi(items, attach_key, parent_doi)
 
         # get text
         try:
@@ -290,9 +377,9 @@ def scrape_collection(
         bioproject_ids = _find_accession_ids(str_text, 'bioproject')
 
         # match found accession IDs with DOI
-        run_doi = _merge2dict(run_doi, run_ids, doi_isbn)
+        run_doi = _merge2dict(run_doi, run_ids, doi)
         bioproject_doi = _merge2dict(
-            bioproject_doi, bioproject_ids, doi_isbn)
+            bioproject_doi, bioproject_ids, doi)
 
     if (len(run_doi) == 0) & (len(bioproject_doi) == 0):
         raise NoAccessionIDs(f'The provided collection {collection_name} '

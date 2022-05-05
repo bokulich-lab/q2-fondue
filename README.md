@@ -56,7 +56,7 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 | `get-all`        | Fetch sequences and metadata by run or BioProject IDs from the SRA repo. |
 | `merge-metadata` | Merge several metadata files into a single metadata object.              |
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs and associated DOI/ISBN names.|
+| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs and associated DOI names.|
 
 
 ### Import run/BioProject accession IDs
@@ -79,7 +79,7 @@ where:
 
 __Note:__ the input TSV file needs to consist of a single column named "ID".
 
-2) To scrape all run and BioProject IDs with associated DOI/ISBN names from an existing web Zotero library collection into a `NCBIAccessionIDs`
+2) To scrape all run and BioProject IDs with associated DOI names from an existing web Zotero library collection into a `NCBIAccessionIDs`
 artifact run:
 ```shell
 qiime fondue scrape-collection \

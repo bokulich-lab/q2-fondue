@@ -15,6 +15,9 @@ from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
     _find_special_id,
     _get_collection_id, _find_accession_ids,
+    _find_doi_in_doi,
+    _find_doi_in_extra, _find_doi_in_arxiv_url,
+    _update_dict_w_values,
     _get_parent_and_doi, _merge2dict,
     _transform_dict_to_df,
     _link_attach_and_doi,
@@ -68,11 +71,75 @@ class TestUtils4CollectionScraping(TestPluginBase):
         ):
             _get_collection_id(self.zot, col_name)
 
+    def test_find_doi_in_doi(self):
+        item, exp_doi = {}, '10.1038/s41467-021-26215-w'
+        item['data'] = {'DOI': exp_doi}
+        obs_doi = _find_doi_in_doi(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_doi_no_key(self):
+        item, exp_doi = {}, ''
+        item['data'] = {}
+        obs_doi = _find_doi_in_doi(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_extra(self):
+        item, exp_doi = {}, '10.1038/s41467-021-._;()w'
+        item['data'] = {'extra': exp_doi}
+        obs_doi = _find_doi_in_extra(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_extra_empty_extra(self):
+        item, exp_doi = {}, ''
+        item['data'] = {'extra': exp_doi}
+        obs_doi = _find_doi_in_extra(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_extra_no_key(self):
+        item, exp_doi = {}, ''
+        item['data'] = {}
+        obs_doi = _find_doi_in_extra(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_arxiv_url(self):
+        item, exp_doi = {}, '10.48550/arXiv.2106.11211'
+        item['data'] = {'url': 'https://arxiv.org/abs/2106.11211'}
+        obs_doi = _find_doi_in_arxiv_url(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_arxiv_url_empty(self):
+        item, exp_doi = {}, ''
+        item['data'] = {'url': ''}
+        obs_doi = _find_doi_in_arxiv_url(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_find_doi_in_arxiv_url_no_key(self):
+        item, exp_doi = {}, ''
+        item['data'] = {}
+        obs_doi = _find_doi_in_arxiv_url(item)
+        self.assertEqual(exp_doi, obs_doi)
+
+    def test_update_dict_w_values(self):
+        item = {'key1': 'doi_str'}
+        exp_out = {'key1': 'doi_str', 'key2': 'doi_new'}
+        obs_out = _update_dict_w_values(item, 'key2', 'doi_new')
+        self.assertDictEqual(exp_out, obs_out)
+
     def test_get_parent_and_doi(self):
-        items = self._open_txt_file('scraper_items.txt')
+        items = self._open_txt_file('scraper_items_journalarticle.txt')
         exp_out = {'CP4ED2CY': '10.1038/s41467-021-26215-w'}
         obs_out = _get_parent_and_doi(items)
-        self.assertEqual(exp_out, obs_out)
+        self.assertDictEqual(exp_out, obs_out)
+
+    def test_get_parent_and_doi_mixed_items(self):
+        items = self._open_txt_file('scraper_items_mix.txt')
+        exp_out = {'VJ72EQHN': '10.3310/eme08140',
+                   'RVZH5NRY': '10.1101/2021.08.23.457365',
+                   'GJ6HKQ8R': '10.1101/2022.03.22.485322',
+                   '9SNTPKCX': '10.48550/arXiv.2106.11234',
+                   'BW2RU99L': '10.48550/arXiv.2106.11234'}
+        obs_out = _get_parent_and_doi(items)
+        self.assertDictEqual(exp_out, obs_out)
 
     def test_get_parent_and_doi_no_doi(self):
         items = self._open_txt_file('scraper_items_no_doi.txt')
@@ -80,7 +147,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
             _get_parent_and_doi(items)
 
     def test_get_attachment_keys(self):
-        items = self._open_txt_file('scraper_items.txt')
+        items = self._open_txt_file('scraper_items_journalarticle.txt')
         exp_keys = ['DMJ4AQ48', 'WZV4HG8X']
         returned_keys = _get_attachment_keys(items)
         self.assertEqual(sorted(exp_keys), sorted(returned_keys))
@@ -91,14 +158,14 @@ class TestUtils4CollectionScraping(TestPluginBase):
             _get_attachment_keys(items)
 
     def test_link_attach_and_doi(self):
-        items = self._open_txt_file('scraper_items.txt')
+        items = self._open_txt_file('scraper_items_journalarticle.txt')
         parent_doi = {'CP4ED2CY': '10.1038/s41467-021-26215-w'}
         exp_doi = '10.1038/s41467-021-26215-w'
         obs_doi = _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
         self.assertEqual(obs_doi, exp_doi)
 
     def test_link_attach_and_doi_no_parent(self):
-        items = self._open_txt_file('scraper_items.txt')
+        items = self._open_txt_file('scraper_items_journalarticle.txt')
         parent_doi = {'other_parentID': '10.1038/s41467-021-26215-w'}
         with self.assertRaisesRegex(KeyError, 'DMJ4AQ48 does not contain'):
             _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
@@ -236,7 +303,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_txt_file(
-            'scraper_items.txt')
+            'scraper_items_journalarticle.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with PRJEB4519 and ERR2765209.",
             "indexedPages": 50,
@@ -261,7 +328,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_txt_file(
-            'scraper_items.txt')
+            'scraper_items_journalarticle.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with ERR2765209.",
             "indexedPages": 50,
@@ -292,7 +359,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_txt_file(
-            'scraper_items.txt')
+            'scraper_items_journalarticle.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text with PRJEB4519.",
             "indexedPages": 50,
@@ -321,7 +388,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_txt_file(
-            'scraper_items.txt')
+            'scraper_items_journalarticle.txt')
         patch_zot_txt.return_value = {
             "content": "This is full-text without any IDs.",
             "indexedPages": 50,
@@ -343,7 +410,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_txt_file(
-            'scraper_items.txt')
+            'scraper_items_journalarticle.txt')
         patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
                                      {
                                          "content":

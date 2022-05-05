@@ -214,7 +214,7 @@ qiime fondue get-sequences \
 
 ### Scraping run and BioProject IDs from a Zotero web library collection
 
-For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the Run and BioProject IDs with associated DOI/ISBN names from an existing Zotero web library collection, you can run the following command:
+For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the Run and BioProject IDs with associated DOI names from an existing Zotero web library collection, you can run the following command:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
@@ -230,8 +230,8 @@ where:
 - `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
 - `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 - `--p-collection-name` is the name of the collection to be scraped. 
-- `--o-run-ids` is the output artifact containing the scraped run IDs and associated DOI/ISBN names.
-- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs and associated DOI/ISBN names.
+- `--o-run-ids` is the output artifact containing the scraped run IDs and associated DOI names.
+- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs and associated DOI names.
 
 To investigate which run and BioProject IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
 ```shell

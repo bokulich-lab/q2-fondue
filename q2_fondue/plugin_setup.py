@@ -226,16 +226,16 @@ plugin.methods.register_function(
     },
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
-                   'from a Zotero collection and associated DOI/ISBN names.',
+                   'from a Zotero collection and associated DOI names.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
                           'from a Zotero collection and associated '
-                          'DOI/ISBN names.'
+                          'DOI names.'
     },
     name='Scrape Zotero collection for run and BioProject IDs and associated'
-    'DOI/ISBN names.',
+    'DOI names.',
     description=(
         'Scrape attachment files of a Zotero collection for run and '
-        'BioProject IDs and associated DOI/ISBN names.'
+        'BioProject IDs and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
