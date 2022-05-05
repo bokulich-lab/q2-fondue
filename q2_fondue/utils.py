@@ -49,13 +49,13 @@ def _validate_esearch_result(
 
 def _determine_id_type(ids: list):
     ids = [x[:3] for x in ids]
-    for kind in ('run', 'bioproject'):
+    for kind in ('run', 'bioproject', 'study'):
         if all([x in PREFIX[kind] for x in ids]):
             return kind
     raise InvalidIDs('The type of provided IDs is either not supported or '
                      'IDs of mixed types were provided. Please provide IDs '
-                     'corresponding to either SRA runs (#SRR) or NCBI '
-                     'BioProject IDs (#PRJ).')
+                     'corresponding to either SRA runs (#S|E|DRR), Study '
+                     'IDs (#S|E|DRP) or NCBI BioProject IDs (#PRJ).')
 
 
 def handle_threaded_exception(args):

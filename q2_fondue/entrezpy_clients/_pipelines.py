@@ -30,10 +30,32 @@ def _get_run_ids_from_projects(email, n_jobs, project_ids, log_level) -> list:
         {'db': 'sra'},
         analyzer=ELinkAnalyzer(), dependency=es
     )
-    # given SRA run IDs, fetch all metadata
+    # given BioProject IDs, fetch all metadata (incl. run IDs)
     samp_ids_pipeline.add_fetch(
         {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
         analyzer=EFetchAnalyzer(log_level), dependency=el
+    )
+
+    a = econduit.run(samp_ids_pipeline)
+    return a.result.metadata_to_series().tolist()
+
+
+def _get_run_ids_from_studies(email, n_jobs, study_ids, log_level) -> list:
+    econduit = ec.Conduit(email=email, threads=n_jobs)
+    set_up_entrezpy_logging(econduit, log_level)
+
+    samp_ids_pipeline = econduit.new_pipeline()
+
+    # search for study IDs
+    es = samp_ids_pipeline.add_search(
+        {'db': 'sra', 'term': " OR ".join(study_ids)},
+        analyzer=ESearchAnalyzer(study_ids, log_level)
+    )
+
+    # given Study IDs, fetch all metadata (incl. run IDs)
+    samp_ids_pipeline.add_fetch(
+        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
+        analyzer=EFetchAnalyzer(log_level), dependency=es
     )
 
     a = econduit.run(samp_ids_pipeline)
