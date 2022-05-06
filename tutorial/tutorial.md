@@ -39,7 +39,7 @@ through variable nomenclature used by the different platforms and to actually fe
 | Runs           | (E\|D\|S)RR[0-9]{6,}    | ERR123456  | 
 
 
-Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. The subordinate _Runs_, contain the actual sequencing data of individual samples. BioProject and Run ID are the two accession number types that can be used as input for _q2-fondue_. 
+Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. Study IDs also allow access to all raw sequencing data and corresponding metadata of the entire project. The subordinate _Runs_, contain the actual sequencing data of individual samples. BioProject, Study and Run ID are the three accession number types that can be used as input for _q2-fondue_. 
 
 #### Database specific accession numbers:
 
@@ -48,6 +48,9 @@ Since the launch of BioProject IDs in 2011, this accession number is commonly re
 | PRJNA  | BioProject accession number | SRA (NCBI)     |
 | PRJEB  | EBI Project accession       | ENA (EMBL-EBI) |
 | PRJD   | DDBJ BioProject             | DDBJ           |
+| SRP    | SRA study accession         | SRA (NCBI)     |
+| ERP    | EBI study accession         | ENA (EMBL-EBI) |
+| DRP    | DDBJ study accession        | DDBJ           |
 | SRR    | SRA run accession           | SRA (NCBI)     |
 | ERR    | ERA run accession           | ENA (EMBL-EBI) |
 | DRR    | DRA run accession           | DDBJ           |
@@ -99,7 +102,7 @@ First, let's move to the tutorial directory.
 cd tutorial
 ```
 
-To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs or BioProjects. 
+To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs, Studies or BioProjects. 
 This metadata file has to contain a header QIIME 2 can recognize and we can for example put *id* as the column name. 
 To learn more about other options for identifiers used in QIIME 2 or learn about metadata in general, check out 
 the [QIIME 2 metadata documentation](docs.qiime2.org).
@@ -170,7 +173,7 @@ In this case we will therefore [continue](#what-now) with the *single_reads.qza*
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
-Also for this action we can start with TSV a file with accession number of BioProject or 
+Also for this action we can start with TSV a file with accession number of BioProjects, Studies or 
 individual Runs. 
 
 ```shell

@@ -20,7 +20,7 @@ from q2_fondue.utils import (
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger, InvalidIDs)
-from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 
 
 threading.excepthook = handle_threaded_exception
@@ -112,10 +112,10 @@ def _get_run_meta(
     return pd.concat(meta_df, axis=0), invalid_ids
 
 
-def _get_project_meta(
-        email, n_jobs, project_ids, log_level, logger
+def _get_other_meta(
+        email, n_jobs, project_ids, id_type, log_level, logger
 ) -> (pd.DataFrame, dict):
-    run_ids = _get_run_ids_from_projects(email, n_jobs, project_ids, log_level)
+    run_ids = _get_run_ids(email, n_jobs, project_ids, id_type, log_level)
     return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
 
 
@@ -152,9 +152,9 @@ def get_metadata(
         meta, invalid_ids = _get_run_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
-    elif id_type == 'bioproject':
-        meta, invalid_ids = _get_project_meta(
-            email, n_jobs, accession_ids, log_level, logger
+    else:
+        meta, invalid_ids = _get_other_meta(
+            email, n_jobs, accession_ids, id_type, log_level, logger
         )
 
     invalid_ids = pd.DataFrame(
