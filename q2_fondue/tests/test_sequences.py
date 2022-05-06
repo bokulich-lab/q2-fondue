@@ -690,7 +690,7 @@ class TestSequenceFetching(SequenceTests):
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
     @patch('q2_fondue.sequences._announce_completion')
-    @patch('q2_fondue.sequences._get_run_ids_from_projects',
+    @patch('q2_fondue.sequences._get_run_ids',
            return_value=['SRR123456'])
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_bioproject(
@@ -707,7 +707,7 @@ class TestSequenceFetching(SequenceTests):
             test_temp_md, email='some@where.com', retries=0)
 
         mock_get.assert_called_with(
-            'some@where.com', 1, ['PRJNA734376'], 'INFO'
+            'some@where.com', 1, ['PRJNA734376'], 'bioproject', 'INFO'
         )
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(

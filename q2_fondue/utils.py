@@ -54,8 +54,8 @@ def _determine_id_type(ids: list):
             return kind
     raise InvalidIDs('The type of provided IDs is either not supported or '
                      'IDs of mixed types were provided. Please provide IDs '
-                     'corresponding to either SRA runs (#S|E|DRR), Study '
-                     'IDs (#S|E|DRP) or NCBI BioProject IDs (#PRJ).')
+                     'corresponding to either SRA run (#S|E|DRR), study '
+                     '(#S|E|DRP) or NCBI BioProject IDs (#PRJ).')
 
 
 def handle_threaded_exception(args):

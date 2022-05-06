@@ -27,7 +27,7 @@ from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
 from tqdm import tqdm
 
-from q2_fondue.entrezpy_clients._pipelines import _get_run_ids_from_projects
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.utils import (
     _determine_id_type, handle_threaded_exception, DownloadError,
@@ -380,8 +380,8 @@ def get_sequences(
 
     id_type = _determine_id_type(accession_ids)
     if id_type == 'bioproject':
-        accession_ids = _get_run_ids_from_projects(
-            email, n_jobs, accession_ids, log_level
+        accession_ids = _get_run_ids(
+            email, n_jobs, accession_ids, id_type, log_level
         )
 
     fetched_q = Queue()
