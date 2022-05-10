@@ -51,16 +51,16 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 
 | Action           | Description                                                              |
 |------------------|--------------------------------------------------------------------------|
-| `get-sequences`  | Fetch sequences by run or BioProject IDs from the SRA repository.        |
-| `get-metadata`   | Fetch metadata by run or BioProject IDs from the SRA repository.         |
-| `get-all`        | Fetch sequences and metadata by run or BioProject IDs from the SRA repo. |
+| `get-sequences`  | Fetch sequences by run, study or BioProject IDs from the SRA repository.        |
+| `get-metadata`   | Fetch metadata by run, study or BioProject IDs from the SRA repository.         |
+| `get-all`        | Fetch sequences and metadata by run, study or BioProject IDs from the SRA repo. |
 | `merge-metadata` | Merge several metadata files into a single metadata object.              |
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
 | `scrape-collection`| Scrape Zotero collection for run and BioProject IDs and associated DOI names.|
 
 
 ### Import run/BioProject accession IDs
-All _q2-fondue_ actions which fetch data from SRA require the list of run or BioProject IDs to
+All _q2-fondue_ actions which fetch data from SRA require the list of run, study or BioProject IDs to
 be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing
 list of IDs (1.) or scrape a Zotero web library collection to obtain these IDs (2.).
 

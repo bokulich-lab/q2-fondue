@@ -78,6 +78,11 @@ class TestFormats(TestPluginBase):
         format = NCBIAccessionIDsFormat(meta_path, mode='r')
         format.validate()
 
+    def test_ncbi_accession_ids_fmt_studies(self):
+        meta_path = self.get_data_path('ncbi-ids-studies.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        format.validate()
+
     def test_ncbi_accession_ids_fmt_empty(self):
         meta_path = self.get_data_path('sra-failed-ids-empty.tsv')
         format = NCBIAccessionIDsFormat(meta_path, mode='r')

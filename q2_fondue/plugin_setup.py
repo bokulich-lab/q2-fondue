@@ -33,7 +33,7 @@ common_inputs = {
 }
 
 common_input_descriptions = {
-    'accession_ids': 'Artifact containing run or BioProject IDs for '
+    'accession_ids': 'Artifact containing run, study or BioProject IDs for '
                      'which the metadata and/or sequences should be fetched.',
 }
 
@@ -85,9 +85,10 @@ plugin.methods.register_function(
         'metadata': output_descriptions['metadata'],
         'failed_runs': output_descriptions['failed_runs'].format('metadata')
     },
-    name='Fetch sequence-related metadata based on run or BioProject ID.',
+    name='Fetch sequence-related metadata based on run, study or '
+         'BioProject ID.',
     description=(
-        'Fetch sequence-related metadata based on run or BioProject ID '
+        'Fetch sequence-related metadata based on run, study or BioProject ID '
         'using Entrez. All metadata will be collapsed into one table.'
     ),
     citations=[citations['Buchmann2019']]
@@ -145,10 +146,10 @@ plugin.pipelines.register_function(
         'failed_runs': output_descriptions['failed_runs'].format(
             'sequences and/or metadata ')
     },
-    name='Fetch sequence-related metadata and sequences of all run or '
-         'BioProject IDs.',
+    name='Fetch sequence-related metadata and sequences of all run, study '
+         'or BioProject IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
-                'sequences of provided run or BioProject IDs.',
+                'sequences of provided run, study or BioProject IDs.',
     citations=[citations['Buchmann2019'], citations['SraToolkit']]
 )
 

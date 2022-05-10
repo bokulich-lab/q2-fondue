@@ -14,22 +14,49 @@ from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
 
 
-def _get_run_ids_from_projects(email, n_jobs, project_ids, log_level) -> list:
+def _get_run_ids(
+        email: str, n_jobs: int, ids: list, source: str,
+        log_level: str) -> list:
+    """Pipeline to retrieve metadata of run IDs associated with
+    studies (`source`='study') or bioprojects (`source`='bioproject')
+    provided in `ids`.
+
+    Args:
+        email (str): User email.
+        n_jobs (int): Number of jobs.
+        ids (list): list of study or bioproject IDs.
+        source (str): Type of IDs provided (either 'study' or 'bioproject').
+        log_level (str): The log level to set.
+
+    Returns:
+        list: Run IDs associated with provided ids.
+    """
     econduit = ec.Conduit(email=email, threads=n_jobs)
     set_up_entrezpy_logging(econduit, log_level)
 
     samp_ids_pipeline = econduit.new_pipeline()
 
-    # search for project IDs
+    if source == 'study':
+        db = 'sra'
+        elink = False
+    elif source == 'bioproject':
+        db = 'bioproject'
+        elink = True
+
+    # search for IDs
     es = samp_ids_pipeline.add_search(
-        {'db': 'bioproject', 'term': " OR ".join(project_ids)},
-        analyzer=ESearchAnalyzer(project_ids, log_level)
+        {'db': db, 'term': " OR ".join(ids)},
+        analyzer=ESearchAnalyzer(ids, log_level)
     )
-    # given bioproject, find linked SRA runs
-    el = samp_ids_pipeline.add_link(
-        {'db': 'sra'},
-        analyzer=ELinkAnalyzer(), dependency=es
-    )
+    if elink:
+        # given bioproject, find linked SRA runs
+        el = samp_ids_pipeline.add_link(
+            {'db': 'sra'},
+            analyzer=ELinkAnalyzer(), dependency=es
+        )
+    else:
+        el = es
+
     # given SRA run IDs, fetch all metadata
     samp_ids_pipeline.add_fetch(
         {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
