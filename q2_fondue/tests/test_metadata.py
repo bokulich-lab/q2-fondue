@@ -393,9 +393,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         patched_get_run.assert_not_called()
 
     @patch('q2_fondue.metadata._get_run_meta')
-    @patch('q2_fondue.metadata._get_project_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_run_w_doi(
-            self, patched_get_project, patched_get_run):
+            self, patched_get_other_study, patched_get_run):
         meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
                               sep='\t', index_col=0)
         patched_get_run.return_value = (meta_df, {})
@@ -405,14 +405,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         self.assertTrue('DOI' in obs_meta.columns)
         assert_frame_equal(obs_meta[['DOI']], ids_meta.to_dataframe())
 
+    # todo: add test_get_metadata_study_w_doi
+
     @patch('q2_fondue.metadata._get_run_meta')
-    @patch('q2_fondue.metadata._get_project_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_project_w_doi(
-            self, patched_get_project, patched_get_run):
+            self, patched_get_other_proj, patched_get_run):
         meta_df = pd.read_csv(
             self.get_data_path('sra-metadata-two-bioprojects.tsv'),
             sep='\t', index_col=0)
-        patched_get_project.return_value = (meta_df, {})
+        patched_get_other_proj.return_value = (meta_df, {})
         ids_meta = Metadata.load(self.get_data_path('project_ids_w_doi.tsv'))
 
         obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
