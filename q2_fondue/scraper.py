@@ -47,7 +47,7 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
 
 
 def _find_doi_in_doi(item: dict) -> str:
-    """Finds DOI in 'data' field of `item` or returns empty string.
+    """Finds DOI in 'data' field of `item` or returns False.
 
     Args:
         item (dict): Zotero item.
@@ -62,7 +62,7 @@ def _find_doi_in_doi(item: dict) -> str:
 
 
 def _find_doi_in_extra(item: dict) -> str:
-    """Finds DOI in 'extra' field of `item` or returns empty string.
+    """Finds DOI in 'extra' field of `item` or returns an empty string.
 
     Args:
         item (dict): Zotero item.
@@ -82,7 +82,7 @@ def _find_doi_in_extra(item: dict) -> str:
 
 
 def _find_doi_in_arxiv_url(item: dict) -> str:
-    """Finds arXiv DOI in 'url' field of `item` or returns empty string.
+    """Finds arXiv DOI in 'url' field of `item` or returns an empty string.
 
     Args:
         item (dict): Zotero item.
@@ -103,22 +103,6 @@ def _find_doi_in_arxiv_url(item: dict) -> str:
         return ''
 
 
-def _update_dict_w_values(dic: dict, key: str, value: str) -> dict:
-    """Update `dic` with key-value pair containing `key` and `value``
-
-    Args:
-        dic (dict): Dictionary to update.
-        key (str): Key to add.
-        value (str): Value to add to key.
-
-    Returns:
-        dict: Updated dictionary.
-    """
-    if len(value) > 0:
-        dic.update({key: value})
-    return dic
-
-
 def _get_parent_and_doi(items: list) -> dict:
     """
     Extract parent keys and DOI for all `items` containing
@@ -135,19 +119,19 @@ def _get_parent_and_doi(items: list) -> dict:
         item_key = item['key']
 
         # fetch DOI for items with field DOI (e.g. JournalArticles)
-        doi_in_doi = _find_doi_in_doi(item)
-        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_doi)
+        doi = _find_doi_in_doi(item)
+        parent_doi.update({item_key: doi}) if doi else False
 
         # fetch DOI with "Extra" field and a DOI within (e.g. Reports from
         # bioRxiv and medRxiv, Books)
-        doi_in_extra = _find_doi_in_extra(item)
-        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_extra)
+        doi = _find_doi_in_extra(item)
+        parent_doi.update({item_key: doi}) if doi else False
 
         # if arXiv ID present - create DOI from it as described in
         # https://blog.arxiv.org/2022/02/17/new-arxiv-articles-are-
         # now-automatically-assigned-dois/
-        doi_in_url = _find_doi_in_arxiv_url(item)
-        parent_doi = _update_dict_w_values(parent_doi, item_key, doi_in_url)
+        doi = _find_doi_in_arxiv_url(item)
+        parent_doi.update({item_key: doi}) if doi else False
 
     if len(parent_doi) == 0:
         raise KeyError(
@@ -197,7 +181,7 @@ def _link_attach_and_doi(
         return parent_doi[parent_key]
 
 
-def _merge2dict(id_dict: dict, keys: list, value2link: str) -> dict:
+def _expand_dict(id_dict: dict, keys: list, value2link: str) -> dict:
     """
     Creates new entries with key from `keys` and associated
     `value2link` in existing dictionary `id_dict`.
@@ -208,35 +192,15 @@ def _merge2dict(id_dict: dict, keys: list, value2link: str) -> dict:
         value2link (str): Value to assign to each of the `keys`.
 
     Returns:
-        dict: Dictionary extended with new keys and associated value.
+        dict: Dictionary expanded with new keys and associated value.
     """
     for key in keys:
-        if key in id_dict:
+        if key in id_dict and value2link not in id_dict[key]:
             # attach to already scraped accession IDs
             id_dict[key].append(value2link)
-            # remove duplicate values & sort
-            id_dict[key] = sorted(list(set(id_dict[key])))
         else:
             id_dict[key] = [value2link]
     return id_dict
-
-
-def _transform_dict_to_df(orig_dict: dict) -> pd.DataFrame:
-    """Transforms provided `orig_dict` to a dataframe with indices being
-    keys of `orig_dict`` and corresponding column entries being its values.
-
-    Args:
-        orig_dict (dict): Dictionary with accession IDs as keys and
-        DOI as values.
-
-    Returns:
-        pd.DataFrame: dataframe with indices being keys of `orig_dict`
-        and corresponding column entries being its values.
-    """
-    new_df = pd.DataFrame.from_dict(
-        orig_dict, orient='index', columns=['DOI'])
-    new_df.index.name = 'ID'
-    return new_df
 
 
 def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
@@ -263,7 +227,7 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
     return ids
 
 
-def _find_accession_ids(txt: str, ID_type: str) -> list:
+def _find_accession_ids(txt: str, id_type: str) -> list:
     """Returns list of run or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
@@ -273,15 +237,15 @@ def _find_accession_ids(txt: str, ID_type: str) -> list:
 
     Args:
         txt (str): Some text to search
-        ID_type (str): Type of ID to search for ('run' or 'bioproject')
+        id_type (str): Type of ID to search for ('run' or 'bioproject')
 
     Returns:
         list: List of run or BioProject IDs found.
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
-    if ID_type == 'run':
+    if id_type == 'run':
         pattern = r'[EDS]RR\s?\d+'
-    elif ID_type == 'bioproject':
+    elif id_type == 'bioproject':
         pattern = r'PRJ[EDN][A-Z]\s?\d+'
     ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
@@ -377,8 +341,8 @@ def scrape_collection(
         bioproject_ids = _find_accession_ids(str_text, 'bioproject')
 
         # match found accession IDs with DOI
-        run_doi = _merge2dict(run_doi, run_ids, doi)
-        bioproject_doi = _merge2dict(
+        run_doi = _expand_dict(run_doi, run_ids, doi)
+        bioproject_doi = _expand_dict(
             bioproject_doi, bioproject_ids, doi)
 
     if (len(run_doi) == 0) & (len(bioproject_doi) == 0):
@@ -392,5 +356,13 @@ def scrape_collection(
                        f'does not contain any BioProject IDs')
 
     # transform dict to dataframe & return
-    return (_transform_dict_to_df(run_doi),
-            _transform_dict_to_df(bioproject_doi))
+    run_doi_df = pd.DataFrame.from_dict(
+        run_doi, orient='index', columns=['DOI'])
+    run_doi_df.index.name = 'ID'
+
+    bioproject_doi_df = pd.DataFrame.from_dict(
+        bioproject_doi, orient='index', columns=['DOI'])
+    bioproject_doi_df.index.name = 'ID'
+
+    return (run_doi_df,
+            bioproject_doi_df)

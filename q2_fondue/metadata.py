@@ -143,10 +143,10 @@ def get_metadata(
     logger = set_up_logger(log_level, logger_name=__name__)
 
     # if present, save DOI to IDs mapping for later
-    if 'DOI' in accession_ids.columns or 'doi' in accession_ids.columns:
-        map_id2doi = accession_ids.to_dataframe().iloc[:, 0]
+    if any(x in accession_ids.columns for x in ['doi', 'DOI']):
+        id2doi = accession_ids.to_dataframe().iloc[:, 0]
     else:
-        map_id2doi = None
+        id2doi = None
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
@@ -159,19 +159,19 @@ def get_metadata(
             email, n_jobs, accession_ids, log_level, logger
         )
         # if available, join DOI to meta by run ID:
-        if map_id2doi is not None:
-            meta = meta.join(map_id2doi, how='left')
+        if id2doi is not None:
+            meta = meta.join(id2doi, how='left')
     else:
         meta, invalid_ids = _get_other_meta(
             email, n_jobs, accession_ids, id_type, log_level, logger
         )
         # if available, join DOI to meta by bioproject ID:
         # todo: prettify quickfix below
-        if map_id2doi is not None and id_type == 'bioproject':
-            meta = meta.merge(map_id2doi, how='left', left_on='Bioproject ID',
+        if id2doi is not None and id_type == 'bioproject':
+            meta = meta.merge(id2doi, how='left', left_on='Bioproject ID',
                               right_index=True)
-        elif map_id2doi is not None and id_type == 'study':
-            meta = meta.merge(map_id2doi, how='left', left_on='Study ID',
+        elif id2doi is not None and id_type == 'study':
+            meta = meta.merge(id2doi, how='left', left_on='Study ID',
                               right_index=True)
 
     invalid_ids = pd.DataFrame(

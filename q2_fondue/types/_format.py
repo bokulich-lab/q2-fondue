@@ -100,24 +100,19 @@ class NCBIAccessionIDsFormat(model.TextFileFormat):
 
     def _validate_(self, level):
         df = pd.read_csv(str(self), sep='\t')
-        cols_df = df.columns.tolist()
+        cols = df.columns.tolist()
 
-        if df.shape[1] > 2:
-            print(df.columns.tolist())
+        if df.shape[1] > 2 or (df.shape[1] == 2 and not any(
+                x in cols for x in ['doi', 'DOI'])):
             raise ValidationError(
                 'NCBI Accession IDs artifact should only contain a single '
                 'column with IDs of the SRA runs, studies or NCBI\'s '
-                'BioProjects and an optional column with associated DOIs.'
-            )
-        elif df.shape[1] == 2 and (
-                'DOI' not in cols_df and 'doi' not in cols_df):
-            raise ValidationError(
-                'NCBI Accession IDs artifact with two columns '
-                'must contain the column \'DOI\'.'
+                'BioProjects and an optional column `doi` with '
+                'associated DOIs.'
             )
 
         # check that there is a valid ID header:
-        if not max([is_id_header(x) for x in cols_df]):
+        if not any([is_id_header(x) for x in cols]):
             raise ValidationError(
                 f'NCBI Accession IDs artifact must contain a valid '
                 f'ID header from {FORMATTED_ID_HEADERS}.'

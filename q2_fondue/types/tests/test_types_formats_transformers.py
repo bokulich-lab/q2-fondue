@@ -116,7 +116,7 @@ class TestFormats(TestPluginBase):
         format = NCBIAccessionIDsFormat(meta_path, mode='r')
         with self.assertRaisesRegexp(
                 ValidationError,
-                'must contain the column \'DOI\''
+                'should only contain a single'
         ):
             format.validate()
 
