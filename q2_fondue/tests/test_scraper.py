@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 import json
 import pandas as pd
-import numpy as np
 import logging
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_frame_equal
