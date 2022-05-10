@@ -103,7 +103,7 @@ def _find_doi_in_arxiv_url(item: dict) -> str:
         return ''
 
 
-def _get_parent_and_doi(items: list) -> dict:
+def _get_parent_and_doi(items: list, on_no_dois: str = 'ignore') -> dict:
     """
     Extract parent keys and DOI for all `items` containing
     this information.
@@ -133,7 +133,7 @@ def _get_parent_and_doi(items: list) -> dict:
         doi = _find_doi_in_arxiv_url(item)
         parent_doi.update({item_key: doi}) if doi else False
 
-    if len(parent_doi) == 0:
+    if len(parent_doi) == 0 and on_no_dois == 'error':
         raise KeyError(
             'This collection has no items with associated DOI names.')
     return parent_doi
@@ -158,7 +158,8 @@ def _get_attachment_keys(items: list) -> list:
 
 
 def _link_attach_and_doi(
-        items: list, attach_key: str, parent_doi: dict) -> str:
+        items: list, attach_key: str, parent_doi: dict,
+        on_no_dois: str = 'ignore') -> str:
     """
     Matches given `attach_key` in `items` to corresponding DOI name
     linked via parent ID in `parent_doi` dictionary.
@@ -173,10 +174,12 @@ def _link_attach_and_doi(
     """
     attach_item = [x for x in items if x['key'] == attach_key]
     parent_key = attach_item[0]['data']['parentItem']
-    if parent_key not in parent_doi:
+    if parent_key not in parent_doi and on_no_dois == 'error':
         raise KeyError(
             f'Attachment {attach_key} does not contain a matching DOI '
             f'parent in this collection')
+    elif parent_key not in parent_doi and on_no_dois == 'ignore':
+        return ''
     else:
         return parent_doi[parent_key]
 
@@ -272,7 +275,7 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
 def scrape_collection(
     library_type: str, user_id: str, api_key: str, collection_name: str,
-    log_level: str = 'INFO'
+    on_no_dois: str = 'ignore', log_level: str = 'INFO'
 ) -> (pd.DataFrame, pd.DataFrame):
     """
     Scrapes Zotero collection for run and BioProject IDs.
@@ -287,6 +290,7 @@ def scrape_collection(
             https://www.zotero.org/settings/keys/new checking
             'Allow library access').
         collection_name (str): Name of the collection to be scraped.
+        on_no_dois (str): Behavior if no DOIs were found.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
@@ -312,7 +316,7 @@ def scrape_collection(
     items = zot.everything(zot.collection_items(coll_id))
 
     # get parent keys and corresponding DOI
-    parent_doi = _get_parent_and_doi(items)
+    parent_doi = _get_parent_and_doi(items, on_no_dois)
 
     # get all attachment items keys of this collection (where pdf/html
     # snapshots are stored)
@@ -326,7 +330,7 @@ def scrape_collection(
 
     for attach_key in attach_keys:
         # get doi linked with this attachment key
-        doi = _link_attach_and_doi(items, attach_key, parent_doi)
+        doi = _link_attach_and_doi(items, attach_key, parent_doi, on_no_dois)
 
         # get text
         try:

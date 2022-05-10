@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 import json
 import pandas as pd
+import numpy as np
 import logging
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_frame_equal
@@ -128,10 +129,15 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_out = _get_parent_and_doi(items)
         self.assertDictEqual(exp_out, obs_out)
 
-    def test_get_parent_and_doi_no_doi(self):
+    def test_get_parent_and_doi_no_doi_error(self):
         items = self._open_json_file('scraper_items_no_doi.json')
         with self.assertRaisesRegex(KeyError, 'no items with associated DOI'):
-            _get_parent_and_doi(items)
+            _get_parent_and_doi(items, 'error')
+
+    def test_get_parent_and_doi_no_doi_ignore(self):
+        items = self._open_json_file('scraper_items_no_doi.json')
+        obs_out = _get_parent_and_doi(items, 'ignore')
+        self.assertDictEqual({}, obs_out)
 
     def test_get_attachment_keys(self):
         items = self._open_json_file('scraper_items_journalarticle.json')
@@ -151,11 +157,18 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_doi = _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
         self.assertEqual(obs_doi, exp_doi)
 
-    def test_link_attach_and_doi_no_parent(self):
+    def test_link_attach_and_doi_no_parent_error(self):
         items = self._open_json_file('scraper_items_journalarticle.json')
         parent_doi = {'other_parentID': '10.1038/s41467-021-26215-w'}
         with self.assertRaisesRegex(KeyError, 'DMJ4AQ48 does not contain'):
-            _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi)
+            _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi, 'error')
+
+    def test_link_attach_and_doi_no_parent_ignore(self):
+        items = self._open_json_file('scraper_items_journalarticle.json')
+        parent_doi = {'other_parentID': '10.1038/s41467-021-26215-w'}
+        exp_out = ''
+        obs_out = _link_attach_and_doi(items, 'DMJ4AQ48', parent_doi, 'ignore')
+        self.assertEqual(exp_out, obs_out)
 
     def test_find_special_id_one_match(self):
         txt = 'PRJDB1234: 2345 and 4567. How about another study?'
@@ -400,3 +413,48 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                 cm.output
             )
             assert_frame_equal(obs_out, exp_out)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_no_doi_ignore(
+            self, patch_zot_txt,
+            patch_col, patch_items, patch_get_col_id):
+        # define patched outputs
+        patch_items.return_value = self._open_json_file(
+            'scraper_items_no_doi.json')
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+                                     {
+                                         "content":
+                                         "This is full-text with PRJEB4519.",
+                                         "indexedPages": 50,
+                                         "totalPages": 50
+                                     }]
+        exp_out = self._create_doi_id_dataframe(
+            ['PRJEB4519'], [''])
+
+        _, obs_out = scrape_collection("user", "12345",
+                                       "myuserkey", "test_collection")
+        assert_frame_equal(obs_out, exp_out)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_no_doi_error(
+            self, patch_zot_txt,
+            patch_col, patch_items, patch_get_col_id):
+        # define patched outputs
+        patch_items.return_value = self._open_json_file(
+            'scraper_items_no_doi.json')
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+                                     {
+                                         "content":
+                                         "This is full-text with PRJEB4519.",
+                                         "indexedPages": 50,
+                                         "totalPages": 50
+                                     }]
+        with self.assertRaisesRegex(KeyError, 'no items with associated DOI'):
+            scrape_collection("user", "12345", "myuserkey",
+                              "test_collection", on_no_dois='error')
