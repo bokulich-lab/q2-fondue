@@ -35,9 +35,9 @@ class TestUtils4CollectionScraping(TestPluginBase):
         file = open(path2col)
         return json.load(file)
 
-    def _create_doi_id_dataframe(self, id_ls, doi_ls):
-        df = pd.DataFrame(columns=['DOI'], data=doi_ls,
-                          index=id_ls)
+    def _create_doi_id_dataframe(self, doi_dict):
+        df = pd.DataFrame.from_dict([doi_dict]).transpose()
+        df.columns = ['DOI']
         df.index.name = 'ID'
         return df
 
@@ -281,9 +281,9 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         }
         # check
         exp_out_run = self._create_doi_id_dataframe(
-            ['ERR2765209'], ['10.1038/s41467-021-26215-w'])
+            {'ERR2765209': ['10.1038/s41467-021-26215-w']})
         exp_out_proj = self._create_doi_id_dataframe(
-            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
+            {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
         obs_out_run, obs_out_proj = scrape_collection(
             "user", "12345", "myuserkey", "test_collection")
         assert_frame_equal(exp_out_proj, obs_out_proj)
@@ -306,9 +306,9 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         }
         # check
         exp_out_run = self._create_doi_id_dataframe(
-            ['ERR2765209'], ['10.1038/s41467-021-26215-w'])
+            {'ERR2765209': ['10.1038/s41467-021-26215-w']})
         obs_out_proj = self._create_doi_id_dataframe(
-            [], [])
+            {'': []})
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             obs_out_run, obs_out_proj = scrape_collection(
                 "user", "12345", "myuserkey", "test_collection")
@@ -337,7 +337,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         }
         # check
         exp_out = self._create_doi_id_dataframe(
-            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
+            {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             _, obs_out = scrape_collection("user", "12345",
@@ -389,7 +389,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                                          "totalPages": 50
                                      }]
         exp_out = self._create_doi_id_dataframe(
-            ['PRJEB4519'], ['10.1038/s41467-021-26215-w'])
+            {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             _, obs_out = scrape_collection("user", "12345",
                                            "myuserkey", "test_collection")
@@ -418,7 +418,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                                          "totalPages": 50
                                      }]
         exp_out = self._create_doi_id_dataframe(
-            ['PRJEB4519'], [''])
+            {'PRJEB4519': ['']})
 
         _, obs_out = scrape_collection("user", "12345",
                                        "myuserkey", "test_collection")
@@ -444,3 +444,32 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         with self.assertRaisesRegex(KeyError, 'no items with associated DOI'):
             scrape_collection("user", "12345", "myuserkey",
                               "test_collection", on_no_dois='error')
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_multiple_dois(
+            self, patch_zot_txt,
+            patch_col, patch_items, patch_get_col_id):
+        # define patched outputs
+        patch_items.return_value = self._open_json_file(
+            'scraper_item_multiple_dois.json')
+        patch_zot_txt.side_effect = [
+            {"content": "IDs are in PRJEB4519 and PRJEB7777.",
+             "indexedPages": 50,
+             "totalPages": 50},
+            {"content": "IDs are in PRJEB4519.",
+             "indexedPages": 50,
+             "totalPages": 50}
+        ]
+
+        # assert equal
+        exp_out = self._create_doi_id_dataframe(
+            {'PRJEB7777': ['10.1038/s41586-021-04177-9'],
+             'PRJEB4519': ['10.1038/s41586-021-04177-9',
+                           '10.1038/s41564-022-01070-7']})
+
+        _, obs_out = scrape_collection("user", "12345",
+                                       "myuserkey", "test_collection")
+        assert_frame_equal(obs_out, exp_out)

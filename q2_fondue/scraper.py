@@ -186,7 +186,7 @@ def _expand_dict(id_dict: dict, keys: list, value2link: str) -> dict:
         if key in id_dict and value2link not in id_dict[key]:
             # attach to already scraped accession IDs
             id_dict[key].append(value2link)
-        else:
+        elif key not in id_dict:
             id_dict[key] = [value2link]
     return id_dict
 
@@ -346,8 +346,8 @@ def scrape_collection(
 
     dfs = []
     for doi_dict in (run_doi, bioproject_doi):
-        df = pd.DataFrame.from_dict(
-            doi_dict, orient='index', columns=['DOI'])
+        df = pd.DataFrame.from_dict([doi_dict]).transpose()
+        df.columns = ['DOI']
         df.index.name = 'ID'
         dfs.append(df)
 
