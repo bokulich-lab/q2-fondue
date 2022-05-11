@@ -46,21 +46,6 @@ def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
     return col_id
 
 
-def _find_doi_in_doi(item: dict) -> str:
-    """Finds DOI in 'data' field of `item` or returns False.
-
-    Args:
-        item (dict): Zotero item.
-
-    Returns:
-        str: DOI
-    """
-    if 'DOI' in item['data'].keys():
-        return item['data']['DOI']
-    else:
-        return ''
-
-
 def _find_doi_in_extra(item: dict) -> str:
     """Finds DOI in 'extra' field of `item` or returns an empty string.
 
@@ -119,7 +104,7 @@ def _get_parent_and_doi(items: list, on_no_dois: str = 'ignore') -> dict:
         item_key = item['key']
 
         # fetch DOI for items with field DOI (e.g. JournalArticles)
-        doi = _find_doi_in_doi(item)
+        doi = item['data'].get('DOI', '')
         parent_doi.update({item_key: doi}) if doi else False
 
         # fetch DOI with "Extra" field and a DOI within (e.g. Reports from
@@ -359,14 +344,11 @@ def scrape_collection(
         logger.warning(f'The provided collection {collection_name} '
                        f'does not contain any BioProject IDs')
 
-    # transform dict to dataframe & return
-    run_doi_df = pd.DataFrame.from_dict(
-        run_doi, orient='index', columns=['DOI'])
-    run_doi_df.index.name = 'ID'
+    dfs = []
+    for doi_dict in (run_doi, bioproject_doi):
+        df = pd.DataFrame.from_dict(
+            doi_dict, orient='index', columns=['DOI'])
+        df.index.name = 'ID'
+        dfs.append(df)
 
-    bioproject_doi_df = pd.DataFrame.from_dict(
-        bioproject_doi, orient='index', columns=['DOI'])
-    bioproject_doi_df.index.name = 'ID'
-
-    return (run_doi_df,
-            bioproject_doi_df)
+    return tuple(dfs)

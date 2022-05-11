@@ -15,7 +15,6 @@ from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
     _find_special_id,
     _get_collection_id, _find_accession_ids,
-    _find_doi_in_doi,
     _find_doi_in_extra, _find_doi_in_arxiv_url,
     _get_parent_and_doi, _expand_dict,
     _link_attach_and_doi,
@@ -63,18 +62,6 @@ class TestUtils4CollectionScraping(TestPluginBase):
             KeyError, f'name {col_name} does not exist'
         ):
             _get_collection_id(self.zot, col_name)
-
-    def test_find_doi_in_doi(self):
-        item, exp_doi = {}, '10.1038/s41467-021-26215-w'
-        item['data'] = {'DOI': exp_doi}
-        obs_doi = _find_doi_in_doi(item)
-        self.assertEqual(exp_doi, obs_doi)
-
-    def test_find_doi_in_doi_no_key(self):
-        item, exp_doi = {}, ''
-        item['data'] = {}
-        obs_doi = _find_doi_in_doi(item)
-        self.assertEqual(exp_doi, obs_doi)
 
     def test_find_doi_in_extra(self):
         item, exp_doi = {}, '10.1038/s41467-021-._;()w'
