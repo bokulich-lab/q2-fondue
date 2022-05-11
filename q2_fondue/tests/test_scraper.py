@@ -43,7 +43,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
 
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collections')
-    def test_get_correct_collectionID(self, patch_col, patch_ever):
+    def test_get_correct_collection_id(self, patch_col, patch_ever):
         patch_ever.return_value = self._open_json_file(
             'scraper_collections.json')
 
@@ -53,7 +53,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
 
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collections')
-    def test_get_collectionID_raiseError(self, patch_col, patch_ever):
+    def test_get_collection_id_raiseError(self, patch_col, patch_ever):
         patch_ever.return_value = self._open_json_file(
             'scraper_collections.json')
 
@@ -181,7 +181,7 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_ids = _find_special_id(txt, pattern, ':')
         self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
 
-    def test_find_runIDs(self):
+    def test_find_run_ids(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_id = ['ERR2765209']
         obs_id = _find_accession_ids(txt_w_2ids, 'run')
@@ -268,7 +268,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_bothIDs(
+    def test_collection_scraper_both_ids(
             self, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
@@ -324,7 +324,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_onlyProjectIDs(
+    def test_collection_scraper_onlyProject_ids(
             self, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
@@ -353,7 +353,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_noIDs(
+    def test_collection_scraper_no_ids(
             self, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
