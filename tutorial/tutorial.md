@@ -217,21 +217,23 @@ qiime fondue get-sequences \
 
 ### Scraping run and BioProject IDs from a Zotero web library collection
 
-For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the Run and BioProject IDs from an existing Zotero web library collection, you can run the following command:
+For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run and BioProject IDs from an existing Zotero web library collection, you can run the `scrape_collection` command. Before doing so, you have to create a tsv file containing the following Zotero library information columns within: `type`, `id` and `api_key`, where:
+* `type` is the Zotero library type 'user' or 'group'.
+* `id` is a valid Zotero user ID. If `type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
+* `api_key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+
+__Note:__ To retrieve all required entries from Zotero, you must be logged in.
+
 ```shell
 qiime fondue scrape-collection \
-              --p-library-type user \
-              --p-user-id user_id \
-              --p-api-key my_key \
+              --m-library-file your_library_info.tsv \
               --p-collection-name collection_name \
               --o-run-ids fondue-output/run_ids.qza \
               --o-bioproject-ids fondue-output/bioproject_ids.qza \
               --verbose
 ```
 where:
-- `--p-library-type` is the Zotero API library type 'user' or 'group'.
-- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.       
-- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+- `--m-library-file` is the path to the formerly created tsv file containing the required Zotero library information.
 - `--p-collection-name` is the name of the collection to be scraped. 
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.

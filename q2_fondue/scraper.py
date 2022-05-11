@@ -174,16 +174,8 @@ def scrape_collection(
     Scrapes Zotero collection for run and BioProject IDs.
 
     Args:
-        library_info (str): Contains Zotero API library `type`,
-            the user `user_id` and the `api_key`
-            `type`: either "group" or "user".
-            `id`: Valid Zotero API userID (for `type` 'user'
-            extract from https://www.zotero.org/settings/keys, for 'group'
-            extract by hovering over group name in
-            https://www.zotero.org/groups/).
-            `api_key`: Valid Zotero API user key (retrieve from
-            https://www.zotero.org/settings/keys/new checking
-            'Allow library access').
+        library (str): Contains Zotero API library `type`,
+            the user `id` and the `api_key`.
         collection_name (str): Name of the collection to be scraped.
         log_level (str, default='INFO'): Logging level.
 
