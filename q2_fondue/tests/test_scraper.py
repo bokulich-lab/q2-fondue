@@ -187,12 +187,6 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_id = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
-    def test_find_study_ids(self):
-        txt_w_2ids = 'this data available in ERP123456'
-        exp_id = ['ERP123456']
-        obs_id = _find_accession_ids(txt_w_2ids, 'study')
-        self.assertListEqual(sorted(obs_id), sorted(exp_id))
-
     def test_find_bioproject_ids(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_id = ['PRJEB4519']
