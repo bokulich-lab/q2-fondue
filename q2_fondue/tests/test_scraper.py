@@ -8,11 +8,13 @@
 import json
 import pandas as pd
 import logging
+from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_series_equal
 from unittest.mock import patch
 from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
+    _get_library_info,
     _find_special_id,
     _get_collection_id, _find_accession_ids,
     _get_attachment_keys, scrape_collection,
@@ -31,6 +33,30 @@ class TestUtils4CollectionScraping(TestPluginBase):
         path2col = self.get_data_path(filename)
         file = open(path2col)
         return json.load(file)
+
+    def test_get_library_info(self):
+        library_md = Metadata.load(
+            self.get_data_path('zotero_library_test.tsv'))
+        uid, ltype, api_key = _get_library_info(library_md)
+        self.assertEqual(uid, '12345')
+        self.assertEqual(ltype, 'user')
+        self.assertEqual(api_key, 'myuserkey')
+
+    def test_get_library_info_wrong_col(self):
+        library_md = Metadata.load(
+            self.get_data_path('zotero_library_wrong_col.tsv'))
+        with self.assertRaisesRegex(
+            KeyError, 'file does not contain '
+        ):
+            _get_library_info(library_md)
+
+    def test_get_library_info_multiple_rows(self):
+        library_md = Metadata.load(
+            self.get_data_path('zotero_library_multiple_rows.tsv'))
+        with self.assertRaisesRegex(
+            KeyError, 'one entry for each required'
+        ):
+            _get_library_info(library_md)
 
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collections')
@@ -166,11 +192,13 @@ class TestCollectionScraping(TestPluginBase):
             "indexedPages": 50,
             "totalPages": 50
         }
+        library_md = Metadata.load(
+            self.get_data_path('zotero_library_test.tsv'))
         # check
         exp_out_run = pd.Series(['ERR2765209'], name='ID')
         exp_out_proj = pd.Series(['PRJEB4519'], name='ID')
         obs_out_run, obs_out_proj = scrape_collection(
-            "user", "12345", "myuserkey", "test_collection")
+            library_md, "test_collection")
         assert_series_equal(exp_out_proj, obs_out_proj)
         assert_series_equal(exp_out_run, obs_out_run)
 
@@ -190,9 +218,12 @@ class TestCollectionScraping(TestPluginBase):
         # check
         exp_out_run = pd.Series(['ERR2765209'], name='ID')
         obs_out_proj = pd.Series([], name='ID')
+
+        library_md = Metadata.load(
+                self.get_data_path('zotero_library_test.tsv'))
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             obs_out_run, obs_out_proj = scrape_collection(
-                "user", "12345", "myuserkey", "test_collection")
+                library_md, "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:The provided collection "
                 "test_collection does not contain any BioProject IDs",
@@ -216,10 +247,10 @@ class TestCollectionScraping(TestPluginBase):
         }
         # check
         exp_out = pd.Series(['PRJEB4519'], name='ID')
-
+        library_md = Metadata.load(
+                self.get_data_path('zotero_library_test.tsv'))
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            _, obs_out = scrape_collection("user", "12345",
-                                           "myuserkey", "test_collection")
+            _, obs_out = scrape_collection(library_md, "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:The provided collection "
                 "test_collection does not contain any run IDs",
@@ -241,11 +272,12 @@ class TestCollectionScraping(TestPluginBase):
             "totalPages": 50
         }
         col_name = "test_collection"
+        library_md = Metadata.load(
+                self.get_data_path('zotero_library_test.tsv'))
         with self.assertRaisesRegex(
             NoAccessionIDs, f'collection {col_name} does not'
         ):
-            scrape_collection("user", "12345",
-                              "myuserkey", col_name)
+            scrape_collection(library_md, col_name)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch('q2_fondue.scraper._get_attachment_keys')
@@ -263,9 +295,10 @@ class TestCollectionScraping(TestPluginBase):
                                          "totalPages": 50
                                      }]
         exp_out = pd.Series(['PRJEB4519'], name='ID')
+        library_md = Metadata.load(
+                self.get_data_path('zotero_library_test.tsv'))
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            _, obs_out = scrape_collection("user", "12345",
-                                           "myuserkey", "test_collection")
+            _, obs_out = scrape_collection(library_md, "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:Item attach_key1 doesn't contain "
                 "any full-text content",

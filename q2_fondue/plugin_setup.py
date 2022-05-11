@@ -13,7 +13,7 @@ from q2_types.per_sample_sequences import (
 from q2_types.sample_data import SampleData
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, List, Range
+    Plugin, Metadata, Citations, Choices, Str, Int, List, Range
 )
 
 from q2_fondue import __version__
@@ -202,9 +202,7 @@ plugin.methods.register_function(
     function=scrape_collection,
     inputs={},
     parameters={
-        'library_type': Str % Choices(['user', 'group']),
-        'user_id': Str,
-        'api_key': Str,
+        'library': Metadata,
         'collection_name': Str,
         'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     },
@@ -212,16 +210,15 @@ plugin.methods.register_function(
              ('bioproject_ids', NCBIAccessionIDs), ],
     input_descriptions={},
     parameter_descriptions={
-        'library_type': 'Zotero API library type.',
-        'user_id': 'Valid Zotero user ID (for library_type \'user\' '
-                   'extract from \'your userID for use in API calls\' in '
-                   'https://www.zotero.org/settings/keys, '
-                   'for \'group\' extract by hovering over group name '
-                   'in https://www.zotero.org/groups/).',
-        'api_key': 'Valid Zotero API user key (retrieve from '
-                   'https://www.zotero.org/settings/keys/new checking '
-                   '"Allow library access" and for \'group\' library '
-                   '"Read/Write" permissions ).',
+        'library': 'Path to file containing Zotero library `type` '
+        '(either "user" or "group"), a valid Zotero API user `id` '
+        'and an `api_key`. '
+        'For library type "user" extract the user `id` from '
+        'https://www.zotero.org/settings/keys and for type "group" '
+        'extract by hovering over group name in '
+        'https://www.zotero.org/groups/. A valid `api_key` can be '
+        'retrieved from https://www.zotero.org/settings/keys/new '
+        'by checking "Allow library access".',
         'collection_name': 'Name of the collection to be scraped.',
         'log_level': 'Logging level.'
     },

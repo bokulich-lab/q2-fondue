@@ -7,6 +7,7 @@
 # ----------------------------------------------------------------------------
 import re
 import pandas as pd
+from qiime2.metadata import Metadata
 from pyzotero import zotero, zotero_errors
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 
@@ -15,6 +16,37 @@ logger = set_up_logger('INFO', logger_name=__name__)
 
 class NoAccessionIDs(Exception):
     pass
+
+
+def _get_library_info(library: Metadata) -> (str, str, str):
+    """If the provided `library` file contains the correct columns and
+    only one row, this function returns the "id", "type" and "api_key"
+    value else an error is returned.
+
+    Args:
+        library (Metadata): Library information Metadata.
+
+    Returns:
+        (str, str, str): (id, type, api_key)
+    """
+
+    lib_df = library.to_dataframe().reset_index()
+
+    if any(
+        [x not in lib_df.columns for x in ['api_key', 'type', 'id']]
+    ):
+        raise KeyError(
+            'The provided library file does not contain '
+            'the correct columns "id", "api_key" and "type".')
+
+    if lib_df.shape[0] > 1:
+        raise KeyError(
+            'The provided library file should only contain '
+            'one entry for each required library field.')
+
+    return (lib_df['id'].values[0],
+            lib_df['type'].values[0],
+            lib_df['api_key'].values[0])
 
 
 def _get_collection_id(zot: zotero.Zotero, col_name: str) -> str:
@@ -134,19 +166,22 @@ def _find_accession_ids(txt, ID_type) -> list:
 
 
 def scrape_collection(
-    library_type: str, user_id: str, api_key: str, collection_name: str,
+    library: Metadata,
+    collection_name: str,
     log_level: str = 'INFO'
 ) -> (pd.Series, pd.Series):
     """
     Scrapes Zotero collection for run and BioProject IDs.
 
     Args:
-        library_type (str): Zotero API library type
-        user_id (str): Valid Zotero API userID (for library_type 'user'
+        library_info (str): Contains Zotero API library `type`,
+            the user `user_id` and the `api_key`
+            `type`: either "group" or "user".
+            `id`: Valid Zotero API userID (for `type` 'user'
             extract from https://www.zotero.org/settings/keys, for 'group'
             extract by hovering over group name in
             https://www.zotero.org/groups/).
-        api_key (str): Valid Zotero API user key (retrieve from
+            `api_key`: Valid Zotero API user key (retrieve from
             https://www.zotero.org/settings/keys/new checking
             'Allow library access').
         collection_name (str): Name of the collection to be scraped.
@@ -156,6 +191,8 @@ def scrape_collection(
         pd.Series: Series with run and BioProject IDs scraped from collection.
     """
     logger.setLevel(log_level.upper())
+
+    user_id, library_type, api_key = _get_library_info(library)
 
     logger.info(
         f'Scraping accession IDs for collection "{collection_name}" in '
