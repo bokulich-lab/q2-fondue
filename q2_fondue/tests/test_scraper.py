@@ -187,6 +187,12 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_id = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
+    def test_find_study_ids(self):
+        txt_w_2ids = 'this data available in ERP123456'
+        exp_id = ['ERP123456']
+        obs_id = _find_accession_ids(txt_w_2ids, 'study')
+        self.assertListEqual(sorted(obs_id), sorted(exp_id))
+
     def test_find_bioproject_ids(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_id = ['PRJEB4519']
@@ -469,7 +475,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             {'PRJEB7777': ['10.1038/s41586-021-04177-9'],
              'PRJEB4519': ['10.1038/s41586-021-04177-9',
                            '10.1038/s41564-022-01070-7']})
-
+        exp_out.sort_index(inplace=True)
         _, obs_out = scrape_collection("user", "12345",
                                        "myuserkey", "test_collection")
+        obs_out.sort_index(inplace=True)
         assert_frame_equal(obs_out, exp_out)
