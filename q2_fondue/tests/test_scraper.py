@@ -187,6 +187,12 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_id = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
+    def test_find_study_ids(self):
+        txt_w_2ids = 'this data available in ERP123456'
+        exp_id = ['ERP123456']
+        obs_id = _find_accession_ids(txt_w_2ids, 'study')
+        self.assertListEqual(sorted(obs_id), sorted(exp_id))
+
     def test_find_bioproject_ids(self):
         txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
         exp_id = ['PRJEB4519']
@@ -268,25 +274,29 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_both_ids(
+    def test_collection_scraper_all_ids(
             self, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_json_file(
             'scraper_items_journalarticle.json')
         patch_zot_txt.return_value = {
-            "content": "This is full-text with PRJEB4519 and ERR2765209.",
+            "content":
+            "This is full-text with PRJEB4519, ERP123456 and ERR2765209.",
             "indexedPages": 50,
             "totalPages": 50
         }
         # check
         exp_out_run = self._create_doi_id_dataframe(
             {'ERR2765209': ['10.1038/s41467-021-26215-w']})
+        exp_out_study = self._create_doi_id_dataframe(
+            {'ERP123456': ['10.1038/s41467-021-26215-w']})
         exp_out_proj = self._create_doi_id_dataframe(
             {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
-        obs_out_run, obs_out_proj = scrape_collection(
+        obs_out_run, obs_out_study, obs_out_proj = scrape_collection(
             "user", "12345", "myuserkey", "test_collection")
         assert_frame_equal(exp_out_proj, obs_out_proj)
+        assert_frame_equal(exp_out_study, obs_out_study)
         assert_frame_equal(exp_out_run, obs_out_run)
 
     @patch('q2_fondue.scraper._get_collection_id')
@@ -307,24 +317,27 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # check
         exp_out_run = self._create_doi_id_dataframe(
             {'ERR2765209': ['10.1038/s41467-021-26215-w']})
-        obs_out_proj = self._create_doi_id_dataframe(
-            {'': []})
+        exp_out_study = self._create_doi_id_dataframe({})
+        exp_out_proj = self._create_doi_id_dataframe({})
+
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out_run, obs_out_proj = scrape_collection(
+            obs_out_run, obs_out_study, obs_out_proj = scrape_collection(
                 "user", "12345", "myuserkey", "test_collection")
-            self.assertIn(
-                "WARNING:q2_fondue.scraper:The provided collection "
-                "test_collection does not contain any BioProject IDs",
-                cm.output
-            )
+            for type in ['study', 'bioproject']:
+                self.assertIn(
+                    f'WARNING:q2_fondue.scraper:The provided collection '
+                    f'test_collection does not contain any {type} IDs',
+                    cm.output
+                )
             assert_frame_equal(obs_out_run, exp_out_run)
-            assert_frame_equal(obs_out_proj, obs_out_proj)
+            assert_frame_equal(obs_out_study, exp_out_study)
+            assert_frame_equal(obs_out_proj, exp_out_proj)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_onlyProject_ids(
+    def test_collection_scraper_only_project_ids(
             self, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
@@ -336,18 +349,57 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             "totalPages": 50
         }
         # check
-        exp_out = self._create_doi_id_dataframe(
+        exp_out_run = self._create_doi_id_dataframe({})
+        exp_out_study = self._create_doi_id_dataframe({})
+        exp_out_proj = self._create_doi_id_dataframe(
             {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            _, obs_out = scrape_collection("user", "12345",
-                                           "myuserkey", "test_collection")
-            self.assertIn(
-                "WARNING:q2_fondue.scraper:The provided collection "
-                "test_collection does not contain any run IDs",
-                cm.output
-            )
-            assert_frame_equal(obs_out, exp_out)
+            obs_out_run, obs_out_study, obs_out_proj = scrape_collection(
+                "user", "12345", "myuserkey", "test_collection")
+            for type in ['study', 'run']:
+                self.assertIn(
+                    f'WARNING:q2_fondue.scraper:The provided collection '
+                    f'test_collection does not contain any {type} IDs',
+                    cm.output
+                )
+            assert_frame_equal(obs_out_run, exp_out_run)
+            assert_frame_equal(obs_out_study, exp_out_study)
+            assert_frame_equal(obs_out_proj, exp_out_proj)
+
+    @patch('q2_fondue.scraper._get_collection_id')
+    @patch.object(zotero.Zotero, 'everything')
+    @patch.object(zotero.Zotero, 'collection_items')
+    @patch.object(zotero.Zotero, 'fulltext_item')
+    def test_collection_scraper_only_study_ids(
+            self, patch_zot_txt,
+            patch_col, patch_items, patch_get_col_id):
+        # define patched outputs
+        patch_items.return_value = self._open_json_file(
+            'scraper_items_journalarticle.json')
+        patch_zot_txt.return_value = {
+            "content": "This is full-text with ERP123456.",
+            "indexedPages": 50,
+            "totalPages": 50
+        }
+        # check
+        exp_out_run = self._create_doi_id_dataframe({})
+        exp_out_study = self._create_doi_id_dataframe(
+            {'ERP123456': ['10.1038/s41467-021-26215-w']})
+        exp_out_proj = self._create_doi_id_dataframe({})
+
+        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
+            obs_out_run, obs_out_study, obs_out_proj = scrape_collection(
+                "user", "12345", "myuserkey", "test_collection")
+            for type in ['bioproject', 'run']:
+                self.assertIn(
+                    f'WARNING:q2_fondue.scraper:The provided collection '
+                    f'test_collection does not contain any {type} IDs',
+                    cm.output
+                )
+            assert_frame_equal(obs_out_run, exp_out_run)
+            assert_frame_equal(obs_out_study, exp_out_study)
+            assert_frame_equal(obs_out_proj, exp_out_proj)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -391,8 +443,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         exp_out = self._create_doi_id_dataframe(
             {'PRJEB4519': ['10.1038/s41467-021-26215-w']})
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            _, obs_out = scrape_collection("user", "12345",
-                                           "myuserkey", "test_collection")
+            _, _, obs_out = scrape_collection("user", "12345",
+                                              "myuserkey", "test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:Item DMJ4AQ48 doesn't contain "
                 "any full-text content",
@@ -420,8 +472,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         exp_out = self._create_doi_id_dataframe(
             {'PRJEB4519': ['']})
 
-        _, obs_out = scrape_collection("user", "12345",
-                                       "myuserkey", "test_collection")
+        _, _, obs_out = scrape_collection("user", "12345",
+                                          "myuserkey", "test_collection")
         assert_frame_equal(obs_out, exp_out)
 
     @patch('q2_fondue.scraper._get_collection_id')
@@ -470,7 +522,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
              'PRJEB4519': ['10.1038/s41586-021-04177-9',
                            '10.1038/s41564-022-01070-7']})
         exp_out.sort_index(inplace=True)
-        _, obs_out = scrape_collection("user", "12345",
-                                       "myuserkey", "test_collection")
+        _, _, obs_out = scrape_collection("user", "12345",
+                                          "myuserkey", "test_collection")
         obs_out.sort_index(inplace=True)
         assert_frame_equal(obs_out, exp_out)

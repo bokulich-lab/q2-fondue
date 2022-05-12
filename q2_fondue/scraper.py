@@ -216,23 +216,26 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
 
 
 def _find_accession_ids(txt: str, id_type: str) -> list:
-    """Returns list of run or BioProject IDs found in `txt`.
+    """Returns list of run, study or BioProject IDs found in `txt`.
 
     Searching for these patterns of accession IDs as they are
     currently supported by q2fondue:
     ProjectID: PRJ(E|D|N)[A-Z][0-9]+
+    studyID: (E|D|S)RP[0-9]{6,}
     runID: (E|D|S)RR[0-9]{6,}
 
     Args:
         txt (str): Some text to search
-        id_type (str): Type of ID to search for ('run' or 'bioproject')
+        id_type (str): Type of ID to search for 'run', 'study' or 'bioproject'
 
     Returns:
-        list: List of run or BioProject IDs found.
+        list: List of run, study or BioProject IDs found.
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
     if id_type == 'run':
         pattern = r'[EDS]RR\s?\d+'
+    elif id_type == 'study':
+        pattern = r'[EDS]RP\s?\d+'
     elif id_type == 'bioproject':
         pattern = r'PRJ[EDN][A-Z]\s?\d+'
     ids = re.findall(f'({pattern})', txt)
@@ -261,9 +264,10 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 def scrape_collection(
     library_type: str, user_id: str, api_key: str, collection_name: str,
     on_no_dois: str = 'ignore', log_level: str = 'INFO'
-) -> (pd.DataFrame, pd.DataFrame):
+) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
-    Scrapes Zotero collection for run and BioProject IDs.
+    Scrapes Zotero collection for run, study and BioProject IDs and if
+    available associated DOI names.
 
     Args:
         library_type (str): Zotero API library type
@@ -279,7 +283,8 @@ def scrape_collection(
         log_level (str, default='INFO'): Logging level.
 
     Returns:
-        pd.Series: Series with run and BioProject IDs scraped from collection.
+        tuple(pd.DataFrame): Dataframes with run, study and BioProject IDs
+        scraped from collection and if available associated DOI names.
     """
     logger.setLevel(log_level.upper())
 
@@ -311,7 +316,7 @@ def scrape_collection(
     )
 
     # extract IDs from text of attachment items
-    run_doi, bioproject_doi = {}, {}
+    doi_dicts = {'run': {}, 'study': {}, 'bioproject': {}}
 
     for attach_key in attach_keys:
         # get doi linked with this attachment key
@@ -325,27 +330,24 @@ def scrape_collection(
             logger.warning(f'Item {attach_key} doesn\'t contain any '
                            f'full-text content')
 
-        # find accession (run and bioproject) IDs
-        run_ids = _find_accession_ids(str_text, 'run')
-        bioproject_ids = _find_accession_ids(str_text, 'bioproject')
+        # find accession (run, study and bioproject) IDs
+        for type in doi_dicts.keys():
+            ids = _find_accession_ids(str_text, type)
+            # match found accession IDs with DOI
+            doi_dicts[type] = _expand_dict(doi_dicts[type], ids, doi)
 
-        # match found accession IDs with DOI
-        run_doi = _expand_dict(run_doi, run_ids, doi)
-        bioproject_doi = _expand_dict(
-            bioproject_doi, bioproject_ids, doi)
-
-    if (len(run_doi) == 0) & (len(bioproject_doi) == 0):
-        raise NoAccessionIDs(f'The provided collection {collection_name} '
-                             f'does not contain any run or BioProject IDs')
-    elif len(run_doi) == 0:
-        logger.warning(f'The provided collection {collection_name} '
-                       f'does not contain any run IDs')
-    elif len(bioproject_doi) == 0:
-        logger.warning(f'The provided collection {collection_name} '
-                       f'does not contain any BioProject IDs')
+    if len(doi_dicts['run']) + len(doi_dicts['study']) + \
+            len(doi_dicts['bioproject']) == 0:
+        raise NoAccessionIDs(f'The provided collection {collection_name} does '
+                             f'not contain any run, study or BioProject IDs')
+    for type in doi_dicts.keys():
+        if len(doi_dicts[type]) == 0:
+            logger.warning(f'The provided collection {collection_name} '
+                           f'does not contain any {type} IDs')
 
     dfs = []
-    for doi_dict in (run_doi, bioproject_doi):
+    for doi_dict in (
+            doi_dicts['run'], doi_dicts['study'], doi_dicts['bioproject']):
         df = pd.DataFrame.from_dict([doi_dict]).transpose()
         df.columns = ['DOI']
         df.index.name = 'ID'

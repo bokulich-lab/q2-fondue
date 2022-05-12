@@ -210,7 +210,8 @@ plugin.methods.register_function(
         'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     },
     outputs=[('run_ids', NCBIAccessionIDs),
-             ('bioproject_ids', NCBIAccessionIDs), ],
+             ('study_ids', NCBIAccessionIDs),
+             ('bioproject_ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
         'library_type': 'Zotero API library type.',
@@ -230,14 +231,16 @@ plugin.methods.register_function(
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
                    'from a Zotero collection and associated DOI names.',
+        'study_ids': 'Artifact containing all study IDs scraped '
+                     'from a Zotero collection and associated DOI names.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
                           'from a Zotero collection and associated '
                           'DOI names.'
     },
-    name='Scrape Zotero collection for run and BioProject IDs and '
+    name='Scrape Zotero collection for run, study and BioProject IDs and '
     'if available associated DOI names.',
     description=(
-        'Scrape attachment files of a Zotero collection for run and '
+        'Scrape attachment files of a Zotero collection for run, study and '
         'BioProject IDs and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
