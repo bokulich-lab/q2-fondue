@@ -1,0 +1,205 @@
+[{
+    "key": "CP4ED2CY",
+    "version": 1257,
+    "library": {
+        "type": "user",
+        "id": 12345,
+        "name": "username",
+        "links": {
+            "alternate": {
+                "href": "https://www.zotero.org/username",
+                "type": "text/html"
+            }
+        }
+    },
+    "links": {
+        "self": {
+            "href": "https://api.zotero.org/users/12345/items/CP4ED2CY",
+            "type": "application/json"
+        },
+        "alternate": {
+            "href": "https://www.zotero.org/username/items/CP4ED2CY",
+            "type": "text/html"
+        },
+        "attachment": {
+            "href": "https://api.zotero.org/users/12345/items/DMJ4AQ48",
+            "type": "application/json",
+            "attachmentType": "application/pdf",
+            "attachmentSize": 3648434
+        }
+    },
+    "meta": {
+        "creatorSummary": "Pruski et al.",
+        "parsedDate": "2021-10-13",
+        "numChildren": 2
+    },
+    "data": {
+        "key": "CP4ED2CY",
+        "version": 1257,
+        "itemType": "journalArticle",
+        "title": "Direct on-swab metabolic profiling of vaginal microbiome host interactions during pregnancy and preterm birth",
+        "creators": [
+            {
+                "creatorType": "author",
+                "firstName": "Pamela",
+                "lastName": "Pruski"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Gonçalo D. S.",
+                "lastName": "Correia"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Holly V.",
+                "lastName": "Lewis"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Katia",
+                "lastName": "Capuccini"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Paolo",
+                "lastName": "Inglese"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Denise",
+                "lastName": "Chan"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Richard G.",
+                "lastName": "Brown"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lindsay",
+                "lastName": "Kindinger"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Yun S.",
+                "lastName": "Lee"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Ann",
+                "lastName": "Smith"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Julian",
+                "lastName": "Marchesi"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Julie A. K.",
+                "lastName": "McDonald"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Simon",
+                "lastName": "Cameron"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Kate",
+                "lastName": "Alexander-Hardiman"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Anna L.",
+                "lastName": "David"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Sarah J.",
+                "lastName": "Stock"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jane E.",
+                "lastName": "Norman"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Vasso",
+                "lastName": "Terzidou"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "T. G.",
+                "lastName": "Teoh"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lynne",
+                "lastName": "Sykes"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Phillip R.",
+                "lastName": "Bennett"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Zoltan",
+                "lastName": "Takats"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "David A.",
+                "lastName": "MacIntyre"
+            }
+        ],
+        "abstractNote": "The pregnancy vaginal microbiome contributes to risk of preterm birth, the primary cause of death in children under 5 years of age. Here we describe direct on-swab metabolic profiling by Desorption Electrospray Ionization Mass Spectrometry (DESI-MS) for sample preparation-free characterisation of the cervicovaginal metabolome in two independent pregnancy cohorts (VMET, n\u2009=\u2009160; 455 swabs; VMET II, n\u2009=\u2009205; 573 swabs). By integrating metataxonomics and immune profiling data from matched samples, we show that specific metabolome signatures can be used to robustly predict simultaneously both the composition of the vaginal microbiome and host inflammatory status. In these patients, vaginal microbiota instability and innate immune activation, as predicted using DESI-MS, associated with preterm birth, including in women receiving cervical cerclage for preterm birth prevention. These findings highlight direct on-swab metabolic profiling by DESI-MS as an innovative approach for preterm birth risk stratification through rapid assessment of vaginal microbiota-host dynamics.",
+        "publicationTitle": "Nature Communications",
+        "volume": "12",
+        "issue": "1",
+        "pages": "5967",
+        "date": "2021-10-13",
+        "series": "",
+        "seriesTitle": "",
+        "seriesText": "",
+        "journalAbbreviation": "Nat Commun",
+        "language": "en",
+        "DOI": "10.1038/s41467-021-26215-w",
+        "ISSN": "2041-1723",
+        "shortTitle": "",
+        "url": "https://www.nature.com/articles/s41467-021-26215-w",
+        "accessDate": "2021-11-10T07:04:46Z",
+        "archive": "",
+        "archiveLocation": "",
+        "libraryCatalog": "www.nature.com",
+        "callNumber": "",
+        "rights": "2021 The Author(s)",
+        "extra": "Bandiera_abtest: a\nCc_license_type: cc_by\nCg_type: Nature Research Journals\nNumber: 1\nPrimary_atype: Research\nPublisher: Nature Publishing Group\nSubject_term: Infectious-disease diagnostics;Predictive markers;Risk factors;Translational research\nSubject_term_id: infectious-disease-diagnostics;predictive-markers;risk-factors;translational-research",
+        "tags": [
+            {
+                "tag": "Infectious-disease diagnostics",
+                "type": 1
+            },
+            {
+                "tag": "Predictive markers",
+                "type": 1
+            },
+            {
+                "tag": "Risk factors",
+                "type": 1
+            },
+            {
+                "tag": "Translational research",
+                "type": 1
+            }
+        ],
+        "collections": [
+            "DCHC4FUN"
+        ],
+        "relations": {},
+        "dateAdded": "2021-11-10T07:04:46Z",
+        "dateModified": "2021-11-10T07:04:46Z"
+    }
+}]

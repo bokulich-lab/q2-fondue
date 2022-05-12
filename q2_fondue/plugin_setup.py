@@ -206,6 +206,7 @@ plugin.methods.register_function(
         'user_id': Str,
         'api_key': Str,
         'collection_name': Str,
+        'on_no_dois': Str % Choices(['ignore', 'error']),
         'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     },
     outputs=[('run_ids', NCBIAccessionIDs),
@@ -223,18 +224,21 @@ plugin.methods.register_function(
                    '"Allow library access" and for \'group\' library '
                    '"Read/Write" permissions ).',
         'collection_name': 'Name of the collection to be scraped.',
+        'on_no_dois': 'Behavior if no DOIs were found.',
         'log_level': 'Logging level.'
     },
     output_descriptions={
         'run_ids': 'Artifact containing all run IDs scraped '
-                   'from a Zotero collection.',
+                   'from a Zotero collection and associated DOI names.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
-                          'from a Zotero collection.'
+                          'from a Zotero collection and associated '
+                          'DOI names.'
     },
-    name='Scrape Zotero collection for run and BioProject IDs.',
+    name='Scrape Zotero collection for run and BioProject IDs and '
+    'if available associated DOI names.',
     description=(
-        'Scrape HTML and PDF files of a Zotero collection for run and '
-        'BioProject IDs.'
+        'Scrape attachment files of a Zotero collection for run and '
+        'BioProject IDs and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )

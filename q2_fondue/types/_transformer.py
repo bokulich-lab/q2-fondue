@@ -76,14 +76,26 @@ def _6(ff: SRAFailedIDsFormat) -> (qiime2.Metadata):
 
 
 @plugin.register_transformer
-def _7(data: pd.Series) -> (NCBIAccessionIDsFormat):
+def _7(data: pd.DataFrame) -> (NCBIAccessionIDsFormat):
+    ff = NCBIAccessionIDsFormat()
+    with ff.open() as fh:
+        data.to_csv(fh, sep='\t', header=True, index=True)
+    return ff
+
+
+@plugin.register_transformer
+def _77(data: pd.Series) -> (NCBIAccessionIDsFormat):
     ff = NCBIAccessionIDsFormat()
     return _series_to_meta_fmt(data, ff)
 
 
 @plugin.register_transformer
-def _8(ff: NCBIAccessionIDsFormat) -> (pd.Series):
-    return _meta_fmt_to_series(ff)
+def _8(ff: NCBIAccessionIDsFormat) -> (pd.DataFrame):
+    with ff.open() as fh:
+        df = pd.read_csv(
+            fh, sep='\t', header=0, index_col=0, dtype='str'
+        )
+        return df
 
 
 @plugin.register_transformer
@@ -96,5 +108,5 @@ def _10(ff: SRAMetadataFormat) -> (NCBIAccessionIDsFormat):
     fout = NCBIAccessionIDsFormat()
     with ff.open() as fh, fout.open() as fo:
         df = pd.read_csv(fh, sep='\t', header=0, index_col=0, dtype='str')
-        df.index.to_series().to_csv(fo, sep='\t', header=True, index=False)
+        df.index.to_frame().to_csv(fo, sep='\t', header=True, index=False)
     return fout
