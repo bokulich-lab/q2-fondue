@@ -235,8 +235,8 @@ qiime fondue scrape-collection \
 where:
 - `--m-library-file` is the path to the formerly created tsv file containing the required Zotero library information.
 - `--p-collection-name` is the name of the collection to be scraped. 
-- `--o-run-ids` is the output artifact containing the scraped run IDs.
-- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
+- `--o-run-ids` is the output artifact containing the scraped run IDs and associated DOI names.
+- `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs and associated DOI names.
 
 To investigate which run and BioProject IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
 ```shell

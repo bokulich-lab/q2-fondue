@@ -56,7 +56,7 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 | `get-all`        | Fetch sequences and metadata by run, study or BioProject IDs from the SRA repo. |
 | `merge-metadata` | Merge several metadata files into a single metadata object.              |
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs.                   |
+| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs and associated DOI names.|
 
 
 ### Import run/BioProject accession IDs

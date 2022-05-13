@@ -1,0 +1,696 @@
+[
+    {
+    "key": "BAAG9ZJJ",
+    "version": 3370,
+    "library": {
+        "type": "user",
+        "id": 1234567,
+        "name": "user",
+        "links": {
+            "alternate": {
+                "href": "https://www.zotero.org/user",
+                "type": "text/html"
+            }
+        }
+    },
+    "links": {
+        "self": {
+            "href": "https://api.zotero.org/users/1234567/items/BAAG9ZJJ",
+            "type": "application/json"
+        },
+        "alternate": {
+            "href": "https://www.zotero.org/user/items/BAAG9ZJJ",
+            "type": "text/html"
+        },
+        "attachment": {
+            "href": "https://api.zotero.org/users/1234567/items/DZ73UIFC",
+            "type": "application/json",
+            "attachmentType": "application/pdf",
+            "attachmentSize": 9653356
+        }
+    },
+    "meta": {
+        "creatorSummary": "Forslund et al.",
+        "parsedDate": "2021-12",
+        "numChildren": 2
+    },
+    "data": {
+        "key": "BAAG9ZJJ",
+        "version": 3370,
+        "itemType": "journalArticle",
+        "title": "Combinatorial, additive and dose-dependent drug\u2013microbiome associations",
+        "creators": [
+            {
+                "creatorType": "author",
+                "firstName": "Sofia K.",
+                "lastName": "Forslund"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Rima",
+                "lastName": "Chakaroun"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Maria",
+                "lastName": "Zimmermann-Kogadeeva"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lajos",
+                "lastName": "Mark\u00f3"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Judith",
+                "lastName": "Aron-Wisnewsky"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Trine",
+                "lastName": "Nielsen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lucas",
+                "lastName": "Moitinho-Silva"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Thomas S. B.",
+                "lastName": "Schmidt"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Gwen",
+                "lastName": "Falony"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Sara",
+                "lastName": "Vieira-Silva"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Solia",
+                "lastName": "Adriouch"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Renato J.",
+                "lastName": "Alves"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Karen",
+                "lastName": "Assmann"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jean-Philippe",
+                "lastName": "Bastard"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Till",
+                "lastName": "Birkner"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Robert",
+                "lastName": "Caesar"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Julien",
+                "lastName": "Chilloux"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Luis Pedro",
+                "lastName": "Coelho"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Leopold",
+                "lastName": "Fezeu"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Nathalie",
+                "lastName": "Galleron"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Gerard",
+                "lastName": "Helft"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Richard",
+                "lastName": "Isnard"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Boyang",
+                "lastName": "Ji"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Michael",
+                "lastName": "Kuhn"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Emmanuelle",
+                "lastName": "Le Chatelier"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Antonis",
+                "lastName": "Myridakis"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lisa",
+                "lastName": "Olsson"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Nicolas",
+                "lastName": "Pons"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Edi",
+                "lastName": "Prifti"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Benoit",
+                "lastName": "Quinquis"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Hugo",
+                "lastName": "Roume"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Joe-Elie",
+                "lastName": "Salem"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Nataliya",
+                "lastName": "Sokolovska"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Valentina",
+                "lastName": "Tremaroli"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Mireia",
+                "lastName": "Valles-Colomer"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Christian",
+                "lastName": "Lewinter"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Nadja B.",
+                "lastName": "S\u00f8ndertoft"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Helle Krogh",
+                "lastName": "Pedersen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Tue H.",
+                "lastName": "Hansen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jens Peter",
+                "lastName": "G\u00f8tze"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Lars",
+                "lastName": "K\u00f8ber"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Henrik",
+                "lastName": "Vestergaard"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Torben",
+                "lastName": "Hansen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jean-Daniel",
+                "lastName": "Zucker"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Serge",
+                "lastName": "Hercberg"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jean-Michel",
+                "lastName": "Oppert"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Ivica",
+                "lastName": "Letunic"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jens",
+                "lastName": "Nielsen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Fredrik",
+                "lastName": "B\u00e4ckhed"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "S. Dusko",
+                "lastName": "Ehrlich"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Marc-Emmanuel",
+                "lastName": "Dumas"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Jeroen",
+                "lastName": "Raes"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Oluf",
+                "lastName": "Pedersen"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Karine",
+                "lastName": "Cl\u00e9ment"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Michael",
+                "lastName": "Stumvoll"
+            },
+            {
+                "creatorType": "author",
+                "firstName": "Peer",
+                "lastName": "Bork"
+            }
+        ],
+        "abstractNote": "During the transition from a healthy state to cardiometabolic disease, patients become heavily medicated, which leads to an increasingly aberrant gut microbiome and serum metabolome, and complicates biomarker\u00a0discovery1\u20135. Here, through integrated multi-omics analyses of 2,173 European residents from the MetaCardis cohort, we show that the explanatory power of drugs for the variability in both host and gut microbiome features exceeds that of disease. We quantify inferred effects of single medications, their combinations as well as additive effects,\u00a0and show that the latter shift the metabolome and microbiome towards a healthier state, exemplified in synergistic reduction in serum atherogenic lipoproteins by statins combined with aspirin, or enrichment of intestinal Roseburia by diuretic\u00a0agents combined with beta-blockers. Several antibiotics exhibit a quantitative relationship between the number of courses prescribed and progression towards a microbiome state that is associated with the severity of cardiometabolic disease. We also report a relationship between cardiometabolic drug dosage, improvement in clinical markers and microbiome composition, supporting direct drug effects. Taken together, our computational framework and resulting resources enable the disentanglement of the effects of drugs and disease on host and microbiome features in multimedicated individuals. Furthermore, the robust signatures identified using our framework provide new hypotheses for drug\u2013host\u2013microbiome interactions in cardiometabolic disease.",
+        "publicationTitle": "Nature",
+        "volume": "600",
+        "issue": "7889",
+        "pages": "500-505",
+        "date": "2021-12",
+        "series": "",
+        "seriesTitle": "",
+        "seriesText": "",
+        "journalAbbreviation": "",
+        "language": "en",
+        "DOI": "10.1038/s41586-021-04177-9",
+        "ISSN": "1476-4687",
+        "shortTitle": "",
+        "url": "https://www.nature.com/articles/s41586-021-04177-9",
+        "accessDate": "2022-05-11T07:46:42Z",
+        "archive": "",
+        "archiveLocation": "",
+        "libraryCatalog": "www.nature.com",
+        "callNumber": "",
+        "rights": "2021 The Author(s), under exclusive licence to Springer Nature Limited",
+        "extra": "Number: 7889\nPublisher: Nature Publishing Group",
+        "tags": [
+            {
+                "tag": "Biomarkers",
+                "type": 1
+            },
+            {
+                "tag": "Cardiovascular diseases",
+                "type": 1
+            },
+            {
+                "tag": "Systems biology",
+                "type": 1
+            }
+        ],
+        "collections": [
+            "XNYSQCDH"
+        ],
+        "relations": {},
+        "dateAdded": "2022-05-11T07:46:42Z",
+        "dateModified": "2022-05-11T07:46:42Z"
+    }
+    },
+    {
+        "key": "L72I8MT7",
+        "version": 3366,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/L72I8MT7",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/L72I8MT7",
+                "type": "text/html"
+            },
+            "attachment": {
+                "href": "https://api.zotero.org/users/1234567/items/8ISF4TZ4",
+                "type": "application/json",
+                "attachmentType": "application/pdf",
+                "attachmentSize": 10010953
+            }
+        },
+        "meta": {
+            "creatorSummary": "Bloom et al.",
+            "parsedDate": "2022-03",
+            "numChildren": 1
+        },
+        "data": {
+            "key": "L72I8MT7",
+            "version": 3366,
+            "itemType": "journalArticle",
+            "title": "Cysteine dependence of Lactobacillus iners is a potential therapeutic target for vaginal microbiota modulation",
+            "creators": [
+                {
+                    "creatorType": "author",
+                    "firstName": "Seth M.",
+                    "lastName": "Bloom"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Nomfuneko A.",
+                    "lastName": "Mafunda"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Benjamin M.",
+                    "lastName": "Woolston"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Matthew R.",
+                    "lastName": "Hayward"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Josephine F.",
+                    "lastName": "Frempong"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Aaron B.",
+                    "lastName": "Abai"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Jiawu",
+                    "lastName": "Xu"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Alissa J.",
+                    "lastName": "Mitchell"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Xavier",
+                    "lastName": "Westergaard"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Fatima A.",
+                    "lastName": "Hussain"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Nondumiso",
+                    "lastName": "Xulu"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Mary",
+                    "lastName": "Dong"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Krista L.",
+                    "lastName": "Dong"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Thandeka",
+                    "lastName": "Gumbi"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "F. Xolisile",
+                    "lastName": "Ceasar"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Justin K.",
+                    "lastName": "Rice"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Namit",
+                    "lastName": "Choksi"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Nasreen",
+                    "lastName": "Ismail"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Thumbi",
+                    "lastName": "Ndung\u2019u"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Musie S.",
+                    "lastName": "Ghebremichael"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "David A.",
+                    "lastName": "Relman"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Emily P.",
+                    "lastName": "Balskus"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Caroline M.",
+                    "lastName": "Mitchell"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Douglas S.",
+                    "lastName": "Kwon"
+                }
+            ],
+            "abstractNote": "Vaginal microbiota composition affects many facets of reproductive health. Lactobacillus iners-dominated microbial communities are associated with poorer outcomes, including higher risk of bacterial vaginosis (BV), compared with vaginal microbiota rich in L. crispatus. Unfortunately, standard-of-care metronidazole therapy for BV typically results in dominance of L. iners, probably contributing to post-treatment relapse. Here we generate an L. iners isolate collection comprising 34 previously unreported isolates from 14 South African women with and without BV and 4 previously unreported isolates from 3 US women. We also report an associated genome catalogue comprising 1,218 vaginal Lactobacillus isolate genomes and metagenome-assembled genomes from >300 women across 4 continents. We show that, unlike L. crispatus, L. iners growth is dependent on l-cysteine in vitro and we trace this phenotype to the absence of canonical cysteine biosynthesis pathways and a restricted repertoire of cysteine-related transport mechanisms. We further show that cysteine concentrations in cervicovaginal lavage samples correlate with Lactobacillus abundance in vivo and that cystine uptake inhibitors selectively inhibit L. iners growth in vitro. Combining an inhibitor with metronidazole promotes L. crispatus dominance of defined BV-like communities in vitro by suppressing L. iners growth. Our findings enable a better understanding of L. iners biology and suggest candidate treatments to modulate the vaginal microbiota to improve reproductive health for women globally.",
+            "publicationTitle": "Nature Microbiology",
+            "volume": "7",
+            "issue": "3",
+            "pages": "434-450",
+            "date": "2022-03",
+            "series": "",
+            "seriesTitle": "",
+            "seriesText": "",
+            "journalAbbreviation": "Nat Microbiol",
+            "language": "en",
+            "DOI": "10.1038/s41564-022-01070-7",
+            "ISSN": "2058-5276",
+            "shortTitle": "",
+            "url": "https://www.nature.com/articles/s41564-022-01070-7",
+            "accessDate": "2022-05-11T07:46:31Z",
+            "archive": "",
+            "archiveLocation": "",
+            "libraryCatalog": "www.nature.com",
+            "callNumber": "",
+            "rights": "2022 The Author(s), under exclusive licence to Springer Nature Limited",
+            "extra": "Number: 3\nPublisher: Nature Publishing Group",
+            "tags": [
+                {
+                    "tag": "Bacteria",
+                    "type": 1
+                },
+                {
+                    "tag": "Bacterial genomics",
+                    "type": 1
+                },
+                {
+                    "tag": "Metagenomics",
+                    "type": 1
+                },
+                {
+                    "tag": "Microbiome",
+                    "type": 1
+                },
+                {
+                    "tag": "Urogenital diseases",
+                    "type": 1
+                }
+            ],
+            "collections": [
+                "XNYSQCDH"
+            ],
+            "relations": {},
+            "dateAdded": "2022-05-11T07:46:31Z",
+            "dateModified": "2022-05-11T07:46:31Z"
+        }
+    },
+    {
+        "key": "64QNRRW6",
+        "version": 3376,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/64QNRRW6",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/64QNRRW6",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/BAAG9ZJJ",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "text/html",
+                "href": "https://api.zotero.org/users/1234567/items/64QNRRW6/file/view"
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "64QNRRW6",
+            "version": 3376,
+            "parentItem": "BAAG9ZJJ",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Snapshot",
+            "accessDate": "2022-05-11T07:46:50Z",
+            "url": "https://www.nature.com/articles/s41586-021-04177-9",
+            "note": "",
+            "contentType": "text/html",
+            "charset": "utf-8",
+            "filename": "s41586-021-04177-9.html",
+            "md5": "e376fba35ceb992a8b0b2b0a72d51206",
+            "mtime": 1652255209000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-11T07:46:50Z",
+            "dateModified": "2022-05-11T07:46:50Z"
+        }
+    },
+    {
+        "key": "8ISF4TZ4",
+        "version": 3368,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/8ISF4TZ4",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/8ISF4TZ4",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/L72I8MT7",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "application/pdf",
+                "href": "https://api.zotero.org/users/1234567/items/8ISF4TZ4/file/view",
+                "title": "Bloom et al. - 2022 - Cysteine dependence of Lactobacillus iners is a po.pdf",
+                "length": 10010953
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "8ISF4TZ4",
+            "version": 3368,
+            "parentItem": "L72I8MT7",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Full Text PDF",
+            "accessDate": "2022-05-11T07:46:32Z",
+            "url": "https://www.nature.com/articles/s41564-022-01070-7.pdf",
+            "note": "",
+            "contentType": "application/pdf",
+            "charset": "",
+            "filename": "Bloom et al. - 2022 - Cysteine dependence of Lactobacillus iners is a po.pdf",
+            "md5": "d7ca5edb4fc06985af82dd7f927c875c",
+            "mtime": 1652255192000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-11T07:46:32Z",
+            "dateModified": "2022-05-11T07:46:32Z"
+        }
+    }
+]

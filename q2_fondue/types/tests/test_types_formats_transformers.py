@@ -106,6 +106,29 @@ class TestFormats(TestPluginBase):
         ):
             format.validate()
 
+    def test_ncbi_accession_ids_fmt_with_doi(self):
+        meta_path = self.get_data_path('ncbi-ids-runs-doi.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        format.validate()
+
+    def test_ncbi_accession_ids_fmt_other_than_doi(self):
+        meta_path = self.get_data_path('ncbi-ids-runs-no-doi.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        with self.assertRaisesRegexp(
+                ValidationError,
+                'should only contain a single'
+        ):
+            format.validate()
+
+    def test_ncbi_accession_ids_fmt_wrong_id_header(self):
+        meta_path = self.get_data_path('ncbi-ids-runs-wrong-id-header.tsv')
+        format = NCBIAccessionIDsFormat(meta_path, mode='r')
+        with self.assertRaisesRegexp(
+                ValidationError,
+                'IDs artifact must contain a valid'
+        ):
+            format.validate()
+
 
 class TestTypes(TestPluginBase):
     package = 'q2_fondue.types.tests'
@@ -150,8 +173,9 @@ class TestTransformers(TestPluginBase):
         ncbi_ids_path = self.get_data_path('ncbi-ids-runs.tsv')
         self.ncbi_ids = NCBIAccessionIDsFormat(ncbi_ids_path, mode='r')
         self.ncbi_ids_ser = pd.read_csv(
-            ncbi_ids_path, header=0, dtype='str', squeeze=True
-        )
+            ncbi_ids_path, header=0, dtype='str', squeeze=True)
+        self.ncbi_ids_df = pd.read_csv(
+            ncbi_ids_path, sep='\t', header=0, index_col=0, dtype='str')
 
     def test_dataframe_to_sra_metadata(self):
         transformer = self.get_transformer(pd.DataFrame, SRAMetadataFormat)
@@ -209,20 +233,28 @@ class TestTransformers(TestPluginBase):
         )
         pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
 
-    def test_ncbi_accession_ids_to_series(self):
+    def test_dataframe_to_ncbi_accession_ids(self):
+        transformer = self.get_transformer(pd.DataFrame,
+                                           NCBIAccessionIDsFormat)
+        obs = transformer(self.ncbi_ids_df)
+        self.assertIsInstance(obs, NCBIAccessionIDsFormat)
+
+        obs = pd.read_csv(
+            str(obs), sep='\t', header=0, index_col=0, dtype='str')
+        pd.testing.assert_frame_equal(obs, self.ncbi_ids_df)
+
+    def test_ncbi_accession_ids_to_dataframe(self):
         _, obs = self.transform_format(
-            NCBIAccessionIDsFormat, pd.Series, 'ncbi-ids-runs.tsv'
+            NCBIAccessionIDsFormat, pd.DataFrame, 'ncbi-ids-runs.tsv'
         )
-        self.assertIsInstance(obs, pd.Series)
-        pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
+        self.assertIsInstance(obs, pd.DataFrame)
+        pd.testing.assert_frame_equal(obs, self.ncbi_ids_df)
 
     def test_ncbi_accession_ids_to_q2_metadata(self):
         _, obs = self.transform_format(
             NCBIAccessionIDsFormat, qiime2.Metadata, 'ncbi-ids-runs.tsv'
         )
-        exp = qiime2.Metadata(
-            pd.DataFrame([], index=self.ncbi_ids_ser)
-        )
+        exp = qiime2.Metadata(self.ncbi_ids_df)
         self.assertEqual(obs, exp)
 
     def test_sra_metadata_to_ncbi_accession_ids(self):
@@ -233,9 +265,8 @@ class TestTransformers(TestPluginBase):
         self.assertIsInstance(obs, NCBIAccessionIDsFormat)
 
         obs = pd.read_csv(
-            str(obs), header=0, dtype='str', squeeze=True
-        )
-        pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
+            str(obs), sep='\t', header=0, index_col=0, dtype='str')
+        pd.testing.assert_frame_equal(obs, self.ncbi_ids_df)
 
 
 if __name__ == "__main__":

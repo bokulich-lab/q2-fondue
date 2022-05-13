@@ -1,0 +1,916 @@
+[
+    {
+        "key": "BW2RU99L",
+        "version": 3336,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/BW2RU99L",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/BW2RU99L",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/9SNTPKCX",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "text/html",
+                "href": "https://api.zotero.org/users/1234567/items/BW2RU99L/file/view"
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "BW2RU99L",
+            "version": 3336,
+            "parentItem": "9SNTPKCX",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "arXiv.org Snapshot",
+            "accessDate": "2022-05-05T14:27:37Z",
+            "url": "https://arxiv.org/abs/2106.11234",
+            "note": "",
+            "contentType": "text/html",
+            "charset": "utf-8",
+            "filename": "2106.html",
+            "md5": "9f6f3104c6a154c35a87033b39be098b",
+            "mtime": 1651760857000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T14:27:37Z",
+            "dateModified": "2022-05-05T14:27:37Z"
+        }
+    },
+    {
+        "key": "F4K9L6DV",
+        "version": 3335,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/F4K9L6DV",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/F4K9L6DV",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/9SNTPKCX",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "application/pdf",
+                "href": "https://api.zotero.org/users/1234567/items/F4K9L6DV/file/view",
+                "title": "Ailer et al. - 2022 - A causal view on compositional data.pdf",
+                "length": 6363168
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "F4K9L6DV",
+            "version": 3335,
+            "parentItem": "9SNTPKCX",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "arXiv Fulltext PDF",
+            "accessDate": "2022-05-05T14:27:32Z",
+            "url": "https://arxiv.org/pdf/2106.11234.pdf",
+            "note": "",
+            "contentType": "application/pdf",
+            "charset": "",
+            "filename": "Ailer et al. - 2022 - A causal view on compositional data.pdf",
+            "md5": "38fe686fbe15d711dc116b8e20aaadec",
+            "mtime": 1651760852000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T14:27:32Z",
+            "dateModified": "2022-05-05T14:27:32Z"
+        }
+    },
+    {
+        "key": "9SNTPKCX",
+        "version": 3343,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/9SNTPKCX",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/9SNTPKCX",
+                "type": "text/html"
+            },
+            "attachment": {
+                "href": "https://api.zotero.org/users/1234567/items/F4K9L6DV",
+                "type": "application/json",
+                "attachmentType": "application/pdf",
+                "attachmentSize": 6363168
+            }
+        },
+        "meta": {
+            "creatorSummary": "Ailer et al.",
+            "parsedDate": "2022-01-14",
+            "numChildren": 2
+        },
+        "data": {
+            "key": "9SNTPKCX",
+            "version": 3343,
+            "itemType": "journalArticle",
+            "title": "A causal view on compositional data",
+            "creators": [
+                {
+                    "creatorType": "author",
+                    "firstName": "Elisabeth",
+                    "lastName": "Ailer"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Christian L.",
+                    "lastName": "M\u00fcller"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Niki",
+                    "lastName": "Kilbertus"
+                }
+            ],
+            "abstractNote": "Many scientific datasets are compositional in nature. Important examples include species abundances in ecology, rock compositions in geology, topic compositions in large-scale text corpora, and sequencing count data in molecular biology. Here, we provide a causal view on compositional data in an instrumental variable setting where the composition acts as the cause. First, we crisply articulate potential pitfalls for practitioners regarding the interpretation of compositional causes from the viewpoint of interventions and warn against attributing causal meaning to common summary statistics such as diversity indices. We then advocate for and develop multivariate methods using statistical data transformations and regression techniques that take the special structure of the compositional sample space into account. In a comparative analysis on synthetic and real data we show the advantages and limitations of our proposal. We posit that our framework provides a useful starting point and guidance for valid and informative cause-effect estimation in the context of compositional data.",
+            "publicationTitle": "arXiv:2106.11234 [cs, q-bio, stat]",
+            "volume": "",
+            "issue": "",
+            "pages": "",
+            "date": "2022-01-14",
+            "series": "",
+            "seriesTitle": "",
+            "seriesText": "",
+            "journalAbbreviation": "",
+            "language": "",
+            "DOI": "",
+            "ISSN": "",
+            "shortTitle": "",
+            "url": "http://arxiv.org/abs/2106.11234",
+            "accessDate": "2022-05-05T14:27:20Z",
+            "archive": "",
+            "archiveLocation": "",
+            "libraryCatalog": "arXiv.org",
+            "callNumber": "",
+            "rights": "",
+            "extra": "arXiv: 2106.11234",
+            "tags": [
+                {
+                    "tag": "Computer Science - Machine Learning",
+                    "type": 1
+                },
+                {
+                    "tag": "Quantitative Biology - Quantitative Methods",
+                    "type": 1
+                },
+                {
+                    "tag": "Statistics - Applications",
+                    "type": 1
+                },
+                {
+                    "tag": "Statistics - Machine Learning",
+                    "type": 1
+                }
+            ],
+            "collections": [
+                "4K4S4BPN",
+                "XJ6D6WYM"
+            ],
+            "relations": {},
+            "dateAdded": "2022-05-05T14:27:20Z",
+            "dateModified": "2022-05-05T14:27:20Z"
+        }
+    },
+    {
+        "key": "VYSXM4Q3",
+        "version": 3330,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/VYSXM4Q3",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/VYSXM4Q3",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/GJ6HKQ8R",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "text/html",
+                "href": "https://api.zotero.org/users/1234567/items/VYSXM4Q3/file/view"
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "VYSXM4Q3",
+            "version": 3330,
+            "parentItem": "GJ6HKQ8R",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Snapshot",
+            "accessDate": "2022-05-05T13:48:36Z",
+            "url": "https://www.biorxiv.org/content/10.1101/2022.03.22.485322v1",
+            "note": "",
+            "contentType": "text/html",
+            "charset": "utf-8",
+            "filename": "2022.03.22.html",
+            "md5": "18fa60c84ab4aabcb4b513b72db8c997",
+            "mtime": 1651758516000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:36Z",
+            "dateModified": "2022-05-05T13:48:36Z"
+        }
+    },
+    {
+        "key": "TU9Y3DKP",
+        "version": 3327,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/TU9Y3DKP",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/TU9Y3DKP",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/GJ6HKQ8R",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "application/pdf",
+                "href": "https://api.zotero.org/users/1234567/items/TU9Y3DKP/file/view",
+                "title": "Ziemski et al. - 2022 - Reproducible acquisition, management, and meta-ana.pdf",
+                "length": 3094685
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "TU9Y3DKP",
+            "version": 3327,
+            "parentItem": "GJ6HKQ8R",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Full Text PDF",
+            "accessDate": "2022-05-05T13:48:35Z",
+            "url": "https://www.biorxiv.org/content/biorxiv/early/2022/03/25/2022.03.22.485322.full.pdf",
+            "note": "",
+            "contentType": "application/pdf",
+            "charset": "",
+            "filename": "Ziemski et al. - 2022 - Reproducible acquisition, management, and meta-ana.pdf",
+            "md5": "f20f7065968b4ab7af2076ca453e227e",
+            "mtime": 1651758515000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:35Z",
+            "dateModified": "2022-05-05T13:48:35Z"
+        }
+    },
+    {
+        "key": "GJ6HKQ8R",
+        "version": 3341,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/GJ6HKQ8R",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/GJ6HKQ8R",
+                "type": "text/html"
+            },
+            "attachment": {
+                "href": "https://api.zotero.org/users/1234567/items/TU9Y3DKP",
+                "type": "application/json",
+                "attachmentType": "application/pdf",
+                "attachmentSize": 3094685
+            }
+        },
+        "meta": {
+            "creatorSummary": "Ziemski et al.",
+            "parsedDate": "2022-03-25",
+            "numChildren": 2
+        },
+        "data": {
+            "key": "GJ6HKQ8R",
+            "version": 3341,
+            "itemType": "report",
+            "title": "Reproducible acquisition, management, and meta-analysis of nucleotide sequence (meta)data using q2-fondue",
+            "creators": [
+                {
+                    "creatorType": "author",
+                    "firstName": "Michal",
+                    "lastName": "Ziemski"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Anja",
+                    "lastName": "Adamov"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Lina",
+                    "lastName": "Kim"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Lena",
+                    "lastName": "Fl\u00f6rl"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Nicholas A.",
+                    "lastName": "Bokulich"
+                }
+            ],
+            "abstractNote": "The volume of public nucleotide sequence data has blossomed over the past two decades, enabling novel discoveries via re-analysis, meta-analyses, and comparative studies for uncovering general biological trends. However, reproducible re-use and management of sequence datasets remains a challenge. We created the software plugin q2-fondue to enable user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles. The software allows fully provenance-tracked programmatic access to and management of data from the Sequence Read Archive (SRA). Sequence data and accompanying metadata retrieved with q2-fondue follow a validated format, which is interoperable with the QIIME 2 ecosystem and its multiple user interfaces. To highlight the manifold capabilities of q2-fondue, we present several demonstration analyses using amplicon, whole genome, and shotgun metagenome datasets. These use cases demonstrate how q2-fondue increases analysis reproducibility and transparency from data download to final visualizations by including source details in the integrated provenance graph. We believe q2-fondue will lower existing barriers to comparative analyses of nucleotide sequence data, enabling more transparent, open, and reproducible conduct of meta-analyses. q2-fondue is a Python 3 package released under the BSD 3-clause license at https://github.com/bokulich-lab/q2-fondue.",
+            "reportNumber": "",
+            "reportType": "",
+            "seriesTitle": "",
+            "place": "",
+            "institution": "bioRxiv",
+            "date": "2022-03-25",
+            "pages": "2022.03.22.485322",
+            "language": "en",
+            "shortTitle": "",
+            "url": "https://www.biorxiv.org/content/10.1101/2022.03.22.485322v1",
+            "accessDate": "2022-05-05T13:48:31Z",
+            "archive": "",
+            "archiveLocation": "",
+            "libraryCatalog": "bioRxiv",
+            "callNumber": "",
+            "rights": "\u00a9 2022, Posted by Cold Spring Harbor Laboratory. This pre-print is available under a Creative Commons License (Attribution-NonCommercial-NoDerivs 4.0 International), CC BY-NC-ND 4.0, as described at http://creativecommons.org/licenses/by-nc-nd/4.0/",
+            "extra": "DOI: 10.1101/2022.03.22.485322\nSection: New Results\nType: article",
+            "tags": [],
+            "collections": [
+                "BRK875DR",
+                "XJ6D6WYM"
+            ],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:31Z",
+            "dateModified": "2022-05-05T13:48:31Z"
+        }
+    },
+    {
+        "key": "RW9VETED",
+        "version": 3328,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/RW9VETED",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/RW9VETED",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/RVZH5NRY",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "text/html",
+                "href": "https://api.zotero.org/users/1234567/items/RW9VETED/file/view"
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "RW9VETED",
+            "version": 3328,
+            "parentItem": "RVZH5NRY",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Snapshot",
+            "accessDate": "2022-05-05T13:48:28Z",
+            "url": "https://www.biorxiv.org/content/10.1101/2021.08.23.457365v2",
+            "note": "",
+            "contentType": "text/html",
+            "charset": "utf-8",
+            "filename": "2021.08.23.html",
+            "md5": "3ec4e994432bb8a8f1f2b1ace79fd262",
+            "mtime": 1651758508000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:28Z",
+            "dateModified": "2022-05-05T13:48:28Z"
+        }
+    },
+    {
+        "key": "TWGVDBHY",
+        "version": 3329,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/TWGVDBHY",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/TWGVDBHY",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/RVZH5NRY",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "application/pdf",
+                "href": "https://api.zotero.org/users/1234567/items/TWGVDBHY/file/view",
+                "title": "Yan et al. - 2021 - A compilation of fecal microbiome shotgun metageno.pdf",
+                "length": 1962378
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "TWGVDBHY",
+            "version": 3329,
+            "parentItem": "RVZH5NRY",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Full Text PDF",
+            "accessDate": "2022-05-05T13:48:27Z",
+            "url": "https://www.biorxiv.org/content/biorxiv/early/2021/08/25/2021.08.23.457365.full.pdf",
+            "note": "",
+            "contentType": "application/pdf",
+            "charset": "",
+            "filename": "Yan et al. - 2021 - A compilation of fecal microbiome shotgun metageno.pdf",
+            "md5": "046e03e0d6dea0791ef1d5c61ad116d0",
+            "mtime": 1651758507000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:27Z",
+            "dateModified": "2022-05-05T13:48:27Z"
+        }
+    },
+    {
+        "key": "RVZH5NRY",
+        "version": 3341,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/RVZH5NRY",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/RVZH5NRY",
+                "type": "text/html"
+            },
+            "attachment": {
+                "href": "https://api.zotero.org/users/1234567/items/TWGVDBHY",
+                "type": "application/json",
+                "attachmentType": "application/pdf",
+                "attachmentSize": 1962378
+            }
+        },
+        "meta": {
+            "creatorSummary": "Yan et al.",
+            "parsedDate": "2021-08-25",
+            "numChildren": 2
+        },
+        "data": {
+            "key": "RVZH5NRY",
+            "version": 3341,
+            "itemType": "report",
+            "title": "A compilation of fecal microbiome shotgun metagenomics from hospitalized patients undergoing hematopoietic cell transplantation",
+            "creators": [
+                {
+                    "creatorType": "author",
+                    "firstName": "Jinyuan",
+                    "lastName": "Yan"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Chen",
+                    "lastName": "Liao"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Bradford P.",
+                    "lastName": "Taylor"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Emily",
+                    "lastName": "Fontana"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Luigi A.",
+                    "lastName": "Amoretti"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Roberta J.",
+                    "lastName": "Wright"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Anqi",
+                    "lastName": "Dai"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Nicholas",
+                    "lastName": "Waters"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Jonathan U.",
+                    "lastName": "Peled"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Ying",
+                    "lastName": "Taur"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Miguel-Angel",
+                    "lastName": "Perales"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Benjamin A.",
+                    "lastName": "Siranosian"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Ami S.",
+                    "lastName": "Bhatt"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Marcel R. M. van den",
+                    "lastName": "Brink"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Eric G.",
+                    "lastName": "Pamer"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Jonas",
+                    "lastName": "Schluter"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Joao B.",
+                    "lastName": "Xavier"
+                }
+            ],
+            "abstractNote": "Hospitalized patients receiving hematopoietic cell transplants provide a unique opportunity to study how the human gut microbiome changes in response to perturbations, and how the resulting changes in the microbiome feedback on its living host. We previously compiled a large-scale longitudinal dataset of stool microbiome compositions from these patients and associated metadata1. In that dataset the microbiome analysis was limited to the taxonomic composition of the bacterial population obtained from 16S rRNA gene sequencing. Here, we augment those data with shotgun metagenomic sequences from a nested subset of 395 stool samples. We provide accession numbers that link each sample to the paired-end sequencing files deposited in a public repository, which can be directly accessed by the online services of PATRIC2 to be analyzed without the users having to download or transfer the files. We provide examples that show how shotgun sequencing enriches microbiome analyses beyond the taxonomic composition such as the analysis of gene functions including virulence factors and antibiotic resistances, and the assembly of genomes from metagenomic data.",
+            "reportNumber": "",
+            "reportType": "",
+            "seriesTitle": "",
+            "place": "",
+            "institution": "bioRxiv",
+            "date": "2021-08-25",
+            "pages": "2021.08.23.457365",
+            "language": "en",
+            "shortTitle": "",
+            "url": "https://www.biorxiv.org/content/10.1101/2021.08.23.457365v2",
+            "accessDate": "2022-05-05T13:48:22Z",
+            "archive": "",
+            "archiveLocation": "",
+            "libraryCatalog": "bioRxiv",
+            "callNumber": "",
+            "rights": "\u00a9 2021, Posted by Cold Spring Harbor Laboratory. This pre-print is available under a Creative Commons License (Attribution-NoDerivs 4.0 International), CC BY-ND 4.0, as described at http://creativecommons.org/licenses/by-nd/4.0/",
+            "extra": "DOI: 10.1101/2021.08.23.457365\nSection: New Results\nType: article",
+            "tags": [],
+            "collections": [
+                "BRK875DR",
+                "XJ6D6WYM"
+            ],
+            "relations": {},
+            "dateAdded": "2022-05-05T13:48:22Z",
+            "dateModified": "2022-05-05T13:48:22Z"
+        }
+    },
+    {
+        "key": "KSTAEZKY",
+        "version": 2016,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/KSTAEZKY",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/KSTAEZKY",
+                "type": "text/html"
+            },
+            "up": {
+                "href": "https://api.zotero.org/users/1234567/items/VJ72EQHN",
+                "type": "application/json"
+            },
+            "enclosure": {
+                "type": "application/pdf",
+                "href": "https://api.zotero.org/users/1234567/items/KSTAEZKY/file/view",
+                "title": "Embleton et al. - 2021 - Lactoferrin impact on gut microbiota in preterm in.pdf",
+                "length": 11187700
+            }
+        },
+        "meta": {
+            "numChildren": false
+        },
+        "data": {
+            "key": "KSTAEZKY",
+            "version": 2016,
+            "parentItem": "VJ72EQHN",
+            "itemType": "attachment",
+            "linkMode": "imported_url",
+            "title": "Full Text",
+            "accessDate": "2022-02-24T09:11:54Z",
+            "url": "https://njl-admin.nihr.ac.uk/document/download/2037633",
+            "note": "",
+            "contentType": "application/pdf",
+            "charset": "",
+            "filename": "Embleton et al. - 2021 - Lactoferrin impact on gut microbiota in preterm in.pdf",
+            "md5": "7653444b04ffaa58c420a594fde7c8be",
+            "mtime": 1645693914000,
+            "tags": [],
+            "relations": {},
+            "dateAdded": "2022-02-24T09:11:54Z",
+            "dateModified": "2022-02-24T09:11:54Z"
+        }
+    },
+    {
+        "key": "VJ72EQHN",
+        "version": 3342,
+        "library": {
+            "type": "user",
+            "id": 1234567,
+            "name": "user",
+            "links": {
+                "alternate": {
+                    "href": "https://www.zotero.org/user",
+                    "type": "text/html"
+                }
+            }
+        },
+        "links": {
+            "self": {
+                "href": "https://api.zotero.org/users/1234567/items/VJ72EQHN",
+                "type": "application/json"
+            },
+            "alternate": {
+                "href": "https://www.zotero.org/user/items/VJ72EQHN",
+                "type": "text/html"
+            },
+            "attachment": {
+                "href": "https://api.zotero.org/users/1234567/items/KSTAEZKY",
+                "type": "application/json",
+                "attachmentType": "application/pdf",
+                "attachmentSize": 11187700
+            }
+        },
+        "meta": {
+            "creatorSummary": "Embleton et al.",
+            "parsedDate": "2021-09",
+            "numChildren": 1
+        },
+        "data": {
+            "key": "VJ72EQHN",
+            "version": 3342,
+            "itemType": "book",
+            "title": "Lactoferrin impact on gut microbiota in preterm infants with late-onset sepsis or necrotising enterocolitis: the MAGPIE mechanisms of action study",
+            "creators": [
+                {
+                    "creatorType": "author",
+                    "firstName": "Nicholas",
+                    "lastName": "Embleton"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Janet",
+                    "lastName": "Berrington"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Stephen",
+                    "lastName": "Cummings"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Jon",
+                    "lastName": "Dorling"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Andrew",
+                    "lastName": "Ewer"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Alessandra",
+                    "lastName": "Frau"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Edmund",
+                    "lastName": "Juszczak"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "John",
+                    "lastName": "Kirby"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Christopher",
+                    "lastName": "Lamb"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Clare",
+                    "lastName": "Lanyon"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Lauren",
+                    "lastName": "Lett"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "William",
+                    "lastName": "McGuire"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Christopher",
+                    "lastName": "Probert"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Stephen",
+                    "lastName": "Rushton"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Mark",
+                    "lastName": "Shirley"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Christopher",
+                    "lastName": "Stewart"
+                },
+                {
+                    "creatorType": "author",
+                    "firstName": "Gregory R.",
+                    "lastName": "Young"
+                }
+            ],
+            "abstractNote": "BACKGROUND: Preterm infants have high rates of morbidity, especially from late-onset sepsis and necrotising enterocolitis. Lactoferrin is an anti-infective milk protein  that may act through effects on gut bacteria, metabolites and epithelial cell  function. The impact of supplemental lactoferrin in reducing late-onset sepsis was  explored in the Enteral LactoFerrin In Neonates (ELFIN) trial. OBJECTIVES: The  Mechanisms Affecting the Gut of Preterm Infants in Enteral feeding (MAGPIE) study  was nested within the ELFIN trial and aimed to determine the impact of lactoferrin  on gut microbiota and bacterial function, and changes preceding disease onset. We  aimed to explore impacts on the stool bacteria and faecal/urinary metabolome using  gas and liquid chromatography\u2013mass spectrometry, and explore immunohistological  pathways in resected tissue. METHODS: Preterm infants from 12 NHS hospitals were  enrolled in the study, and daily stool and urine samples were collected. Local  sample collection data were combined with ELFIN trial data from the National  Perinatal Epidemiology Unit, Oxford. The longitudinal impact of lactoferrin in  healthy infants was determined, and samples that were collected before disease onset  were matched with samples from healthy control infants. Established,  quality-controlled 16S ribonucleic acid, gas chromatography\u2013mass spectrometry and  liquid chromatography\u2013mass spectrometry analyses were conducted. Validated databases  and standardised workflows were used to identify bacteria and metabolites. Tissue  samples from infants undergoing surgery and matched controls were analysed. RESULTS:  We recruited 479 preterm infants (mean gestation of 28.4\u2009\u00b1\u20092.3 weeks) and collected  >\u200933,000 usable samples from 467 infants. 16S ribonucleic acid bacterial analysis  was conducted on samples from 201 infants, of whom 20 had necrotising enterocolitis  and 51 had late-onset sepsis, along with samples from healthy matched controls to  explore longitudinal changes. The greatest change in relative bacterial abundance  over time was observed in Staphylococcus, which decreased from 42% at aged 7\u20139 days  to only 2% at aged 30\u201360 days (p\u2009<\u20090.001). Small but significant differences in  community composition were observed between samples in each ELFIN trial group  (R(2)\u2009=\u20090.005; p\u2009=\u20090.04). Staphylococcus (p\u2009<\u20090.01), Haemophilus (p\u2009<\u20090.01) and  Lactobacillus (p\u2009=\u20090.01) showed greater mean relative abundance in the placebo group  than in the lactoferrin group. Gas chromatography\u2013mass spectrometry and liquid  chromatography\u2013mass spectrometry analyses showed that lactoferrin had limited impact  on the metabolome. Liquid chromatography\u2013mass spectrometry showed significant  metabolite differences between necrotising enterocolitis or late-onset sepsis  infants and healthy controls. The resected gut tissue analysis revealed 82  differentially expressed genes between healthy and necrotic tissue. LIMITATIONS:  Although we recruited a large number of infants, collecting daily samples from every  infant is challenging, especially in the few days immediately preceding disease  onset. CONCLUSION: We conducted a large mechanistic study across multiple hospital  sites and showed that, although lactoferrin significantly decreased the level of  Staphylococcus and other key pathogens, the impact was smaller than those of other  clinical variables. Immunohistochemistry identified multiple inflammatory pathways  leading to necrotising enterocolitis and showed that the use of NHS pathology  archive tissue is feasible in the context of a randomised controlled trial. FUTURE  WORK: We observed significant changes in the stool and urinary metabolome in cases  preceding late-onset sepsis or necrotising enterocolitis, which provide metabolic  targets for a future mechanistic and biomarker study. TRIAL REGISTRATION: Current  Controlled Trials ISRCTN12554594. FUNDING: This project was funded by the Efficacy  and Mechanism Evaluation (EME) programme, a Medical Research Council (MRC) and  National Institute for Health Research (NIHR) partnership. This will be published in  full in Efficacy and Mechanism Evaluation; Vol. 8, No. 14. See the NIHR Journals  Library website for further project information.",
+            "series": "",
+            "seriesNumber": "",
+            "volume": "",
+            "numberOfVolumes": "",
+            "edition": "",
+            "place": "Southampton (UK)",
+            "publisher": "NIHR Journals Library",
+            "date": "2021 Sep",
+            "numPages": "",
+            "language": "eng",
+            "ISBN": "",
+            "shortTitle": "",
+            "url": "",
+            "accessDate": "",
+            "archive": "",
+            "archiveLocation": "",
+            "libraryCatalog": "",
+            "callNumber": "",
+            "rights": "Copyright \u00a9 2021 Embleton et al. This work was produced by Embleton et al. under the terms of a commissioning contract issued by the Secretary of State for Health and  Social Care. This is an Open Access publication distributed under the terms of the  Creative Commons Attribution CC BY 4.0 licence, which permits unrestricted use,  distribution, reproduction and adaption in any medium and for any purpose provided  that it is properly attributed. See: https://creativecommons.org/licenses/by/4.0/.  For attribution the title, original author(s), the publication source \u2013 NIHR  Journals Library, and the DOI of the publication must be cited.",
+            "extra": "Book Title: Lactoferrin impact on gut microbiota in preterm infants with late-onset sepsis or necrotising enterocolitis: the MAGPIE mechanisms of action study\nDOI: 10.3310/eme08140\nPMID: 34591437",
+            "tags": [],
+            "collections": [
+                "65NWQAUV",
+                "XJ6D6WYM"
+            ],
+            "relations": {},
+            "dateAdded": "2022-02-24T08:59:59Z",
+            "dateModified": "2022-02-24T08:59:59Z"
+        }
+    }
+]
