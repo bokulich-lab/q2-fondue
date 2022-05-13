@@ -223,13 +223,19 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
     ProjectID: PRJ(E|D|N)[A-Z][0-9]+
     studyID: (E|D|S)RP[0-9]{6,}
     runID: (E|D|S)RR[0-9]{6,}
+    Also sample and experiment IDs are fetched grouped as 'other' IDs
+    as the other q2fondue actions do not support them yet:
+    experiment ID: (E|D|S)RX[0-9]{6,}
+    sample ID: (E|D|S)RS[0-9]{6,}
+
 
     Args:
         txt (str): Some text to search
-        id_type (str): Type of ID to search for 'run', 'study' or 'bioproject'
+        id_type (str): Type of ID to search for 'run', 'study', 'bioproject'
+        or 'other' (latter includes experiment and sample IDs)
 
     Returns:
-        list: List of run, study or BioProject IDs found.
+        list: List of run, study, BioProject or other IDs found.
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
     if id_type == 'run':
@@ -238,6 +244,9 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
         pattern = r'[EDS]RP\s?\d+'
     elif id_type == 'bioproject':
         pattern = r'PRJ[EDN][A-Z]\s?\d+'
+    elif id_type == 'other':
+        pattern = r'[EDS]R[XS]\s?\d+'
+
     ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
     ids = [x.replace(' ', '') for x in ids]
@@ -264,10 +273,10 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 def scrape_collection(
     library_type: str, user_id: str, api_key: str, collection_name: str,
     on_no_dois: str = 'ignore', log_level: str = 'INFO'
-) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
-    Scrapes Zotero collection for run, study and BioProject IDs and if
-    available associated DOI names.
+    Scrapes Zotero collection for accession IDs (run, study, BioProject,
+    experiment and sample) and associated DOI names.
 
     Args:
         library_type (str): Zotero API library type
@@ -283,8 +292,8 @@ def scrape_collection(
         log_level (str, default='INFO'): Logging level.
 
     Returns:
-        tuple(pd.DataFrame): Dataframes with run, study and BioProject IDs
-        scraped from collection and if available associated DOI names.
+        tuple(pd.DataFrame): Dataframes with run, study, BioProject and other
+        accession IDs and associated DOI names scraped from Zotero collection.
     """
     logger.setLevel(log_level.upper())
 
@@ -316,7 +325,7 @@ def scrape_collection(
     )
 
     # extract IDs from text of attachment items
-    doi_dicts = {'run': {}, 'study': {}, 'bioproject': {}}
+    doi_dicts = {'run': {}, 'study': {}, 'bioproject': {}, 'other': {}}
 
     for attach_key in attach_keys:
         # get doi linked with this attachment key
@@ -337,9 +346,9 @@ def scrape_collection(
             doi_dicts[type] = _expand_dict(doi_dicts[type], ids, doi)
 
     if len(doi_dicts['run']) + len(doi_dicts['study']) + \
-            len(doi_dicts['bioproject']) == 0:
+            len(doi_dicts['bioproject']) + len(doi_dicts['other']) == 0:
         raise NoAccessionIDs(f'The provided collection {collection_name} does '
-                             f'not contain any run, study or BioProject IDs')
+                             f'not contain any accession IDs.')
     for type in doi_dicts.keys():
         if len(doi_dicts[type]) == 0:
             logger.warning(f'The provided collection {collection_name} '
@@ -347,7 +356,8 @@ def scrape_collection(
 
     dfs = []
     for doi_dict in (
-            doi_dicts['run'], doi_dicts['study'], doi_dicts['bioproject']):
+            doi_dicts['run'], doi_dicts['study'], doi_dicts['bioproject'],
+            doi_dicts['other']):
         df = pd.DataFrame.from_dict([doi_dict]).transpose()
         df.columns = ['DOI']
         df.index.name = 'ID'

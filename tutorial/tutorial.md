@@ -217,7 +217,7 @@ qiime fondue get-sequences \
 
 ### Scraping run, study and BioProject IDs from a Zotero web library collection
 
-For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study and BioProject IDs with associated DOI names from an existing Zotero web library collection, you can run the following command:
+For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject and other IDs with associated DOI names from an existing Zotero web library collection, you can run the following command:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
@@ -227,6 +227,7 @@ qiime fondue scrape-collection \
               --o-run-ids fondue-output/run_ids.qza \
               --o-study-ids fondue-output/study_ids.qza \
               --o-bioproject-ids fondue-output/bioproject_ids.qza \
+              --o-other-ids other_ids.qza \
               --verbose
 ```
 where:
@@ -237,8 +238,10 @@ where:
 - `--o-run-ids` is the output artifact containing the scraped run IDs and associated DOI names.
 - `--o-study-ids` is the output artifact containing the scraped study IDs and associated DOI names.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs and associated DOI names.
+- `--o-other-ids` is the output artifact containing the scraped sample and experiment IDs.
 
-To investigate which run, study and BioProject IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
+
+To investigate which run, study, BioProject and other IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
 ```shell
 qiime metadata tabulate \
       --m-input-file fondue-output/run_ids.qza \

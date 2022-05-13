@@ -211,7 +211,8 @@ plugin.methods.register_function(
     },
     outputs=[('run_ids', NCBIAccessionIDs),
              ('study_ids', NCBIAccessionIDs),
-             ('bioproject_ids', NCBIAccessionIDs)],
+             ('bioproject_ids', NCBIAccessionIDs),
+             ('other_ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
         'library_type': 'Zotero API library type.',
@@ -235,7 +236,10 @@ plugin.methods.register_function(
                      'from a Zotero collection and associated DOI names.',
         'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
                           'from a Zotero collection and associated '
-                          'DOI names.'
+                          'DOI names.',
+        'other_ids': 'Artifact containing all sample and experiment IDs '
+                     'scraped from a Zotero collection and associated '
+                     'DOI names.'
     },
     name='Scrape Zotero collection for run, study and BioProject IDs and '
     'if available associated DOI names.',
