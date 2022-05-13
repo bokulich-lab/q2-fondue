@@ -216,15 +216,15 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
 
 
 def _find_accession_ids(txt: str, id_type: str) -> list:
-    """Returns list of run, study or BioProject IDs found in `txt`.
+    """Returns list of run, study, BioProject and other IDs found in `txt`.
 
-    Searching for these patterns of accession IDs as they are
-    currently supported by q2fondue:
+    Searching for these patterns of accession IDs that are currently
+    supported by other q2fondue actions:
     ProjectID: PRJ(E|D|N)[A-Z][0-9]+
     studyID: (E|D|S)RP[0-9]{6,}
     runID: (E|D|S)RR[0-9]{6,}
     Also sample and experiment IDs are fetched grouped as 'other' IDs
-    as the other q2fondue actions do not support them yet:
+    as the q2fondue actions do not support them yet:
     experiment ID: (E|D|S)RX[0-9]{6,}
     sample ID: (E|D|S)RS[0-9]{6,}
 
@@ -339,7 +339,7 @@ def scrape_collection(
             logger.warning(f'Item {attach_key} doesn\'t contain any '
                            f'full-text content')
 
-        # find accession (run, study and bioproject) IDs
+        # find accession IDs
         for type in doi_dicts.keys():
             ids = _find_accession_ids(str_text, type)
             # match found accession IDs with DOI

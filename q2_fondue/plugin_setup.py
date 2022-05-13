@@ -241,11 +241,11 @@ plugin.methods.register_function(
                      'scraped from a Zotero collection and associated '
                      'DOI names.'
     },
-    name='Scrape Zotero collection for run, study and BioProject IDs and '
-    'if available associated DOI names.',
+    name='Scrape Zotero collection for run, study, BioProject and other IDs, '
+    'and associated DOI names.',
     description=(
-        'Scrape attachment files of a Zotero collection for run, study and '
-        'BioProject IDs and associated DOI names.'
+        'Scrape attachment files of a Zotero collection for run, study, '
+        'BioProject and other IDs, and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
