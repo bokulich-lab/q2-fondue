@@ -220,13 +220,13 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
     Searching for these patterns of accession IDs that are currently
     supported by other q2fondue actions:
-    ProjectID: PRJ(E|D|N)[A-Z][0-9]+
-    studyID: (E|D|S)RP[0-9]{6,}
-    runID: (E|D|S)RR[0-9]{6,}
+    BioProject ID: PRJ(E|D|N)[A-Z][0-9]+
+    Study ID: (E|D|S)RP[0-9]{6,}
+    Run ID: (E|D|S)RR[0-9]{6,}
     Also sample and experiment IDs are fetched grouped as 'other' IDs
     as the q2fondue actions do not support them yet:
-    experiment ID: (E|D|S)RX[0-9]{6,}
-    sample ID: (E|D|S)RS[0-9]{6,}
+    Experiment ID: (E|D|S)RX[0-9]{6,}
+    Sample ID: (E|D|S)RS[0-9]{6,}
 
 
     Args:
@@ -238,14 +238,11 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
         list: List of run, study, BioProject or other IDs found.
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
-    if id_type == 'run':
-        pattern = r'[EDS]RR\s?\d+'
-    elif id_type == 'study':
-        pattern = r'[EDS]RP\s?\d+'
-    elif id_type == 'bioproject':
-        pattern = r'PRJ[EDN][A-Z]\s?\d+'
-    elif id_type == 'other':
-        pattern = r'[EDS]R[XS]\s?\d+'
+    patterns = {
+        'run': r'[EDS]RR\s?\d+', 'study': r'[EDS]RP\s?\d+',
+        'bioproject': r'PRJ[EDN][A-Z]\s?\d+', 'other': r'[EDS]R[XS]\s?\d+'
+    }
+    pattern = patterns[id_type]
 
     ids = re.findall(f'({pattern})', txt)
     # remove potential whitespace
@@ -292,8 +289,9 @@ def scrape_collection(
         log_level (str, default='INFO'): Logging level.
 
     Returns:
-        tuple(pd.DataFrame): Dataframes with run, study, BioProject and other
-        accession IDs and associated DOI names scraped from Zotero collection.
+        (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame): Dataframes
+        with run, study, BioProject and other accession IDs and associated
+        DOI names scraped from Zotero collection.
     """
     logger.setLevel(log_level.upper())
 
@@ -340,24 +338,21 @@ def scrape_collection(
                            f'full-text content')
 
         # find accession IDs
-        for type in doi_dicts.keys():
-            ids = _find_accession_ids(str_text, type)
+        for id_type in doi_dicts.keys():
+            ids = _find_accession_ids(str_text, id_type)
             # match found accession IDs with DOI
-            doi_dicts[type] = _expand_dict(doi_dicts[type], ids, doi)
+            doi_dicts[id_type] = _expand_dict(doi_dicts[id_type], ids, doi)
 
-    if len(doi_dicts['run']) + len(doi_dicts['study']) + \
-            len(doi_dicts['bioproject']) + len(doi_dicts['other']) == 0:
+    if sum([len(v) for _, v in doi_dicts.items()]) == 0:
         raise NoAccessionIDs(f'The provided collection {collection_name} does '
                              f'not contain any accession IDs.')
-    for type in doi_dicts.keys():
-        if len(doi_dicts[type]) == 0:
+    for id_type in doi_dicts.keys():
+        if len(doi_dicts[id_type]) == 0:
             logger.warning(f'The provided collection {collection_name} '
-                           f'does not contain any {type} IDs')
+                           f'does not contain any {id_type} IDs')
 
     dfs = []
-    for doi_dict in (
-            doi_dicts['run'], doi_dicts['study'], doi_dicts['bioproject'],
-            doi_dicts['other']):
+    for doi_dict in doi_dicts.values():
         df = pd.DataFrame.from_dict([doi_dict]).transpose()
         df.columns = ['DOI']
         df.index.name = 'ID'

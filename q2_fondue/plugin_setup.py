@@ -59,6 +59,9 @@ output_descriptions = {
                    'with their corresponding error messages.'
 }
 
+output_scraper_txt = 'Artifact containing all {} IDs scraped from ' \
+                     'a Zotero collection and associated DOI names.'
+
 citations = Citations.load('citations.bib', package='q2_fondue')
 
 plugin = Plugin(
@@ -230,16 +233,10 @@ plugin.methods.register_function(
         'log_level': 'Logging level.'
     },
     output_descriptions={
-        'run_ids': 'Artifact containing all run IDs scraped '
-                   'from a Zotero collection and associated DOI names.',
-        'study_ids': 'Artifact containing all study IDs scraped '
-                     'from a Zotero collection and associated DOI names.',
-        'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
-                          'from a Zotero collection and associated '
-                          'DOI names.',
-        'other_ids': 'Artifact containing all sample and experiment IDs '
-                     'scraped from a Zotero collection and associated '
-                     'DOI names.'
+        'run_ids': output_scraper_txt.format('run'),
+        'study_ids': output_scraper_txt.format('study'),
+        'bioproject_ids': output_scraper_txt.format('BioProject'),
+        'other_ids': output_scraper_txt.format('sample and experiment')
     },
     name='Scrape Zotero collection for run, study, BioProject and other IDs, '
     'and associated DOI names.',

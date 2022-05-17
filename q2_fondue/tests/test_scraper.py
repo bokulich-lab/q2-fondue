@@ -284,15 +284,10 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
 
     def _create_exp_out(self, study_entry):
         exp_out = 4 * [self._create_doi_id_dataframe({})]
+        keys = ['run', 'study', 'bioproject', 'other']
+        indices = dict(zip(keys, range(len(keys))))
         for key, value in study_entry.items():
-            if key == 'run':
-                index = 0
-            elif key == 'study':
-                index = 1
-            elif key == 'bioproject':
-                index = 2
-            elif key == 'other':
-                index = 3
+            index = indices[key]
             exp_out[index] = self._create_doi_id_dataframe(value)
         return exp_out
 

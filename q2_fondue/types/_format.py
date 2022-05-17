@@ -88,8 +88,8 @@ class NCBIAccessionIDsFormat(model.TextFileFormat):
     """
 
     ALLOWED_PREFIXES = tuple(itertools.chain(*[
-        v for k, v in PREFIX.items() if k in ('bioproject', 'run', 'study',
-                                              'sample', 'experiment')
+        v for k, v in PREFIX.items()
+        if k in ('bioproject', 'run', 'study', 'sample', 'experiment')
     ]))
 
     def _validate_id(self, _id: str):

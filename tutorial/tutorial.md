@@ -227,7 +227,7 @@ qiime fondue scrape-collection \
               --o-run-ids fondue-output/run_ids.qza \
               --o-study-ids fondue-output/study_ids.qza \
               --o-bioproject-ids fondue-output/bioproject_ids.qza \
-              --o-other-ids other_ids.qza \
+              --o-other-ids fondue-output/other_ids.qza \
               --verbose
 ```
 where:
