@@ -56,7 +56,7 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 | `get-all`        | Fetch sequences and metadata by run, study or BioProject IDs from the SRA repo. |
 | `merge-metadata` | Merge several metadata files into a single metadata object.              |
 | `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`| Scrape Zotero collection for run and BioProject IDs and associated DOI names.|
+| `scrape-collection`| Scrape Zotero collection for run, study, BioProject, sample and experiment IDs and associated DOI names.|
 
 
 ### Import run/BioProject accession IDs
@@ -79,8 +79,7 @@ where:
 
 __Note:__ the input TSV file needs to consist of a single column named "ID".
 
-2) To scrape all run and BioProject IDs with associated DOI names from an existing web Zotero library collection into a `NCBIAccessionIDs`
-artifact run:
+2) To scrape all run, study, BioProject and other IDs with associated DOI names from an existing web Zotero library collection into a `NCBIAccessionIDs` artifact run:
 ```shell
 qiime fondue scrape-collection \
               --p-library-type user \
@@ -88,7 +87,9 @@ qiime fondue scrape-collection \
               --p-api-key my_key \
               --p-collection-name collection_name \
               --o-run-ids run_ids.qza \
-              --o-bioproject-ids bioproject_ids.qza
+              --o-study-ids study_ids.qza \
+              --o-bioproject-ids bioproject_ids.qza \
+              --o-other-ids other_ids.qza
 ```
 where:
 - `--p-library-type` is the Zotero API library type 'user' or 'group'.
@@ -96,7 +97,9 @@ where:
 - `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 - `--p-collection-name` is the name of the collection to be scraped.
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
+- `--o-study-ids` is the output artifact containing the scraped study IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
+- `--o-other-ids` is the output artifact containing the scraped sample and experiment IDs.
 
 __Note:__ To retrieve all required IDs from Zotero, you must be logged in.
 

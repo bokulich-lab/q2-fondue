@@ -81,21 +81,23 @@ SRAFailedIDsDirFmt = model.SingleFileDirectoryFormat(
 
 class NCBIAccessionIDsFormat(model.TextFileFormat):
     """
-    This is a format used to store a list of SRA run, study or BioProject
-    IDs, which can be converted to QIIME's metadata and input into any fondue
-    action.
+    This is a format used to store a list of SRA accession IDs (run,
+    study, BioProject, sample and experiment IDs), which can be converted
+    to QIIME's metadata. Artifacts containing of run, study and BioProject
+    IDs can be input into any fondue action.
     """
 
     ALLOWED_PREFIXES = tuple(itertools.chain(*[
-        v for k, v in PREFIX.items() if k in ('bioproject', 'run', 'study')
+        v for k, v in PREFIX.items()
+        if k in ('bioproject', 'run', 'study', 'sample', 'experiment')
     ]))
 
     def _validate_id(self, _id: str):
         if not _id.startswith(self.ALLOWED_PREFIXES):
             raise ValidationError(
-                'Some of the provided IDs are invalid - only SRA run, study '
-                'and BioProject IDs are allowed. Please check your input '
-                'and try again.'
+                'Some of the provided IDs are invalid - only SRA run, study, '
+                'BioProject, sample and experiment IDs are allowed. Please '
+                'check your input and try again.'
             )
 
     def _validate_(self, level):

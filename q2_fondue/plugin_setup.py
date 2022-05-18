@@ -59,6 +59,9 @@ output_descriptions = {
                    'with their corresponding error messages.'
 }
 
+output_scraper_txt = 'Artifact containing all {} IDs scraped from ' \
+                     'a Zotero collection and associated DOI names.'
+
 citations = Citations.load('citations.bib', package='q2_fondue')
 
 plugin = Plugin(
@@ -210,7 +213,9 @@ plugin.methods.register_function(
         'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
     },
     outputs=[('run_ids', NCBIAccessionIDs),
-             ('bioproject_ids', NCBIAccessionIDs), ],
+             ('study_ids', NCBIAccessionIDs),
+             ('bioproject_ids', NCBIAccessionIDs),
+             ('other_ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
         'library_type': 'Zotero API library type.',
@@ -228,17 +233,16 @@ plugin.methods.register_function(
         'log_level': 'Logging level.'
     },
     output_descriptions={
-        'run_ids': 'Artifact containing all run IDs scraped '
-                   'from a Zotero collection and associated DOI names.',
-        'bioproject_ids': 'Artifact containing all BioProject IDs scraped '
-                          'from a Zotero collection and associated '
-                          'DOI names.'
+        'run_ids': output_scraper_txt.format('run'),
+        'study_ids': output_scraper_txt.format('study'),
+        'bioproject_ids': output_scraper_txt.format('BioProject'),
+        'other_ids': output_scraper_txt.format('sample and experiment')
     },
-    name='Scrape Zotero collection for run and BioProject IDs and '
-    'if available associated DOI names.',
+    name='Scrape Zotero collection for run, study, BioProject and other IDs, '
+    'and associated DOI names.',
     description=(
-        'Scrape attachment files of a Zotero collection for run and '
-        'BioProject IDs and associated DOI names.'
+        'Scrape attachment files of a Zotero collection for run, study, '
+        'BioProject and other IDs, and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
