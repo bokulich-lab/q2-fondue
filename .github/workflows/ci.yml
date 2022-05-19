@@ -63,7 +63,7 @@ jobs:
 
     - uses: qiime2/action-library-packaging@alpha1
       with:
-        package-name: q2-assembly
-        additional-tests: pytest --pyargs q2_assembly
+        package-name: q2-fondue
+        additional-tests: pytest --pyargs q2_fondue
         build-target: dev
         library-token: ${{ secrets.LIBRARY_TOKEN }}
