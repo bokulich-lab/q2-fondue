@@ -41,12 +41,7 @@ echo "Testing installation..."
 if [[ $(which prefetch) == "$CONDA_PREFIX/bin"* ]]; then
   echo "Success!"
 else
-  echo "Installation failed. Command 'which prefetch' returned:"
-  which prefetch
-  echo "conda prefix: ${CONDA_PREFIX}"
-  echo "build prefix: ${BUILD_PREFIX}"
-  conda info
-  ls "${CONDA_PREFIX}/bin"
+  echo "Installation failed."
   exit 1
 fi
 
