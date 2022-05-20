@@ -30,6 +30,9 @@ rm sratoolkit.tar.gz
 mv "sratoolkit.${TOOLKIT_VER}-${OS_VER}/" "sratoolkit/"
 
 echo "Installing SRA Tools in $CONDA_PREFIX..."
+if [[ ! -d "$CONDA_PREFIX/bin/" ]]; then
+  mkdir $CONDA_PREFIX/bin/
+fi
 find sratoolkit/bin/ -maxdepth 1 -type f -exec mv -f {} $CONDA_PREFIX/bin/ \;
 find sratoolkit/bin/ -maxdepth 1 -type l -exec mv -f {} $CONDA_PREFIX/bin/ \;
 rm -r sratoolkit
@@ -38,7 +41,12 @@ echo "Testing installation..."
 if [[ $(which prefetch) == "$CONDA_PREFIX/bin"* ]]; then
   echo "Success!"
 else
-  echo "Installation failed."
+  echo "Installation failed. Command 'which prefetch' returned:"
+  which prefetch
+  echo "conda prefix: ${CONDA_PREFIX}"
+  echo "build prefix: ${BUILD_PREFIX}"
+  conda info
+  ls "${CONDA_PREFIX}/bin"
   exit 1
 fi
 
