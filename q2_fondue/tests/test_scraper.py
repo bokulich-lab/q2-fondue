@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
 import json
 import pandas as pd
 import logging
@@ -275,6 +276,8 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertDictEqual(exp_out, obs_out)
 
 
+@patch.dict(os.environ, {"TYPE": "user", "USERID": "12345",
+                         "APIKEY": "myuserkey"})
 class TestCollectionScraping(TestUtils4CollectionScraping):
     package = 'q2_fondue.tests'
 
@@ -316,8 +319,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'bioproject': {'PRJEB4519': [doi]},
             'other': {'ERS115020': [doi]}
         })
-        obs_out = scrape_collection(
-            "user", "12345", "myuserkey", "test_collection")
+        obs_out = scrape_collection("test_collection")
         for i in range(0, 4):
             assert_frame_equal(exp_out[i], obs_out[i])
 
@@ -342,8 +344,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'run': {'ERR2765209': ['10.1038/s41467-021-26215-w']}})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection(
-                "user", "12345", "myuserkey", "test_collection")
+            obs_out = scrape_collection("test_collection")
             for type in ['study', 'bioproject', 'other']:
                 self.assertIn(
                     f'WARNING:q2_fondue.scraper:The provided collection '
@@ -373,8 +374,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'bioproject': {'PRJEB4519': ['10.1038/s41467-021-26215-w']}})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection(
-                "user", "12345", "myuserkey", "test_collection")
+            obs_out = scrape_collection("test_collection")
             for type in ['study', 'run', 'other']:
                 self.assertIn(
                     f'WARNING:q2_fondue.scraper:The provided collection '
@@ -404,8 +404,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'study': {'ERP123456': ['10.1038/s41467-021-26215-w']}})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection(
-                "user", "12345", "myuserkey", "test_collection")
+            obs_out = scrape_collection("test_collection")
             for type in ['bioproject', 'run', 'other']:
                 self.assertIn(
                     f'WARNING:q2_fondue.scraper:The provided collection '
@@ -435,8 +434,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'other': {'ERS115020': ['10.1038/s41467-021-26215-w']}})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection(
-                "user", "12345", "myuserkey", "test_collection")
+            obs_out = scrape_collection("test_collection")
             for type in ['bioproject', 'run', 'study']:
                 self.assertIn(
                     f'WARNING:q2_fondue.scraper:The provided collection '
@@ -465,8 +463,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         with self.assertRaisesRegex(
             NoAccessionIDs, f'collection {col_name} does not'
         ):
-            scrape_collection("user", "12345",
-                              "myuserkey", col_name)
+            scrape_collection(col_name)
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -489,8 +486,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'bioproject': {'PRJEB4519': ['10.1038/s41467-021-26215-w']}})
 
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection("user", "12345",
-                                        "myuserkey", "test_collection")
+            obs_out = scrape_collection("test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:Item DMJ4AQ48 doesn't contain "
                 "any full-text content",
@@ -519,8 +515,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         exp_out = self._create_exp_out({
             'bioproject': {'PRJEB4519': ['']}})
 
-        obs_out = scrape_collection("user", "12345",
-                                    "myuserkey", "test_collection")
+        obs_out = scrape_collection("test_collection")
         for i in range(0, 4):
             assert_frame_equal(exp_out[i], obs_out[i])
 
@@ -542,8 +537,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
                                          "totalPages": 50
                                      }]
         with self.assertRaisesRegex(KeyError, 'no items with associated DOI'):
-            scrape_collection("user", "12345", "myuserkey",
-                              "test_collection", on_no_dois='error')
+            scrape_collection("test_collection", on_no_dois='error')
 
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
@@ -569,8 +563,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'bioproject': {'PRJEB7777': ['10.1038/s41586-021-04177-9'],
                            'PRJEB4519': ['10.1038/s41586-021-04177-9',
                                          '10.1038/s41564-022-01070-7']}})
-        obs_out = scrape_collection("user", "12345",
-                                    "myuserkey", "test_collection")
+        obs_out = scrape_collection("test_collection")
         for i in range(0, 4):
             exp_out[i].sort_index(inplace=True)
             obs_out[i].sort_index(inplace=True)

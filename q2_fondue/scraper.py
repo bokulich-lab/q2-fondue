@@ -5,6 +5,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import os
+import dotenv
 import re
 import pandas as pd
 from pyzotero import zotero, zotero_errors
@@ -268,22 +270,13 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
 
 def scrape_collection(
-    library_type: str, user_id: str, api_key: str, collection_name: str,
-    on_no_dois: str = 'ignore', log_level: str = 'INFO'
+    collection_name: str, on_no_dois: str = 'ignore', log_level: str = 'INFO'
 ) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
     Scrapes Zotero collection for accession IDs (run, study, BioProject,
     experiment and sample) and associated DOI names.
 
     Args:
-        library_type (str): Zotero API library type
-        user_id (str): Valid Zotero API userID (for library_type 'user'
-            extract from https://www.zotero.org/settings/keys, for 'group'
-            extract by hovering over group name in
-            https://www.zotero.org/groups/).
-        api_key (str): Valid Zotero API user key (retrieve from
-            https://www.zotero.org/settings/keys/new checking
-            'Allow library access').
         collection_name (str): Name of the collection to be scraped.
         on_no_dois (str): Behavior if no DOIs were found.
         log_level (str, default='INFO'): Logging level.
@@ -295,16 +288,17 @@ def scrape_collection(
     """
     logger.setLevel(log_level.upper())
 
+    dotenv.load_dotenv()
+
     logger.info(
-        f'Scraping accession IDs for collection "{collection_name}" in '
-        f'{library_type} library with user ID {user_id}...'
+        f'Scraping accession IDs for collection "{collection_name}"...'
     )
 
     # initialise Zotero instance
     zot = zotero.Zotero(
-        user_id,
-        library_type,
-        api_key)
+        os.getenv('USERID'),
+        os.getenv('TYPE'),
+        os.getenv('APIKEY'))
 
     # get collection id
     coll_id = _get_collection_id(zot, collection_name)
