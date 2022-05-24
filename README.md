@@ -84,11 +84,11 @@ where:
 __Note:__ the input TSV file needs to consist of a single column named "ID".
 
 2) To scrape all run and BioProject IDs from an existing web Zotero library collection into a `NCBIAccessionIDs` artifact run, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
-* `TYPE` is the Zotero library type 'user' or 'group'.
-* `USERID` is a valid Zotero user ID. If `TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
-* `APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+* `ZOTERO_TYPE` is the Zotero library type 'user' or 'group'.
+* `ZOTERO_USERID` is a valid Zotero user ID. If `ZOTERO_TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `ZOTERO_TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
+* `ZOTERO_APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 
-To set these environment variables run the following commands in your terminal for each of the three required variables: `export TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`). 
+To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`). 
 
 __Note:__ To retrieve all required entries from Zotero, you must be logged in.
 

@@ -218,11 +218,11 @@ qiime fondue get-sequences \
 ### Scraping run, study and BioProject IDs from a Zotero web library collection
 
 For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject and other IDs with associated DOI names from an existing Zotero web library collection, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
-* `TYPE` is the Zotero API library type 'user' or 'group'.
-* `USERID` is a valid Zotero user ID. If `TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
-* `APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+* `ZOTERO_TYPE` is the Zotero API library type 'user' or 'group'.
+* `ZOTERO_USERID` is a valid Zotero user ID. If `ZOTERO_TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `ZOTERO_TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
+* `ZOTERO_APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 
-To set these environment variables run the following commands in your terminal for each of the three required variables: `export TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in your version control (e.g., by adding it to `.gitignore`). 
+To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in your version control (e.g., by adding it to `.gitignore`). 
 ```shell
 qiime fondue scrape-collection \
               --p-collection-name collection_name \

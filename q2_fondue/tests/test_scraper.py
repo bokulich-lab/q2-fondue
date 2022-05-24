@@ -276,8 +276,8 @@ class TestUtils4CollectionScraping(TestPluginBase):
         self.assertDictEqual(exp_out, obs_out)
 
 
-@patch.dict(os.environ, {"TYPE": "user", "USERID": "12345",
-                         "APIKEY": "myuserkey"})
+@patch.dict(os.environ, {"ZOTERO_TYPE": "user", "ZOTERO_USERID": "12345",
+                         "ZOTERO_APIKEY": "myuserkey"})
 class TestCollectionScraping(TestUtils4CollectionScraping):
     package = 'q2_fondue.tests'
 

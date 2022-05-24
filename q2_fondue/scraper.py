@@ -296,9 +296,9 @@ def scrape_collection(
 
     # initialise Zotero instance
     zot = zotero.Zotero(
-        os.getenv('USERID'),
-        os.getenv('TYPE'),
-        os.getenv('APIKEY'))
+        os.getenv('ZOTERO_USERID'),
+        os.getenv('ZOTERO_TYPE'),
+        os.getenv('ZOTERO_APIKEY'))
 
     # get collection id
     coll_id = _get_collection_id(zot, collection_name)
