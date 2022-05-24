@@ -72,7 +72,7 @@ First, activate your QIIME 2 environment and install relevant dependencies:
 conda activate qiime2
 
 conda install -c conda-forge -c bioconda -c defaults \
- "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero
+ "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero dotenv
 ```
 
 Then, we are installing and configuring the wrapped SRA Toolkit with the script provided in this repo:

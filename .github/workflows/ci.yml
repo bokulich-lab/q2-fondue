@@ -42,7 +42,7 @@ jobs:
         auto-activate-base: false
     - name: run tests
       run: |
-        conda install -c conda-forge -c bioconda -c defaults -y "entrezpy>=2.1.2" xmltodict "tqdm>=4.62.3" pyzotero
+        conda install -c conda-forge -c bioconda -c defaults -y "entrezpy>=2.1.2" xmltodict "tqdm>=4.62.3" pyzotero dotenv
         make dev
         qiime dev refresh-cache
         make test
