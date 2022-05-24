@@ -205,9 +205,6 @@ plugin.methods.register_function(
     function=scrape_collection,
     inputs={},
     parameters={
-        'library_type': Str % Choices(['user', 'group']),
-        'user_id': Str,
-        'api_key': Str,
         'collection_name': Str,
         'on_no_dois': Str % Choices(['ignore', 'error']),
         'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR'])
@@ -218,16 +215,6 @@ plugin.methods.register_function(
              ('other_ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
-        'library_type': 'Zotero API library type.',
-        'user_id': 'Valid Zotero user ID (for library_type \'user\' '
-                   'extract from \'your userID for use in API calls\' in '
-                   'https://www.zotero.org/settings/keys, '
-                   'for \'group\' extract by hovering over group name '
-                   'in https://www.zotero.org/groups/).',
-        'api_key': 'Valid Zotero API user key (retrieve from '
-                   'https://www.zotero.org/settings/keys/new checking '
-                   '"Allow library access" and for \'group\' library '
-                   '"Read/Write" permissions ).',
         'collection_name': 'Name of the collection to be scraped.',
         'on_no_dois': 'Behavior if no DOIs were found.',
         'log_level': 'Logging level.'

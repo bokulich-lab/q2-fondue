@@ -21,6 +21,7 @@ requirements:
     - python {{ python }}
     - xmltodict
     - pyzotero
+    - python-dotenv
     - tqdm >=4.62.3
     - entrezpy >=2.1.2
     - q2-types {{ release }}.*

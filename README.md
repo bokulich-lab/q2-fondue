@@ -18,7 +18,7 @@ Before q2-fondue is available *via* conda, you can use the following instruction
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero python-dotenv
 
 conda activate fondue
 ```
@@ -83,29 +83,29 @@ where:
 
 __Note:__ the input TSV file needs to consist of a single column named "ID".
 
-2) To scrape all run, study, BioProject and other IDs with associated DOI names from an existing web Zotero library collection into a `NCBIAccessionIDs` artifact run:
+2) To scrape all run and BioProject IDs from an existing web Zotero library collection into a `NCBIAccessionIDs` artifact run, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
+* `ZOTERO_TYPE` is the Zotero library type 'user' or 'group'.
+* `ZOTERO_USERID` is a valid Zotero user ID. If `ZOTERO_TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `ZOTERO_TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
+* `ZOTERO_APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
+
+To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`). 
+
+__Note:__ To retrieve all required entries from Zotero, you must be logged in.
+
 ```shell
 qiime fondue scrape-collection \
-              --p-library-type user \
-              --p-user-id user_id \
-              --p-api-key my_key \
               --p-collection-name collection_name \
               --o-run-ids run_ids.qza \
               --o-study-ids study_ids.qza \
               --o-bioproject-ids bioproject_ids.qza \
-              --o-other-ids other_ids.qza
+              --o-other-ids other_ids.qza --verbose
 ```
 where:
-- `--p-library-type` is the Zotero API library type 'user' or 'group'.
-- `--p-user-id` is a valid Zotero user ID. If `--p-library-type` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `--p-library-type` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
-- `--p-api-key` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 - `--p-collection-name` is the name of the collection to be scraped.
 - `--o-run-ids` is the output artifact containing the scraped run IDs.
 - `--o-study-ids` is the output artifact containing the scraped study IDs.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
 - `--o-other-ids` is the output artifact containing the scraped sample and experiment IDs.
-
-__Note:__ To retrieve all required IDs from Zotero, you must be logged in.
 
 ### Fetching metadata
 To fetch metadata associated with a number of run or project IDs, execute the following command:
