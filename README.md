@@ -1,11 +1,15 @@
 # q2-fondue
 ![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/bokulich-lab/q2-fondue/branch/main/graph/badge.svg?token=UTM4W4B1KW)](https://codecov.io/gh/bokulich-lab/q2-fondue)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6388476.svg)](https://doi.org/10.5281/zenodo.6388476)
 [![DOI](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1101/2022.03.22.485322)
 
-<p align="left"><img src="logo.png" height="150" /></p>
-
-`q2-fondue` is a [QIIME 2](https://qiime2.org/) plugin for programmatic access to sequences and metadata from NCBI Sequence Read Archive (SRA). It enables user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles.
+<p>
+<img src="logo.png" height="150" align="left"/>
+<span>
+<b>q2-fondue</b> is a <a href="https://qiime2.org/">QIIME 2</a> plugin for programmatic access to sequences and metadata from NCBI Sequence Read Archive (SRA). It enables user-friendly acquisition, re-use, and management of public nucleotide sequence (meta)data while adhering to open data principles.
+</span>
+</p><br>
 
 ## Installation
 Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.

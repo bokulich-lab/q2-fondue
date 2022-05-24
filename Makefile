@@ -11,7 +11,8 @@ test: all
 	py.test
 
 test-cov: all
-	py.test --cov=q2_fondue
+	coverage run -m pytest
+	coverage xml
 
 install: all
 	bash install-sra-tools.sh
@@ -19,6 +20,7 @@ install: all
 
 dev: all
 	bash install-sra-tools.sh
+	pip install coverage
 	pip install -e .
 
 clean: distclean

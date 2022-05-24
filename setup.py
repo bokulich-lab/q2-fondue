@@ -29,7 +29,7 @@ setup(
     },
     package_data={
         'q2_fondue': ['citations.bib'],
-        'q2_fondue.tests': ['data/*'],
+        'q2_fondue.tests': ['data/*', 'data/*/*'],
         'q2_fondue.types.tests': ['data/*']
     },
     zip_safe=False,
