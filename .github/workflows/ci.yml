@@ -25,8 +25,7 @@ jobs:
         pip install -q flake8
         flake8
 
-  # this is temporary to run the tests
-  test:
+  coverage:
     needs: lint
     runs-on: ubuntu-latest
     defaults:
@@ -37,20 +36,34 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v2
       with:
         activate-environment: fondue-test-env
-        environment-file: temp-env.yml
-        channels: conda-forge,bioconda,qiime2,defaults
-        auto-activate-base: false
-    - name: run tests
+        mamba-version: "*"
+        channels: conda-forge
+    - name: Run tests with coverage
       run: |
-        conda install -c conda-forge -c bioconda -c defaults -y "entrezpy>=2.1.2" xmltodict "tqdm>=4.62.3" pyzotero dotenv
+        mamba install -c https://packages.qiime2.org/qiime2/2022.4/tested -c conda-forge -c bioconda -c defaults -y --file requirements.txt
         make dev
         qiime dev refresh-cache
-        make test
+        make test-cov
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        fail_ci_if_error: true
 
-#    - uses: qiime2/action-library-packaging@alpha1
-#      with:
-#        package-name: q2-fondue
-#        additional-tests: pytest --pyargs q2_fondue
-#        # TODO: update this to `release` when tagging release
-#        build-target: staged
-#        library-token: ${{ secrets.LIBRARY_TOKEN }}
+  build-and-test:
+    needs: coverage
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        # necessary for versioneer
+        fetch-depth: 0
+
+    - uses: qiime2/action-library-packaging@alpha1
+      with:
+        package-name: q2-fondue
+        additional-tests: pytest --pyargs q2_fondue
+        build-target: dev
+        library-token: ${{ secrets.LIBRARY_TOKEN }}
