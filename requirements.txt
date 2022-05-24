@@ -1,0 +1,8 @@
+entrezpy>=2.1.2
+pyzotero
+q2-types
+q2cli
+q2templates
+tqdm>=4.62.3
+xmltodict
+dotenv
