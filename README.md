@@ -18,7 +18,7 @@ Before q2-fondue is available *via* conda, you can use the following instruction
 ```shell
 conda create -y -n fondue \
    -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero dotenv
+  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero python-dotenv
 
 conda activate fondue
 ```

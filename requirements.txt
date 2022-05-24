@@ -5,4 +5,4 @@ q2cli
 q2templates
 tqdm>=4.62.3
 xmltodict
-dotenv
+python-dotenv
