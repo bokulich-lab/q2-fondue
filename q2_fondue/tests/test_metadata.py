@@ -101,6 +101,20 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         exp = 'run'
         self.assertEqual(exp, obs)
 
+    def test_determine_id_type_experiment(self):
+        ids = ['ERX123', 'SRX123']
+
+        obs = _determine_id_type(ids)
+        exp = 'experiment'
+        self.assertEqual(exp, obs)
+
+    def test_determine_id_type_sample(self):
+        ids = ['ERS123', 'SRS123']
+
+        obs = _determine_id_type(ids)
+        exp = 'sample'
+        self.assertEqual(exp, obs)
+
     def test_determine_id_type_mixed(self):
         ids = ['SRS123', 'ERR123']
 
@@ -394,6 +408,34 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
 
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
+    def test_get_metadata_experiment(
+            self, patched_get_other_study, patched_get_run):
+        patched_get_other_study.return_value = (pd.DataFrame(), {})
+        ids_meta = Metadata.load(self.get_data_path('experiment_ids.tsv'))
+        _ = get_metadata(ids_meta, 'abc@def.com', 2)
+
+        patched_get_other_study.assert_called_once_with(
+            'abc@def.com', 2, ['ERX115020', 'SRX10331465'], 'experiment',
+            'INFO', ANY
+        )
+        patched_get_run.assert_not_called()
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
+    def test_get_metadata_sample(
+            self, patched_get_other_study, patched_get_run):
+        patched_get_other_study.return_value = (pd.DataFrame(), {})
+        ids_meta = Metadata.load(self.get_data_path('sample_ids.tsv'))
+        _ = get_metadata(ids_meta, 'abc@def.com', 2)
+
+        patched_get_other_study.assert_called_once_with(
+            'abc@def.com', 2, ['ERS147978', 'ERS3588233'], 'sample',
+            'INFO', ANY
+        )
+        patched_get_run.assert_not_called()
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_run_w_doi(
             self, patched_get_other_study, patched_get_run):
         meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
@@ -405,7 +447,55 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         self.assertTrue('DOI' in obs_meta.columns)
         assert_frame_equal(obs_meta[['DOI']], ids_meta.to_dataframe())
 
-    # todo: add test_get_metadata_study_w_doi
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
+    def test_get_metadata_study_w_doi(
+            self, patched_get_other_study, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
+                              sep='\t', index_col=0)
+        patched_get_other_study.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path('study_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
+        self.assertTrue('DOI' in obs_meta.columns)
+        for row in range(0, obs_meta.shape[0]):
+            assert_array_equal(
+                obs_meta[['Study ID', 'DOI']].values[row],
+                ids_meta.to_dataframe().reset_index().values[0])
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
+    def test_get_metadata_experiment_w_doi(
+            self, patched_get_other_study, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
+                              sep='\t', index_col=0)
+        patched_get_other_study.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path(
+            'experiment_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
+        self.assertTrue('DOI' in obs_meta.columns)
+        for row in range(0, obs_meta.shape[0]):
+            assert_array_equal(
+                obs_meta[['Experiment ID', 'DOI']].values[row],
+                ids_meta.to_dataframe().reset_index().values[0])
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    @patch('q2_fondue.metadata._get_other_meta')
+    def test_get_metadata_sample_w_doi(
+            self, patched_get_other_study, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
+                              sep='\t', index_col=0)
+        patched_get_other_study.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path(
+            'sample_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
+        self.assertTrue('DOI' in obs_meta.columns)
+        for row in range(0, obs_meta.shape[0]):
+            assert_array_equal(
+                obs_meta[['Sample Accession', 'DOI']].values[row],
+                ids_meta.to_dataframe().reset_index().values[0])
 
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
