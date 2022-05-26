@@ -33,8 +33,9 @@ common_inputs = {
 }
 
 common_input_descriptions = {
-    'accession_ids': 'Artifact containing run, study or BioProject IDs for '
-                     'which the metadata and/or sequences should be fetched.',
+    'accession_ids': 'Artifact containing run, study, BioProject, experiment '
+                     'or sample IDs for which the metadata and/or sequences '
+                     'should be fetched.',
 }
 
 common_params = {
@@ -88,11 +89,12 @@ plugin.methods.register_function(
         'metadata': output_descriptions['metadata'],
         'failed_runs': output_descriptions['failed_runs'].format('metadata')
     },
-    name='Fetch sequence-related metadata based on run, study or '
-         'BioProject ID.',
+    name='Fetch sequence-related metadata based on run, study, BioProject, '
+         'experiment or sample ID.',
     description=(
-        'Fetch sequence-related metadata based on run, study or BioProject ID '
-        'using Entrez. All metadata will be collapsed into one table.'
+        'Fetch sequence-related metadata based on run, study, BioProject, '
+        'experiment or sample ID using Entrez. All metadata will be collapsed '
+        'into one table.'
     ),
     citations=[citations['Buchmann2019']]
 )
@@ -149,10 +151,11 @@ plugin.pipelines.register_function(
         'failed_runs': output_descriptions['failed_runs'].format(
             'sequences and/or metadata ')
     },
-    name='Fetch sequence-related metadata and sequences of all run, study '
-         'or BioProject IDs.',
+    name='Fetch sequence-related metadata and sequences of all run, study, '
+         'BioProject, experiment or sample IDs.',
     description='Pipeline fetching all sequence-related metadata and raw '
-                'sequences of provided run, study or BioProject IDs.',
+                'sequences of provided run, study, BioProject, experiment '
+                'or sample IDs.',
     citations=[citations['Buchmann2019'], citations['SraToolkit']]
 )
 
@@ -212,7 +215,8 @@ plugin.methods.register_function(
     outputs=[('run_ids', NCBIAccessionIDs),
              ('study_ids', NCBIAccessionIDs),
              ('bioproject_ids', NCBIAccessionIDs),
-             ('other_ids', NCBIAccessionIDs)],
+             ('experiment_ids', NCBIAccessionIDs),
+             ('sample_ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
         'collection_name': 'Name of the collection to be scraped.',
@@ -223,13 +227,14 @@ plugin.methods.register_function(
         'run_ids': output_scraper_txt.format('run'),
         'study_ids': output_scraper_txt.format('study'),
         'bioproject_ids': output_scraper_txt.format('BioProject'),
-        'other_ids': output_scraper_txt.format('sample and experiment')
+        'experiment_ids': output_scraper_txt.format('experiment'),
+        'sample_ids': output_scraper_txt.format('sample')
     },
-    name='Scrape Zotero collection for run, study, BioProject and other IDs, '
-    'and associated DOI names.',
+    name='Scrape Zotero collection for run, study, BioProject, experiment and '
+    'sample IDs, and associated DOI names.',
     description=(
         'Scrape attachment files of a Zotero collection for run, study, '
-        'BioProject and other IDs, and associated DOI names.'
+        'BioProject, experiment and sample IDs, and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
 )
