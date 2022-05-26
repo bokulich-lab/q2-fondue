@@ -20,7 +20,7 @@ install: all
 
 dev: all
 	bash install-sra-tools.sh
-	pip install coverage
+	pip install coverage parameterized
 	pip install -e .
 
 clean: distclean
