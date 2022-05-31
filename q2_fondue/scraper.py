@@ -233,9 +233,10 @@ def _find_hyphen_sequence(
     Returns:
         list: List of accession IDs with hyphenated IDs included.
     """
-    # source of hyphens: https://stackoverflow.com/a/48923796
+    # source of hyphens: https://stackoverflow.com/a/48923796 with \u00ad added
     hyphens = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\
-    \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D]'
+    \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D\
+    \u00AD]'
     pattern_hyphen = pattern + r'\s*' + hyphens + r'\s*' + after_hyphen
     ids = []
     matches = re.findall(f'({pattern_hyphen})', txt)
@@ -374,6 +375,9 @@ def scrape_collection(
         # get text
         try:
             str_text = zot.fulltext_item(attach_key)['content']
+            # remove character frequently placed before soft hyphen, see
+            # https://stackoverflow.com/a/51976543
+            str_text = str_text.replace('\xad', '')
         except zotero_errors.ResourceNotFound:
             str_text = ''
             logger.warning(f'Item {attach_key} doesn\'t contain any '
