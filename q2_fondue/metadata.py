@@ -123,15 +123,17 @@ def get_metadata(
         accession_ids: Metadata, email: str,
         n_jobs: int = 1, log_level: str = 'INFO'
 ) -> (pd.DataFrame, pd.DataFrame):
-    """Fetches metadata using the provided run/bioproject accession IDs.
+    """Fetches metadata using the provided run/bioproject/study/sample or
+    experiment accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
     will be fetched only if all the IDs are valid. Otherwise, the user
     will be informed on which IDs require checking.
 
     Args:
-        accession_ids (Metadata): List of all the run/project IDs
-            to be fetched.
+        accession_ids (Metadata): List of all the accession IDs
+            to be fetched (either run, bioproject, study, sample or
+            experiment IDs).
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
@@ -165,13 +167,14 @@ def get_metadata(
         meta, invalid_ids = _get_other_meta(
             email, n_jobs, accession_ids, id_type, log_level, logger
         )
-        # if available, join DOI to meta by bioproject ID:
-        # todo: prettify quickfix below
-        if id2doi is not None and id_type == 'bioproject':
-            meta = meta.merge(id2doi, how='left', left_on='Bioproject ID',
-                              right_index=True)
-        elif id2doi is not None and id_type == 'study':
-            meta = meta.merge(id2doi, how='left', left_on='Study ID',
+        match_study_meta = {
+            'bioproject': 'Bioproject ID', 'study': 'Study ID',
+            'experiment': 'Experiment ID', 'sample': 'Sample Accession'
+        }
+        # if available, join DOI to meta by respective ID:
+        if id2doi is not None:
+            meta = meta.merge(id2doi, how='left',
+                              left_on=match_study_meta[id_type],
                               right_index=True)
 
     invalid_ids = pd.DataFrame(

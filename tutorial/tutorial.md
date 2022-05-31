@@ -11,6 +11,8 @@ Why use _q2-fondue_?
 * direct integration with QIIME 2 sequence analysis pipeline - see [Overview of QIIME 2 Plugin Workflows](https://docs.qiime2.org)
 * support for multiple user interfaces
 * no need to navigate online databases to retrieve data 
+* prevention of data loss upon space exhaustion
+* support for downloading (meta)data given a publication library
 
 This tutorial will give you an insight into working with q2-fondue and how its output artifacts can further be used. 
 
@@ -36,10 +38,11 @@ through variable nomenclature used by the different platforms and to actually fe
 | Projects       | PRJ(E\|D\|N)[A-Z][0-9]+ | PRJEB12345 |
 | Studies        | (E\|D\|S)RP[0-9]{6,}    | ERP123456  |
 | Experiments    | (E\|D\|S)RX[0-9]{6,}    | ERX123456  |
+| Samples        | (E\|D\|S)RS[0-9]{6,}    | ERS123456  | 
 | Runs           | (E\|D\|S)RR[0-9]{6,}    | ERR123456  | 
 
 
-Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. Study IDs also allow access to all raw sequencing data and corresponding metadata of the entire project. The subordinate _Runs_, contain the actual sequencing data of individual samples. BioProject, Study and Run ID are the three accession number types that can be used as input for _q2-fondue_. 
+Since the launch of BioProject IDs in 2011, this accession number is commonly referenced in most publications, allowing access to all raw sequencing data and corresponding metadata of the entire project<sup>1</sup>. Study, experiment and sample IDs also allow access to all raw sequencing data and corresponding metadata of the entire project. The subordinate _Runs_, contain the actual sequencing data of individual samples. All these accession number types can be used as input for fetching metadata and sequences with _q2-fondue_. 
 
 #### Database specific accession numbers:
 
@@ -102,7 +105,7 @@ First, let's move to the tutorial directory.
 cd tutorial
 ```
 
-To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs, Studies or BioProjects. 
+To run _q2-fondue_ we need a TSV file containing the accession numbers of the desired Runs, Studies, BioProjects, Experiments or Samples. 
 This metadata file has to contain a header QIIME 2 can recognize and we can for example put *id* as the column name. 
 To learn more about other options for identifiers used in QIIME 2 or learn about metadata in general, check out 
 the [QIIME 2 metadata documentation](docs.qiime2.org).
@@ -173,8 +176,7 @@ In this case we will therefore [continue](#what-now) with the *single_reads.qza*
 ## Other q2-fondue functionalities
 ### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
-Also for this action we can start with TSV a file with accession number of BioProjects, Studies or 
-individual Runs. 
+Also for this action we can start with TSV a file with accession number of BioProjects, Studies, Experiments, Samples or individual Runs. 
 
 ```shell
 qiime tools import \
@@ -215,9 +217,9 @@ qiime fondue get-sequences \
 
 > *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).  
 
-### Scraping run, study and BioProject IDs from a Zotero web library collection
+### Scraping IDs from a Zotero web library collection
 
-For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject and other IDs with associated DOI names from an existing Zotero web library collection, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
+For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject, experiment and samples IDs with associated DOI names from an existing Zotero web library collection, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
 * `ZOTERO_TYPE` is the Zotero API library type 'user' or 'group'.
 * `ZOTERO_USERID` is a valid Zotero user ID. If `ZOTERO_TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `ZOTERO_TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
 * `ZOTERO_APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
@@ -229,7 +231,8 @@ qiime fondue scrape-collection \
               --o-run-ids fondue-output/run_ids.qza \
               --o-study-ids fondue-output/study_ids.qza \
               --o-bioproject-ids fondue-output/bioproject_ids.qza \
-              --o-other-ids fondue-output/other_ids.qza \
+              --o-experiment-ids fondue-output/experiment_ids.qza \
+              --o-sample-ids fondue-output/sample_ids.qza \
               --verbose
 ```
 where:
@@ -237,10 +240,11 @@ where:
 - `--o-run-ids` is the output artifact containing the scraped run IDs and associated DOI names.
 - `--o-study-ids` is the output artifact containing the scraped study IDs and associated DOI names.
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs and associated DOI names.
-- `--o-other-ids` is the output artifact containing the scraped sample and experiment IDs.
+- `--o-experiment-ids` is the output artifact containing the scraped experiment IDs.
+- `--o-sample-ids` is the output artifact containing the scraped sample IDs.
 
 
-To investigate which run, study, BioProject and other IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
+To investigate which IDs were scraped from your collection, you can check out the respective output artifacts with the commands:
 ```shell
 qiime metadata tabulate \
       --m-input-file fondue-output/run_ids.qza \
@@ -266,6 +270,7 @@ qiime metadata tabulate \
 
 qiime tools view fondue-output/metadata.qzv
 ```
+> *Note:* make sure to have q2-metadata installed in your conda environment with `conda install -c qiime2 q2-metadata`.
 
 ### Using the sequencing data 
 Apart from avoiding the tedious search and manual downloading of these large piles of data, 

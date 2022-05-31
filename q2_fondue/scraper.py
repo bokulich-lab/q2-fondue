@@ -218,31 +218,32 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
 
 
 def _find_accession_ids(txt: str, id_type: str) -> list:
-    """Returns list of run, study, BioProject and other IDs found in `txt`.
+    """Returns list of run, study, BioProject, experiment and
+    sample IDs found in `txt`.
 
-    Searching for these patterns of accession IDs that are currently
+    Searching for these patterns of accession IDs that are all also
     supported by other q2fondue actions:
     BioProject ID: PRJ(E|D|N)[A-Z][0-9]+
     Study ID: (E|D|S)RP[0-9]{6,}
     Run ID: (E|D|S)RR[0-9]{6,}
-    Also sample and experiment IDs are fetched grouped as 'other' IDs
-    as the q2fondue actions do not support them yet:
     Experiment ID: (E|D|S)RX[0-9]{6,}
     Sample ID: (E|D|S)RS[0-9]{6,}
 
 
     Args:
         txt (str): Some text to search
-        id_type (str): Type of ID to search for 'run', 'study', 'bioproject'
-        or 'other' (latter includes experiment and sample IDs)
+        id_type (str): Type of ID to search for 'run', 'study', 'bioproject',
+        'experiment' or 'sample'.
 
     Returns:
-        list: List of run, study, BioProject or other IDs found.
+        list: List of run, study, BioProject, experiment or sample IDs found.
     """
     # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
     patterns = {
         'run': r'[EDS]RR\s?\d+', 'study': r'[EDS]RP\s?\d+',
-        'bioproject': r'PRJ[EDN][A-Z]\s?\d+', 'other': r'[EDS]R[XS]\s?\d+'
+        'bioproject': r'PRJ[EDN][A-Z]\s?\d+',
+        'experiment': r'[EDS]RX\s?\d+',
+        'sample': r'[EDS]RS\s?\d+',
     }
     pattern = patterns[id_type]
 
@@ -271,7 +272,7 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
 def scrape_collection(
     collection_name: str, on_no_dois: str = 'ignore', log_level: str = 'INFO'
-) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
+) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
     Scrapes Zotero collection for accession IDs (run, study, BioProject,
     experiment and sample) and associated DOI names.
@@ -282,9 +283,9 @@ def scrape_collection(
         log_level (str, default='INFO'): Logging level.
 
     Returns:
-        (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame): Dataframes
-        with run, study, BioProject and other accession IDs and associated
-        DOI names scraped from Zotero collection.
+        (pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame):
+        Dataframes with run, study, BioProject, experiment and sample IDs and
+        associated DOI names scraped from Zotero collection.
     """
     logger.setLevel(log_level.upper())
 
@@ -317,7 +318,8 @@ def scrape_collection(
     )
 
     # extract IDs from text of attachment items
-    doi_dicts = {'run': {}, 'study': {}, 'bioproject': {}, 'other': {}}
+    doi_dicts = {'run': {}, 'study': {}, 'bioproject': {}, 'experiment': {},
+                 'sample': {}}
 
     for attach_key in attach_keys:
         # get doi linked with this attachment key
