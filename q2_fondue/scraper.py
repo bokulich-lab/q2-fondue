@@ -313,8 +313,8 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
     # SPECIAL case 3: hyphenated sequence of IDs
     # "SRX100006-7" and "SRX100006-SRX100007" both yield "SRX100006, SRX100007"
-    ids += _find_hyphen_sequence(txt, pattern, r'\d+')
-    ids += _find_hyphen_sequence(txt, pattern, pattern)
+    for after_hyphen_pattern in [r'\d+', pattern]:
+        ids += _find_hyphen_sequence(txt, pattern, after_hyphen_pattern)
 
     return list(set(ids))
 
