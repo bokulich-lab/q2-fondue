@@ -14,7 +14,7 @@ from pandas._testing import assert_frame_equal
 from unittest.mock import patch
 from pyzotero import zotero, zotero_errors
 from q2_fondue.scraper import (
-    _find_special_id, _find_hyphen_sequence,
+    _find_special_id,
     _get_collection_id, _find_accession_ids,
     _find_doi_in_extra, _find_doi_in_arxiv_url,
     _get_parent_and_doi, _expand_dict,
