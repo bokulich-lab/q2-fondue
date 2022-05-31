@@ -266,6 +266,26 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
     pattern_and = pattern_comma + r'\sand\s\d+'
     ids += _find_special_id(txt, pattern_and, 'and')
 
+    # SPECIAL case 3: hyphenated sequence of IDs
+    # "SRX1479791-2" yields "SRX1479791, SRX1479792
+    # regex set for hyphens obtained from
+    # https://stackoverflow.com/questions/48923599/searching-for-all
+    # -unicode-variation-of-hyphens-in-python
+    hyphens = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\
+        \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D]'
+    pattern_hyphen = pattern + hyphens + r'\d+'
+
+    matches = re.findall(f'({pattern_hyphen})', txt)
+    if len(matches) > 0:
+        for match in matches:
+            split_match = re.split(hyphens, match)
+            nb_digits = len(split_match[-1])
+            base = split_match[0][:-nb_digits]
+            start = split_match[0][-nb_digits:]
+            end = split_match[-1][-nb_digits:]
+            for i in range(int(start), int(end) + 1):
+                ids += [base + str(i)]
+
     return list(set(ids))
 
 
