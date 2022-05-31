@@ -123,16 +123,17 @@ def get_metadata(
         accession_ids: Metadata, email: str,
         n_jobs: int = 1, log_level: str = 'INFO'
 ) -> (pd.DataFrame, pd.DataFrame):
-    """Fetches metadata using the provided run/bioproject/sample/experiment
-    accession IDs.
+    """Fetches metadata using the provided run/bioproject/study/sample or
+    experiment accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
     will be fetched only if all the IDs are valid. Otherwise, the user
     will be informed on which IDs require checking.
 
     Args:
-        accession_ids (Metadata): List of all the run/project IDs
-            to be fetched.
+        accession_ids (Metadata): List of all the accession IDs
+            to be fetched (either run, bioproject, study, sample or
+            experiment IDs).
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
