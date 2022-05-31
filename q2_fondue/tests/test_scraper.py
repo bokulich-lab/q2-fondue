@@ -9,6 +9,7 @@ import os
 import json
 import pandas as pd
 import logging
+from parameterized import parameterized
 from qiime2.plugin.testing import TestPluginBase
 from pandas._testing import assert_frame_equal
 from unittest.mock import patch
@@ -182,34 +183,17 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_ids = _find_special_id(txt, pattern, ':')
         self.assertListEqual(sorted(obs_ids), sorted(exp_ids))
 
-    def test_find_run_ids(self):
-        txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
-        exp_id = ['ERR2765209']
-        obs_id = _find_accession_ids(txt_w_2ids, 'run')
-        self.assertListEqual(sorted(obs_id), sorted(exp_id))
-
-    def test_find_study_ids(self):
-        txt_w_2ids = 'this data available in ERP123456'
-        exp_id = ['ERP123456']
-        obs_id = _find_accession_ids(txt_w_2ids, 'study')
-        self.assertListEqual(sorted(obs_id), sorted(exp_id))
-
-    def test_find_bioproject_ids(self):
-        txt_w_2ids = 'this data available in PRJEB4519 and ERR2765209'
-        exp_id = ['PRJEB4519']
-        obs_id = _find_accession_ids(txt_w_2ids, 'bioproject')
-        self.assertListEqual(sorted(obs_id), sorted(exp_id))
-
-    def test_find_other_experiment_ids(self):
-        txt_w_2ids = 'this data available in ERX115020'
-        exp_id = ['ERX115020']
-        obs_id = _find_accession_ids(txt_w_2ids, 'other')
-        self.assertListEqual(sorted(obs_id), sorted(exp_id))
-
-    def test_find_other_sample_ids(self):
-        txt_w_2ids = 'this data available in ERS115020'
-        exp_id = ['ERS115020']
-        obs_id = _find_accession_ids(txt_w_2ids, 'other')
+    @parameterized.expand([
+        ("run", "ERR2765209"),
+        ("study", "ERP123456"),
+        ("bioproject", "PRJEB4519"),
+        ("experiment", "ERX115020"),
+        ("sample", "ERS115020")
+        ])
+    def test_find_accession_ids(self, id_type, acc_id):
+        txt_w_2ids = f'this data available in {acc_id}'
+        exp_id = [acc_id]
+        obs_id = _find_accession_ids(txt_w_2ids, id_type)
         self.assertListEqual(sorted(obs_id), sorted(exp_id))
 
     def test_find_accession_ids_no_double(self):
@@ -329,10 +313,12 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
     @classmethod
     def setUpClass(cls) -> None:
         cls.fake_logger = logging.getLogger('test_log')
+        cls.all_id_types = ['run', 'study', 'bioproject',
+                            'experiment', 'sample']
 
     def _create_exp_out(self, study_entry):
-        exp_out = 4 * [self._create_doi_id_dataframe({})]
-        keys = ['run', 'study', 'bioproject', 'other']
+        exp_out = 5 * [self._create_doi_id_dataframe({})]
+        keys = ['run', 'study', 'bioproject', 'experiment', 'sample']
         indices = dict(zip(keys, range(len(keys))))
         for key, value in study_entry.items():
             index = indices[key]
@@ -351,8 +337,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'scraper_items_journalarticle.json')
         patch_zot_txt.return_value = {
             "content":
-            "This is full-text with PRJEB4519, ERP123456, ERR2765209 and "
-            "ERS115020",
+            "This is full-text with PRJEB4519, ERP123456, ERR2765209, "
+            "ERS115020 and ERX115020",
             "indexedPages": 50,
             "totalPages": 50
         }
@@ -362,125 +348,43 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             'run': {'ERR2765209': [doi]},
             'study': {'ERP123456': [doi]},
             'bioproject': {'PRJEB4519': [doi]},
-            'other': {'ERS115020': [doi]}
+            'experiment': {'ERX115020': [doi]},
+            'sample': {'ERS115020': [doi]}
         })
         obs_out = scrape_collection("test_collection")
         for i in range(0, 4):
             assert_frame_equal(exp_out[i], obs_out[i])
 
+    @parameterized.expand([
+        ("run", "ERR2765209"),
+        ("study", "ERP123456"),
+        ("bioproject", "PRJEB4519"),
+        ("experiment", "ERX115020"),
+        ("sample", "ERS115020")
+        ])
     @patch('q2_fondue.scraper._get_collection_id')
     @patch.object(zotero.Zotero, 'everything')
     @patch.object(zotero.Zotero, 'collection_items')
     @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_only_run_ids(
-            self, patch_zot_txt,
+    def test_collection_scraper_one_id_type(
+            self, id_type, acc_id, patch_zot_txt,
             patch_col, patch_items, patch_get_col_id):
         # define patched outputs
         patch_items.return_value = self._open_json_file(
             'scraper_items_journalarticle.json')
         patch_zot_txt.return_value = {
-            "content": "This is full-text with ERR2765209.",
+            "content": f"This is full-text with {acc_id}.",
             "indexedPages": 50,
             "totalPages": 50
         }
 
         # check
         exp_out = self._create_exp_out({
-            'run': {'ERR2765209': ['10.1038/s41467-021-26215-w']}})
-
+            id_type: {acc_id: ['10.1038/s41467-021-26215-w']}})
+        ls_other_types = [x for x in self.all_id_types if x != id_type]
         with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
             obs_out = scrape_collection("test_collection")
-            for type in ['study', 'bioproject', 'other']:
-                self.assertIn(
-                    f'WARNING:q2_fondue.scraper:The provided collection '
-                    f'test_collection does not contain any {type} IDs',
-                    cm.output
-                )
-            for i in range(0, 4):
-                assert_frame_equal(exp_out[i], obs_out[i])
-
-    @patch('q2_fondue.scraper._get_collection_id')
-    @patch.object(zotero.Zotero, 'everything')
-    @patch.object(zotero.Zotero, 'collection_items')
-    @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_only_project_ids(
-            self, patch_zot_txt,
-            patch_col, patch_items, patch_get_col_id):
-        # define patched outputs
-        patch_items.return_value = self._open_json_file(
-            'scraper_items_journalarticle.json')
-        patch_zot_txt.return_value = {
-            "content": "This is full-text with PRJEB4519.",
-            "indexedPages": 50,
-            "totalPages": 50
-        }
-        # check
-        exp_out = self._create_exp_out({
-            'bioproject': {'PRJEB4519': ['10.1038/s41467-021-26215-w']}})
-
-        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection("test_collection")
-            for type in ['study', 'run', 'other']:
-                self.assertIn(
-                    f'WARNING:q2_fondue.scraper:The provided collection '
-                    f'test_collection does not contain any {type} IDs',
-                    cm.output
-                )
-            for i in range(0, 4):
-                assert_frame_equal(exp_out[i], obs_out[i])
-
-    @patch('q2_fondue.scraper._get_collection_id')
-    @patch.object(zotero.Zotero, 'everything')
-    @patch.object(zotero.Zotero, 'collection_items')
-    @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_only_study_ids(
-            self, patch_zot_txt,
-            patch_col, patch_items, patch_get_col_id):
-        # define patched outputs
-        patch_items.return_value = self._open_json_file(
-            'scraper_items_journalarticle.json')
-        patch_zot_txt.return_value = {
-            "content": "This is full-text with ERP123456.",
-            "indexedPages": 50,
-            "totalPages": 50
-        }
-        # check
-        exp_out = self._create_exp_out({
-            'study': {'ERP123456': ['10.1038/s41467-021-26215-w']}})
-
-        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection("test_collection")
-            for type in ['bioproject', 'run', 'other']:
-                self.assertIn(
-                    f'WARNING:q2_fondue.scraper:The provided collection '
-                    f'test_collection does not contain any {type} IDs',
-                    cm.output
-                )
-            for i in range(0, 4):
-                assert_frame_equal(exp_out[i], obs_out[i])
-
-    @patch('q2_fondue.scraper._get_collection_id')
-    @patch.object(zotero.Zotero, 'everything')
-    @patch.object(zotero.Zotero, 'collection_items')
-    @patch.object(zotero.Zotero, 'fulltext_item')
-    def test_collection_scraper_only_other_ids(
-            self, patch_zot_txt,
-            patch_col, patch_items, patch_get_col_id):
-        # define patched outputs
-        patch_items.return_value = self._open_json_file(
-            'scraper_items_journalarticle.json')
-        patch_zot_txt.return_value = {
-            "content": "This is full-text with ERS115020.",
-            "indexedPages": 50,
-            "totalPages": 50
-        }
-        # check
-        exp_out = self._create_exp_out({
-            'other': {'ERS115020': ['10.1038/s41467-021-26215-w']}})
-
-        with self.assertLogs('q2_fondue.scraper', level='WARNING') as cm:
-            obs_out = scrape_collection("test_collection")
-            for type in ['bioproject', 'run', 'study']:
+            for type in ls_other_types:
                 self.assertIn(
                     f'WARNING:q2_fondue.scraper:The provided collection '
                     f'test_collection does not contain any {type} IDs',

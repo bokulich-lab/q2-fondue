@@ -10,6 +10,7 @@ import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
 import unittest
+from parameterized import parameterized
 from entrezpy import conduit
 from entrezpy.esearch import esearcher
 from entrezpy.requester.requester import Requester
@@ -80,26 +81,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         return meta_dfs, exp_df
 
-    def test_determine_id_type_project(self):
-        ids = ['PRJNA123', 'PRJNA123']
-
-        obs = _determine_id_type(ids)
-        exp = 'bioproject'
-        self.assertEqual(exp, obs)
-
-    def test_determine_id_type_study(self):
-        ids = ['ERP12345', 'SRP23456']
-
-        obs = _determine_id_type(ids)
-        exp = 'study'
-        self.assertEqual(exp, obs)
-
-    def test_determine_id_type_run(self):
-        ids = ['SRR123', 'ERR123']
-
-        obs = _determine_id_type(ids)
-        exp = 'run'
-        self.assertEqual(exp, obs)
+    @parameterized.expand([
+        ("run", ['SRR123', 'ERR123']),
+        ("study", ['ERP12345', 'SRP23456']),
+        ("bioproject", ['PRJNA123', 'PRJNA123']),
+        ("experiment", ['ERX123', 'SRX123']),
+        ("sample", ['ERS123', 'SRS123'])
+        ])
+    def test_determine_id_type(self, id_type, acc_ids):
+        obs = _determine_id_type(acc_ids)
+        self.assertEqual(id_type, obs)
 
     def test_determine_id_type_mixed(self):
         ids = ['SRS123', 'ERR123']
@@ -310,12 +301,18 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 'INFO', self.fake_logger
             )
 
+    @parameterized.expand([
+        ("study", "sra"),
+        ("bioproject", "bioproject"),
+        ("experiment", "sra"),
+        ("sample", "sra")
+        ])
     @patch('q2_fondue.metadata._get_run_meta')
-    def test_get_other_meta_project(self, patched_get):
+    def test_get_other_meta(self, id_type, db2search, patched_get):
         with patch.object(conduit, 'Conduit') as mock_conduit:
             mock_conduit.return_value = self.fake_econduit
             _ = _get_other_meta(
-                'someone@somewhere.com', 1, ['AB', 'cd'], 'bioproject',
+                'someone@somewhere.com', 1, ['AB', 'cd'], id_type,
                 'INFO', MagicMock()
             )
 
@@ -324,27 +321,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                        'SRR000050', 'SRR000057', 'SRR000058', 'SRR13961759']
 
             self.fake_econduit.pipeline.add_search.assert_called_once_with(
-                {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
-            )
-            patched_get.assert_called_once_with(
-                'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
-            )
-
-    @patch('q2_fondue.metadata._get_run_meta')
-    def test_get_other_meta_study(self, patched_get):
-        with patch.object(conduit, 'Conduit') as mock_conduit:
-            mock_conduit.return_value = self.fake_econduit
-            _ = _get_other_meta(
-                'someone@somewhere.com', 1, ['SRP1', 'SRP2'], 'study',
-                'INFO', MagicMock()
-            )
-
-            exp_ids = ['SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
-                       'SRR000038', 'SRR000043', 'SRR000046', 'SRR000048',
-                       'SRR000050', 'SRR000057', 'SRR000058', 'SRR13961759']
-
-            self.fake_econduit.pipeline.add_search.assert_called_once_with(
-                {'db': 'sra', 'term': "SRP1 OR SRP2"}, analyzer=ANY
+                {'db': db2search, 'term': "AB OR cd"}, analyzer=ANY
             )
             patched_get.assert_called_once_with(
                 'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
@@ -364,30 +341,22 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patched_get_other.assert_not_called()
 
+    @parameterized.expand([
+        ("study", ['ERP12345', 'SRP23456']),
+        ("bioproject", ['PRJNA123', 'PRJNA234']),
+        ("experiment", ['ERX115020', 'SRX10331465']),
+        ("sample", ['ERS147978', 'ERS3588233'])
+        ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
-    def test_get_metadata_project(
-            self, patched_get_other_proj, patched_get_run):
-        patched_get_other_proj.return_value = (pd.DataFrame(), {})
-        ids_meta = Metadata.load(self.get_data_path('project_ids.tsv'))
+    def test_get_metadata_other(
+            self, id_type, acc_ids, patched_get_other, patched_get_run):
+        patched_get_other.return_value = (pd.DataFrame(), {})
+        ids_meta = Metadata.load(self.get_data_path(f'{id_type}_ids.tsv'))
         _ = get_metadata(ids_meta, 'abc@def.com', 2)
 
-        patched_get_other_proj.assert_called_once_with(
-            'abc@def.com', 2, ['PRJNA123', 'PRJNA234'], 'bioproject',
-            'INFO', ANY
-        )
-        patched_get_run.assert_not_called()
-
-    @patch('q2_fondue.metadata._get_run_meta')
-    @patch('q2_fondue.metadata._get_other_meta')
-    def test_get_metadata_study(
-            self, patched_get_other_study, patched_get_run):
-        patched_get_other_study.return_value = (pd.DataFrame(), {})
-        ids_meta = Metadata.load(self.get_data_path('study_ids.tsv'))
-        _ = get_metadata(ids_meta, 'abc@def.com', 2)
-
-        patched_get_other_study.assert_called_once_with(
-            'abc@def.com', 2, ['ERP12345', 'SRP23456'], 'study',
+        patched_get_other.assert_called_once_with(
+            'abc@def.com', 2, acc_ids, id_type,
             'INFO', ANY
         )
         patched_get_run.assert_not_called()
@@ -405,22 +374,28 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         self.assertTrue('DOI' in obs_meta.columns)
         assert_frame_equal(obs_meta[['DOI']], ids_meta.to_dataframe())
 
-    # todo: add test_get_metadata_study_w_doi
-
+    @parameterized.expand([
+        ("study", "Study ID"),
+        ("bioproject", "Bioproject ID"),
+        ("experiment", "Experiment ID"),
+        ("sample", "Sample Accession")
+        ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
-    def test_get_metadata_project_w_doi(
-            self, patched_get_other_proj, patched_get_run):
-        meta_df = pd.read_csv(
-            self.get_data_path('sra-metadata-two-bioprojects.tsv'),
-            sep='\t', index_col=0)
-        patched_get_other_proj.return_value = (meta_df, {})
-        ids_meta = Metadata.load(self.get_data_path('project_ids_w_doi.tsv'))
+    def test_get_metadata_other_w_doi(
+            self, id_type, match_id, patched_get_other_study, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
+                              sep='\t', index_col=0)
+        patched_get_other_study.return_value = (meta_df, {})
+        ids_meta = Metadata.load(self.get_data_path(
+            f'{id_type}_ids_w_doi.tsv'))
 
         obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
         self.assertTrue('DOI' in obs_meta.columns)
-        assert_array_equal(obs_meta[['Bioproject ID', 'DOI']].values,
-                           ids_meta.to_dataframe().reset_index().values)
+        for row in range(0, obs_meta.shape[0]):
+            assert_array_equal(
+                obs_meta[[match_id, 'DOI']].values[row],
+                ids_meta.to_dataframe().reset_index().values[0])
 
     def test_merge_metadata_3dfs_nodupl(self):
         # Test merging metadata with no duplicated run IDs

@@ -49,7 +49,7 @@ def _validate_esearch_result(
 
 def _determine_id_type(ids: list):
     ids = [x[:3] for x in ids]
-    for kind in ('run', 'bioproject', 'study'):
+    for kind in PREFIX.keys():
         if all([x in PREFIX[kind] for x in ids]):
             return kind
     raise InvalidIDs('The type of provided IDs is either not supported or '

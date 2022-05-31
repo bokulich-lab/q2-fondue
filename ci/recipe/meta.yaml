@@ -31,6 +31,8 @@ test:
   imports:
     - q2_fondue
     - qiime2.plugins.fondue
+  requires:
+    - parameterized
 
 about:
   home: https://github.com/bokulich-lab/q2-fondue

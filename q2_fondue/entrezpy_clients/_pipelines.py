@@ -25,7 +25,8 @@ def _get_run_ids(
         email (str): User email.
         n_jobs (int): Number of jobs.
         ids (list): list of study or bioproject IDs.
-        source (str): Type of IDs provided (either 'study' or 'bioproject').
+        source (str): Type of IDs provided ('study', 'bioproject',
+                      'sample' or 'experiment').
         log_level (str): The log level to set.
 
     Returns:
@@ -36,12 +37,12 @@ def _get_run_ids(
 
     samp_ids_pipeline = econduit.new_pipeline()
 
-    if source == 'study':
-        db = 'sra'
-        elink = False
-    elif source == 'bioproject':
+    if source == 'bioproject':
         db = 'bioproject'
         elink = True
+    else:
+        db = 'sra'
+        elink = False
 
     # search for IDs
     es = samp_ids_pipeline.add_search(

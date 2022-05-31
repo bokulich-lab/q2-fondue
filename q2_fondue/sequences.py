@@ -379,7 +379,7 @@ def get_sequences(
     accession_ids = list(accession_ids.get_ids())
 
     id_type = _determine_id_type(accession_ids)
-    if id_type == 'bioproject':
+    if id_type != 'run':
         accession_ids = _get_run_ids(
             email, n_jobs, accession_ids, id_type, log_level
         )
