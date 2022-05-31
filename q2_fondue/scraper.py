@@ -218,7 +218,7 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
 
 
 def _find_hyphen_sequence(
-        txt: str, pattern: str, after_hyphen: str, ids: list) -> list:
+        txt: str, pattern: str, after_hyphen: str) -> list:
     """Return all accession IDs from a hyphenated accession ID sequence, both
     'SRX100006-7' (below `after_hyphen` option '\\d+') and
     'SRX100006-SRX100007' (below `after_hyphen` option 'pattern')
@@ -229,7 +229,6 @@ def _find_hyphen_sequence(
         pattern (str): Accession ID pattern to search for.
         after_hyphen (str): Pattern given after the hyphen (supported
         options include '\\d+' and pattern)
-        ids (list): List of accession IDs already scraped
 
     Returns:
         list: List of accession IDs with hyphenated IDs included.
@@ -238,7 +237,7 @@ def _find_hyphen_sequence(
     hyphens = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\
     \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D]'
     pattern_hyphen = pattern + r'\s*' + hyphens + r'\s*' + after_hyphen
-
+    ids = []
     matches = re.findall(f'({pattern_hyphen})', txt)
     if len(matches) > 0:
         for match in matches:
@@ -312,8 +311,8 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
 
     # SPECIAL case 3: hyphenated sequence of IDs
     # "SRX100006-7" and "SRX100006-SRX100007" both yield "SRX100006, SRX100007"
-    ids = _find_hyphen_sequence(txt, pattern, r'\d+', ids)
-    ids = _find_hyphen_sequence(txt, pattern, pattern, ids)
+    ids += _find_hyphen_sequence(txt, pattern, r'\d+')
+    ids += _find_hyphen_sequence(txt, pattern, pattern)
 
     return list(set(ids))
 
