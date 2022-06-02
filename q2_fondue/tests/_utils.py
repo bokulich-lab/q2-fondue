@@ -26,7 +26,7 @@ from q2_fondue.entrezpy_clients._sra_meta import (SRAStudy, SRASample,
 
 class FakeParams:
     def __init__(self, temp_dir, uids=None, term=None, eutil='efetch.cgi',
-                 rettype='xml', retmode='text'):
+                 rettype='xml', retmode='xml'):
         self.query_id = 'some-id-123'
         self.term = term
         self.usehistory = False

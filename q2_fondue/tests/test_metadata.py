@@ -17,7 +17,7 @@ from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal
 from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
-from unittest.mock import patch, MagicMock, ANY, call
+from unittest.mock import patch, MagicMock, ANY
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._utils import InvalidIDs
@@ -141,6 +141,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         pd.testing.assert_frame_equal(
             exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
 
+    def test_efetcher_inquire_error(self):
+        with patch.object(Requester, 'request') as mock_response:
+            mock_response.return_value = self.xml_to_response('error')
+            obs_df, obs_missing = _efetcher_inquire(
+                self.fake_efetcher, ['FAKEID1'], 'INFO'
+            )
+            exp_missing = {
+                'FAKEID1': '<?xml version="1.0"  ?>\n<ERROR>\n</ERROR>\n'}
+            self.assertDictEqual(obs_missing, exp_missing)
+
     def test_esearcher_inquire_single(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.json_to_response(
@@ -234,56 +244,45 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'], 'INFO')
         patch_ef.assert_called_once_with(
-            'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO'
+            'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
+            self.fake_logger
         )
 
     @patch.object(esearcher, 'Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
     @patch('q2_fondue.metadata._execute_efetcher')
     def test_get_run_meta_missing_ids(self, patch_ef, patch_val, patch_es):
-        exp_df = pd.DataFrame(
-            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
-            index=['AB', 'cd', 'Ef']
+        exp_meta = pd.DataFrame(
+            {'meta1': [1, 2], 'meta2': ['a', 'b']},
+            index=['AB', 'cd']
         )
-        patch_ef.side_effect = [(exp_df.iloc[:2, :], ['Ef']),
-                                (exp_df.iloc[2:, :], [])]
-        obs_df, obs_dict = _get_run_meta(
-            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
-            'INFO', self.fake_logger
-        )
-
-        assert_frame_equal(exp_df, obs_df)
-        patch_es.assert_called_once_with(
-            'esearcher', 'someone@somewhere.com', apikey=None,
-            apikey_var=None, threads=1, qid=None
-        )
-        patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'], 'INFO')
-        patch_ef.assert_has_calls(
-            [call('someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO'),
-             call('someone@somewhere.com', 1, ['Ef'], 'INFO')], any_order=False
-        )
-        self.assertEqual(2, patch_ef.call_count)
-
-    @patch.object(esearcher, 'Esearcher')
-    @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
-    @patch('q2_fondue.metadata._execute_efetcher')
-    def test_get_run_meta_not_all_found(self, patch_ef, patch_val, patch_es):
-        exp_df = pd.DataFrame(
-            {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
-            index=['AB', 'cd', 'Ef']
-        )
-        patch_ef.side_effect = [(exp_df, ['Ef']) for i in range(21)]
+        exp_missing = {'Ef': 'Fake error'}
+        patch_ef.return_value = (exp_meta.iloc[:2, :], exp_missing)
 
         with self.assertLogs('test_log', level='WARNING') as cm:
-            _ = _get_run_meta(
+            obs_df, missing_dict = _get_run_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
                 'INFO', self.fake_logger
             )
-        self.assertEqual(
-            cm.output, ['WARNING:test_log:Metadata for the following run IDs '
-                        'could not be fetched: Ef. Please try fetching those '
-                        'independently.']
-        )
+
+            assert_frame_equal(exp_meta, obs_df)
+            self.assertDictEqual(missing_dict, exp_missing)
+            self.assertEqual(
+                cm.output,
+                ['WARNING:test_log:Metadata for the following run IDs '
+                 'could not be fetched: Ef. Please try fetching those '
+                 'independently.']
+            )
+
+            patch_es.assert_called_once_with(
+                'esearcher', 'someone@somewhere.com', apikey=None,
+                apikey_var=None, threads=1, qid=None
+            )
+            patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'], 'INFO')
+            patch_ef.assert_called_once_with(
+                'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
+                self.fake_logger
+            )
 
     @patch.object(esearcher, 'Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result')
@@ -299,6 +298,30 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             _ = _get_run_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd'],
                 'INFO', self.fake_logger
+            )
+
+    @patch.object(esearcher, 'Esearcher')
+    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._execute_efetcher')
+    def test_get_run_meta_one_invalid_id(self, patch_ef, patch_val, patch_es):
+        patch_val.return_value = {
+            'AB': 'ID is invalid.'
+        }
+        exp_df = pd.DataFrame(
+            {'meta1': [1], 'meta2': ['a']},
+            index=['AA']
+        )
+        patch_ef.return_value = (exp_df, [])
+
+        with self.assertLogs('test_log', level='WARNING') as cm:
+            _ = _get_run_meta(
+                'someone@somewhere.com', 1, ['AA', 'AB'],
+                'INFO', self.fake_logger
+            )
+            self.assertIn(
+                'WARNING:test_log:The following provided IDs are invalid: AB. '
+                'Please correct them and try fetching those independently.',
+                cm.output
             )
 
     @parameterized.expand([

@@ -33,7 +33,7 @@ class EFetchResult(EutilsResult):
         self.samples = {}
         self.experiments = {}
         self.runs = {}
-        self.missing_uids = []
+        self.error_msg = None
         self.logger = set_up_logger(log_level, self)
 
     def size(self):
@@ -505,9 +505,6 @@ class EFetchResult(EutilsResult):
                 self.metadata[i] = self._process_single_id(
                     parsed_results[current_run], desired_id=uid)
 
-        self.missing_uids.extend(set(uids) - found_uids)
-        # TODO: add a logging statement here
-
 
 class EFetchAnalyzer(EutilsAnalyzer):
     def __init__(self, log_level):
@@ -527,6 +524,7 @@ class EFetchAnalyzer(EutilsAnalyzer):
                 'Response': {
                     'dump': request.dump(),
                     'error': response.getvalue()}}}))
+        self.error_msg = response.getvalue()
 
     def analyze_result(self, response, request):
         self.init_result(response, request)
@@ -541,4 +539,10 @@ class EFetchAnalyzer(EutilsAnalyzer):
     def parse(self, raw_response, request):
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
-        self.analyze_result(response, request)
+        if self.isErrorResponse(response, request):
+            self.hasErrorResponse = True
+            self.analyze_error(response, request)
+            if self.error_msg == '':
+                self.error_msg = raw_response.msg
+        else:
+            self.analyze_result(response, request)

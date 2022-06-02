@@ -24,11 +24,17 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 
 
 threading.excepthook = handle_threaded_exception
+BATCH_SIZE = 150
+
+
+def _chunker(seq, size):
+    # source: https://stackoverflow.com/a/434328/579416
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def _efetcher_inquire(
         efetcher: ef.Efetcher, run_ids: List[str], log_level: str
-) -> Tuple[pd.DataFrame, list]:
+) -> Tuple[pd.DataFrame, dict]:
     """Makes an EFetch request using the provided IDs.
 
     Args:
@@ -44,24 +50,42 @@ def _efetcher_inquire(
             'db': 'sra',
             'id': run_ids,
             'rettype': 'xml',
-            'retmode': 'text'
+            'retmode': 'xml',
+            'retmax': BATCH_SIZE
         }, analyzer=EFetchAnalyzer(log_level)
     )
 
-    return (
-        metadata_response.result.metadata_to_df(),
-        metadata_response.result.missing_uids
-    )
+    if metadata_response.result is None:
+        error_msg = metadata_response.error_msg
+        if error_msg == '':
+            error_msg = 'NCBI did not return this ID. Try again.'
+        return (pd.DataFrame(),
+                {m_id: error_msg for m_id in run_ids})
+    else:
+        return (metadata_response.result.metadata_to_df(), {})
 
 
-def _execute_efetcher(email, n_jobs, run_ids, log_level):
-    efetcher = ef.Efetcher(
-        'efetcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None
-    )
-    set_up_entrezpy_logging(efetcher, log_level)
-    meta_df, missing_ids = _efetcher_inquire(efetcher, run_ids, log_level)
-    return meta_df, missing_ids
+def _execute_efetcher(email, n_jobs, run_ids, log_level, logger):
+    meta_df = []
+    missing_ids = {}
+    for num, batch in enumerate(_chunker(run_ids, BATCH_SIZE), 1):
+        # one efetcher object per loop because threads of one
+        # efetcher object can only be started once:
+        efetcher = ef.Efetcher(
+            'efetcher', email, apikey=None,
+            apikey_var=None, threads=n_jobs, qid=None
+        )
+        set_up_entrezpy_logging(efetcher, log_level)
+
+        logger.info(
+            f'Fetching metadata of run IDs from batch number {num}...'
+        )
+        df, missing_ids = _efetcher_inquire(efetcher, batch, log_level)
+
+        meta_df.append(df)
+        missing_ids.update(missing_ids)
+
+    return pd.concat(meta_df, axis=0), missing_ids
 
 
 def _get_run_meta(
@@ -80,36 +104,26 @@ def _get_run_meta(
         raise InvalidIDs(
             'All provided IDs were invalid. Please check your input.'
         )
+    if invalid_ids:
+        logger.warning(
+            f'The following provided IDs are invalid: '
+            f'{",".join(invalid_ids.keys())}. Please correct them and '
+            f'try fetching those independently.'
+        )
 
     # fetch metadata
     meta_df, missing_ids = _execute_efetcher(
-        email, n_jobs, valid_ids, log_level
+        email, n_jobs, valid_ids, log_level, logger
     )
 
-    # when hundreds of runs were requested, it could happen that not all
-    # metadata will be fetched - in that case, keep running efetcher
-    # until all runs are retrieved
-    meta_df = [meta_df]
-    retries = 20
-    while missing_ids and retries > 0:
-        logger.info(
-            f'{len(missing_ids)} missing IDs were found - we will '
-            f'retry fetching those ({retries} retries left).'
-        )
-        df, missing_ids = _execute_efetcher(
-            email, n_jobs, missing_ids, log_level
-        )
-        meta_df.append(df)
-        retries -= 1
-
-    if retries == 0 and missing_ids:
+    if missing_ids:
         logger.warning(
             'Metadata for the following run IDs could not be fetched: '
-            f'{",".join(missing_ids)}. '
+            f'{",".join(missing_ids.keys())}. '
             f'Please try fetching those independently.'
         )
 
-    return pd.concat(meta_df, axis=0), invalid_ids
+    return meta_df, missing_ids
 
 
 def _get_other_meta(
@@ -157,14 +171,14 @@ def get_metadata(
     id_type = _determine_id_type(accession_ids)
 
     if id_type == 'run':
-        meta, invalid_ids = _get_run_meta(
+        meta, missing_ids = _get_run_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
         # if available, join DOI to meta by run ID:
         if id2doi is not None:
             meta = meta.join(id2doi, how='left')
     else:
-        meta, invalid_ids = _get_other_meta(
+        meta, missing_ids = _get_other_meta(
             email, n_jobs, accession_ids, id_type, log_level, logger
         )
         match_study_meta = {
@@ -177,11 +191,11 @@ def get_metadata(
                               left_on=match_study_meta[id_type],
                               right_index=True)
 
-    invalid_ids = pd.DataFrame(
-        data={'Error message': invalid_ids.values()},
-        index=pd.Index(invalid_ids.keys(), name='ID')
+    missing_ids = pd.DataFrame(
+        data={'Error message': missing_ids.values()},
+        index=pd.Index(missing_ids.keys(), name='ID')
     )
-    return meta, invalid_ids
+    return meta, missing_ids
 
 
 def merge_metadata(

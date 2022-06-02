@@ -53,7 +53,7 @@ class TestGetAll(SequenceTests):
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
         mock_inquire.return_value = (
-            pd.read_csv(path2df, sep='\t', index_col=0), []
+            pd.read_csv(path2df, sep='\t', index_col=0), {}
         )
 
         # define mocked return values for get_sequences mocks
@@ -129,7 +129,7 @@ class TestGetAll(SequenceTests):
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
         mock_inquire.return_value = (
-            pd.read_csv(path2df, sep='\t', index_col=0), []
+            pd.read_csv(path2df, sep='\t', index_col=0), {}
         )
 
         # define mocked return values for get_sequences mocks
