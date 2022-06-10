@@ -29,16 +29,21 @@ tar -xzf sratoolkit.tar.gz
 rm sratoolkit.tar.gz
 mv "sratoolkit.${TOOLKIT_VER}-${OS_VER}/" "sratoolkit/"
 
-echo "Installing SRA Tools in $CONDA_PREFIX..."
-if [[ ! -d "$CONDA_PREFIX/bin/" ]]; then
-  mkdir $CONDA_PREFIX/bin/
+if [[ "$PREFIX" == "" ]]; then
+  echo "Setting PREFIX=$CONDA_PREFIX"
+  PREFIX="$CONDA_PREFIX"
 fi
-find sratoolkit/bin/ -maxdepth 1 -type f -exec mv -f {} $CONDA_PREFIX/bin/ \;
-find sratoolkit/bin/ -maxdepth 1 -type l -exec mv -f {} $CONDA_PREFIX/bin/ \;
+
+echo "Installing SRA Tools in $PREFIX..."
+if [[ ! -d "$PREFIX/bin/" ]]; then
+  mkdir $PREFIX/bin/
+fi
+find sratoolkit/bin/ -maxdepth 1 -type f -exec mv -f {} $PREFIX/bin/ \;
+find sratoolkit/bin/ -maxdepth 1 -type l -exec mv -f {} $PREFIX/bin/ \;
 rm -r sratoolkit
 
 echo "Testing installation..."
-if [[ $(which prefetch) == "$CONDA_PREFIX/bin"* ]]; then
+if [[ $(which prefetch) == "$PREFIX/bin"* ]]; then
   echo "Success!"
 else
   echo "Installation failed."
