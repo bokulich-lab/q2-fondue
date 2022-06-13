@@ -255,9 +255,12 @@ def _find_hyphen_sequence(
                 prefix_digit_split = re.split(r'(\d+)', split_match[0])
                 base = prefix_digit_split[0]
                 start = prefix_digit_split[1]
+                nb_digits = len(start)
                 end = re.split(r'(\d+)', split_match[-1])[1]
+
             for i in range(int(start), int(end) + 1):
-                ids += [base + str(i)]
+                filling_zeros = nb_digits - len(str(i))
+                ids += [base + filling_zeros * str(0) + str(i)]
     return ids
 
 
@@ -377,8 +380,7 @@ def scrape_collection(
         # get text
         try:
             str_text = zot.fulltext_item(attach_key)['content']
-            # remove character frequently placed before soft hyphen, see
-            # https://stackoverflow.com/a/51976543
+            # remove the soft hyphen, see https://stackoverflow.com/a/51976543
             str_text = str_text.replace('\xad', '')
         except zotero_errors.ResourceNotFound:
             str_text = ''
