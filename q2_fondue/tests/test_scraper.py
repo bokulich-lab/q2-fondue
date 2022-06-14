@@ -226,6 +226,68 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_proj = _find_accession_ids(txt_diff, 'bioproject')
         self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
 
+    def test_find_accession_ids_special_cases_hyphen_one_digit(self):
+        # example inspired by 10.1038/s41467-019-13036-1
+        txt_diff = 'Breezer mWGS: PRJEB1479791–5'
+        exp_proj = ['PRJEB1479791', 'PRJEB1479792', 'PRJEB1479793',
+                    'PRJEB1479794', 'PRJEB1479795']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_two_digits(self):
+        # example inspired by 10.1038/s41467-019-13036-1
+        txt_diff = 'Scott mWGS: PRJEB1479846–50'
+        exp_proj = ['PRJEB1479846', 'PRJEB1479847', 'PRJEB1479848',
+                    'PRJEB1479849', 'PRJEB1479850']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_three_digits(self):
+        txt_diff = 'some text here PRJEB1479100-102'
+        exp_proj = ['PRJEB1479100', 'PRJEB1479101', 'PRJEB1479102']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_three_digits_over_hundred(
+            self):
+        txt_diff = 'some text here PRJEB1479095-102'
+        exp_proj = ['PRJEB1479095', 'PRJEB1479096', 'PRJEB1479097',
+                    'PRJEB1479098', 'PRJEB1479099', 'PRJEB1479100',
+                    'PRJEB1479101', 'PRJEB1479102']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_types(self):
+        txt_diff = 'some text here PRJEB10000-1, PRJEB10002–3, \
+                    PRJEB10004‑5, PRJEB10006﹣7'
+        exp_proj = ['PRJEB10000', 'PRJEB10001', 'PRJEB10002',
+                    'PRJEB10003', 'PRJEB10004', 'PRJEB10005',
+                    'PRJEB10006', 'PRJEB10007']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_accession(self):
+        txt_diff = 'Scott mWGS: PRJEB1479846–PRJEB1479850'
+        exp_proj = ['PRJEB1479846', 'PRJEB1479847', 'PRJEB1479848',
+                    'PRJEB1479849', 'PRJEB1479850']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_accession_space(self):
+        txt_diff = 'Scott mWGS: PRJEB1479846 – PRJEB1479850'
+        exp_proj = ['PRJEB1479846', 'PRJEB1479847', 'PRJEB1479848',
+                    'PRJEB1479849', 'PRJEB1479850']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_hyphen_accession_over_hundred(
+            self):
+        txt_diff = 'Scott mWGS: PRJEB1479098 – PRJEB1479102'
+        exp_proj = ['PRJEB1479098', 'PRJEB1479099', 'PRJEB1479100',
+                    'PRJEB1479101', 'PRJEB1479102']
+        obs_proj = _find_accession_ids(txt_diff, 'bioproject')
+        self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
     def test_find_accession_ids_no_ids(self):
         txt = 'this text has no run ids and no bioproject ids.'
         exp_ls = []

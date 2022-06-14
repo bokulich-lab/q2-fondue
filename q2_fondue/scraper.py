@@ -217,6 +217,53 @@ def _find_special_id(txt: str, pattern: str, split_str: str) -> list:
     return ids
 
 
+def _find_hyphen_sequence(
+        txt: str, pattern: str, after_hyphen: str) -> list:
+    """Return all accession IDs from a hyphenated accession ID sequence, both
+    'SRX100006-7' (below `after_hyphen` option '\\d+') and
+    'SRX100006-SRX100007' (below `after_hyphen` option 'pattern')
+    yield 'SRX100006, SRX100007'.
+
+    Args:
+        txt (str): Text to scrape through.
+        pattern (str): Accession ID pattern to search for.
+        after_hyphen (str): Pattern given after the hyphen (supported
+        options include '\\d+' and pattern)
+
+    Returns:
+        list: List of accession IDs with hyphenated IDs included.
+    """
+    # source of hyphens: https://stackoverflow.com/a/48923796 with \u00ad added
+    hyphens = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\
+    \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D\
+    \u00AD]'
+    pattern_hyphen = pattern + r'\s*' + hyphens + r'\s*' + after_hyphen
+    ids = []
+    matches = re.findall(f'({pattern_hyphen})', txt)
+    if len(matches) > 0:
+        for match in matches:
+            split_match = re.split(hyphens, match)
+
+            if after_hyphen == r'\d+':
+                # 3.a) "SRX100006-7" > "SRX100006, SRX100007"
+                nb_digits = len(split_match[-1])
+                base = split_match[0][:-nb_digits]
+                start = split_match[0][-nb_digits:]
+                end = split_match[-1][-nb_digits:]
+            elif after_hyphen == pattern:
+                # 3.b) "SRX100006-SRX100007" > "SRX100006, SRX100007"
+                prefix_digit_split = re.split(r'(\d+)', split_match[0])
+                base = prefix_digit_split[0]
+                start = prefix_digit_split[1]
+                nb_digits = len(start)
+                end = re.split(r'(\d+)', split_match[-1])[1]
+
+            for i in range(int(start), int(end) + 1):
+                filling_zeros = nb_digits - len(str(i))
+                ids += [base + filling_zeros * str(0) + str(i)]
+    return ids
+
+
 def _find_accession_ids(txt: str, id_type: str) -> list:
     """Returns list of run, study, BioProject, experiment and
     sample IDs found in `txt`.
@@ -266,6 +313,11 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
     # "PREFIX12345, 56789 and 67899" yields "PREFIX67899"
     pattern_and = pattern_comma + r'\sand\s\d+'
     ids += _find_special_id(txt, pattern_and, 'and')
+
+    # SPECIAL case 3: hyphenated sequence of IDs
+    # "SRX100006-7" and "SRX100006-SRX100007" both yield "SRX100006, SRX100007"
+    for after_hyphen_pattern in [r'\d+', pattern]:
+        ids += _find_hyphen_sequence(txt, pattern, after_hyphen_pattern)
 
     return list(set(ids))
 
@@ -328,6 +380,8 @@ def scrape_collection(
         # get text
         try:
             str_text = zot.fulltext_item(attach_key)['content']
+            # remove the soft hyphen, see https://stackoverflow.com/a/51976543
+            str_text = str_text.replace('\xad', '')
         except zotero_errors.ResourceNotFound:
             str_text = ''
             logger.warning(f'Item {attach_key} doesn\'t contain any '
