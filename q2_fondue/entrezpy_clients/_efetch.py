@@ -542,7 +542,5 @@ class EFetchAnalyzer(EutilsAnalyzer):
         if self.isErrorResponse(response, request):
             self.hasErrorResponse = True
             self.analyze_error(response, request)
-            if self.error_msg == '':
-                self.error_msg = raw_response.msg
         else:
             self.analyze_result(response, request)

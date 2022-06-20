@@ -57,8 +57,6 @@ def _efetcher_inquire(
 
     if metadata_response.result is None:
         error_msg = metadata_response.error_msg
-        if error_msg == '':
-            error_msg = 'NCBI did not return this ID. Try again.'
         return (pd.DataFrame(),
                 {m_id: error_msg for m_id in run_ids})
     else:
