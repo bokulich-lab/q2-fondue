@@ -9,6 +9,7 @@ import os
 
 import pandas as pd
 import unittest
+from pandas.testing import assert_frame_equal
 from q2_types.per_sample_sequences import \
     CasavaOneEightSingleLanePerSampleDirFmt
 from qiime2 import Artifact
@@ -100,6 +101,7 @@ class TestGetAll(SequenceTests):
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
 
+    @patch('q2_fondue.metadata.BATCH_SIZE', 1)
     @patch('q2_fondue.metadata.es.Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata.ef.Efetcher')
@@ -110,7 +112,7 @@ class TestGetAll(SequenceTests):
     @patch('q2_fondue.sequences._announce_completion')
     @patch('q2_fondue.sequences.CasavaOneEightSingleLanePerSampleDirFmt')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_all_multi_with_errors(
+    def test_get_all_multi_with_missing_ids(
             self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
             mock_proc, mock_sleep, mock_inquire, mock_efetcher,
             mock_validation, mock_esearcher
@@ -125,12 +127,14 @@ class TestGetAll(SequenceTests):
         )
 
         # define mocked return values for get_metadata mocks
-        mock_validation.return_value = {'SRR123457': 'ID is invalid.'}
+        mock_validation.return_value = {}
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
-        mock_inquire.return_value = (
-            pd.read_csv(path2df, sep='\t', index_col=0), {}
-        )
+        missing_ids_dic = {'SRR123457': 'Some error message'}
+        mock_inquire.side_effect = [
+            (pd.read_csv(path2df, sep='\t', index_col=0), {}),
+            (pd.DataFrame(), missing_ids_dic)
+        ]
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
@@ -152,18 +156,30 @@ class TestGetAll(SequenceTests):
         )
 
         # run pipeline
-        fondue.actions.get_all(test_md, 'fake@email.com', retries=0)
+        _, _, _, missing_ids_obs = fondue.actions.get_all(
+            test_md, 'fake@email.com', retries=0)
+
+        # assert missing ids output
+        missing_ids_exp = pd.DataFrame(
+            data={'Error message': missing_ids_dic.values()},
+            index=pd.Index(missing_ids_dic.keys(), name='ID'))
+        assert_frame_equal(
+            missing_ids_obs.view(pd.DataFrame),
+            missing_ids_exp)
 
         # function call assertions for get_metadata within
         mock_esearcher.assert_called_once_with(
             'esearcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
         mock_validation.assert_called_once_with(ANY, acc_ids, 'INFO')
-        mock_efetcher.assert_called_once_with(
+        mock_efetcher.assert_called_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, [acc_ids[0]], 'INFO')
-
+        self.assertEqual(mock_efetcher.call_count, 2)
+        mock_inquire.assert_has_calls([
+            call(ANY, [acc_ids[0]], 'INFO'),
+            call(ANY, [acc_ids[1]], 'INFO')
+        ])
         # function call assertions for get_sequences within
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
