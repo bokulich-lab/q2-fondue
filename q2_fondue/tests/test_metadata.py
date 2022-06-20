@@ -13,16 +13,17 @@ import unittest
 from parameterized import parameterized
 from entrezpy import conduit
 from entrezpy.esearch import esearcher
+from entrezpy.efetch import efetcher
 from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal
 from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock, ANY, call
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.metadata import (
-    _efetcher_inquire, _get_other_meta,
+    _efetcher_inquire, _execute_efetcher, _get_other_meta,
     get_metadata, _get_run_meta, merge_metadata
 )
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
@@ -140,6 +141,21 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_request.assert_called_once()
         pd.testing.assert_frame_equal(
             exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
+
+    @patch('q2_fondue.metadata.BATCH_SIZE', 2)
+    @patch.object(efetcher, 'Efetcher')
+    @patch('q2_fondue.metadata._efetcher_inquire')
+    def test_execute_efetcher_batchsize(self, patch_efetch_iq, patch_ef):
+        patch_efetch_iq.side_effect = [(pd.DataFrame(), {}),
+                                       (pd.DataFrame(), {})]
+        _, _ = _execute_efetcher('someone@somewhere.com', 1,
+                                 ['Valid1', 'Valid2', 'Valid3'],
+                                 'INFO', self.fake_logger)
+        patch_efetch_iq.assert_has_calls([
+            call(ANY, ['Valid1', 'Valid2'], 'INFO'),
+            call(ANY, ['Valid3'], 'INFO')
+        ])
+        self.assertEqual(patch_efetch_iq.call_count, 2)
 
     def test_efetcher_inquire_error(self):
         with patch.object(Requester, 'request') as mock_response:
