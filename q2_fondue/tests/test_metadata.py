@@ -68,6 +68,12 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         self.fake_econduit = FakeConduit(
             self.generate_ef_result(kind='runs', prefix='efetch'),
             self.xml_to_response('runs', prefix='efetch'))
+        self.fake_econduit_b1 = FakeConduit(
+            self.generate_ef_result(kind='runs', prefix='efetch_b1'),
+            self.xml_to_response('runs', prefix='efetch_b1'))
+        self.fake_econduit_b2 = FakeConduit(
+            self.generate_ef_result(kind='runs', prefix='efetch_b2'),
+            self.xml_to_response('runs', prefix='efetch_b2'))
 
     def generate_meta_df(self, obs_suffices, exp_suffix):
         meta_dfs = []
@@ -362,6 +368,42 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             self.fake_econduit.pipeline.add_search.assert_called_once_with(
                 {'db': db2search, 'term': "AB OR cd"}, analyzer=ANY
             )
+            patched_get.assert_called_once_with(
+                'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
+            )
+
+    @patch('q2_fondue.entrezpy_clients._pipelines.RUN_RETMAX', 10)
+    @patch('q2_fondue.metadata.RUN_RETMAX', 10)
+    @patch('q2_fondue.metadata._get_run_meta')
+    def test_get_other_meta_batching(self, patched_get):
+        with patch.object(conduit, 'Conduit') as mock_conduit:
+            mock_conduit.side_effect = ([self.fake_econduit_b1,
+                                         self.fake_econduit_b2])
+            _ = _get_other_meta(
+                'someone@somewhere.com', 1, ['AB', 'cd'], 'bioproject',
+                'INFO', MagicMock()
+            )
+            # test first batch retrieval
+            self.fake_econduit_b1.pipeline.add_search.assert_called_once_with(
+                {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
+            )
+            self.fake_econduit_b1.pipeline.add_fetch.assert_called_once_with(
+                {'rettype': 'docsum', 'retmode': 'xml',
+                    'retmax': 10, 'retstart': 0},
+                analyzer=ANY, dependency=ANY)
+            # test second batch retrieval
+            self.fake_econduit_b2.pipeline.add_search.assert_called_once_with(
+                {'db': 'bioproject', 'term': "AB OR cd"}, analyzer=ANY
+            )
+            self.fake_econduit_b2.pipeline.add_fetch.assert_called_once_with(
+                {'rettype': 'docsum', 'retmode': 'xml',
+                    'retmax': 10, 'retstart': 10},
+                analyzer=ANY, dependency=ANY)
+            # check that all run IDs were fetched
+            exp_ids = [
+                'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+                'SRR000057', 'SRR000058', 'SRR13961771', 'SRR13961759']
             patched_get.assert_called_once_with(
                 'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
             )

@@ -13,9 +13,11 @@ from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
 
+RUN_RETMAX = 1000
+
 
 def _get_run_ids(
-        email: str, n_jobs: int, ids: list, source: str,
+        email: str, n_jobs: int, step: int, ids: list, source: str,
         log_level: str) -> list:
     """Pipeline to retrieve metadata of run IDs associated with
     studies (`source`='study') or bioprojects (`source`='bioproject')
@@ -24,7 +26,9 @@ def _get_run_ids(
     Args:
         email (str): User email.
         n_jobs (int): Number of jobs.
-        ids (list): list of study or bioproject IDs.
+        step (int): Count on how frequently run IDs were already fetched
+                    before.
+        ids (list): List of study, bioproject, sample or experiment IDs.
         source (str): Type of IDs provided ('study', 'bioproject',
                       'sample' or 'experiment').
         log_level (str): The log level to set.
@@ -58,9 +62,12 @@ def _get_run_ids(
     else:
         el = es
 
-    # given SRA run IDs, fetch all metadata
+    # given SRA run IDs, fetch all metadata - using retmax + retstart to
+    # fetch all available run IDs (source:
+    # https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch)
     samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
+        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': RUN_RETMAX,
+         'retstart': 0 + step * RUN_RETMAX},
         analyzer=EFetchAnalyzer(log_level), dependency=el
     )
 

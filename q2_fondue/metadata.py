@@ -20,7 +20,7 @@ from q2_fondue.utils import (
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger, InvalidIDs)
-from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
+from q2_fondue.entrezpy_clients._pipelines import _get_run_ids, RUN_RETMAX
 
 
 threading.excepthook = handle_threaded_exception
@@ -127,7 +127,19 @@ def _get_run_meta(
 def _get_other_meta(
         email, n_jobs, project_ids, id_type, log_level, logger
 ) -> (pd.DataFrame, dict):
-    run_ids = _get_run_ids(email, n_jobs, project_ids, id_type, log_level)
+    i = 0
+    run_ids = []
+    more_needed = True
+
+    while more_needed:
+        batch_run_ids = _get_run_ids(
+                    email, n_jobs, i, project_ids, id_type, log_level)
+        i += 1
+        run_ids += batch_run_ids
+        # if batch_run_ids==RUN_RETMAX, there might be more run IDs to fetch
+        if len(batch_run_ids) != RUN_RETMAX:
+            more_needed = False
+
     return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
 
 
