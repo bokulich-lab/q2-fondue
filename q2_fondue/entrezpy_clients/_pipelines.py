@@ -13,19 +13,19 @@ from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
 
-RUN_RETMAX = 1000
-
 
 def _get_run_ids(
-        email: str, n_jobs: int, step: int, ids: list, source: str,
-        log_level: str) -> list:
+        email: str, n_jobs: int, retmax: int, step: int, ids: list,
+        source: str, log_level: str) -> list:
     """Pipeline to retrieve metadata of run IDs associated with
-    studies (`source`='study') or bioprojects (`source`='bioproject')
+    studies (`source`='study'), bioprojects (`source`='bioproject'),
+    samples (`source`='sample') or experiments (`source`='experiment')
     provided in `ids`.
 
     Args:
         email (str): User email.
         n_jobs (int): Number of jobs.
+        retmax (int): Number of IDs to get in one fetch.
         step (int): Count on how frequently run IDs were already fetched
                     before.
         ids (list): List of study, bioproject, sample or experiment IDs.
@@ -66,10 +66,12 @@ def _get_run_ids(
     # fetch all available run IDs (source:
     # https://dataguide.nlm.nih.gov/eutilities/utilities.html#efetch)
     samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': RUN_RETMAX,
-         'retstart': 0 + step * RUN_RETMAX},
+        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': retmax,
+         'retstart': 0 + step * retmax},
         analyzer=EFetchAnalyzer(log_level), dependency=el
     )
 
     a = econduit.run(samp_ids_pipeline)
+    # deleting conduit object to avoid thread error
+    del econduit
     return a.result.metadata_to_series().tolist()

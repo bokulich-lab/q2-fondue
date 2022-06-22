@@ -372,7 +372,6 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
             )
 
-    @patch('q2_fondue.entrezpy_clients._pipelines.RUN_RETMAX', 10)
     @patch('q2_fondue.metadata.RUN_RETMAX', 10)
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_other_meta_batching(self, patched_get):
