@@ -69,6 +69,10 @@ def handle_threaded_exception(args):
     # silence threads exiting correctly
     elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '0':
         return
+    # todo: remove or uncomment below
+    # # silence empty threads (happens when RETMAX >>> fetched run IDs)
+    # elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '':
+    #     return
     else:
         msg += f'Caught {args.exc_type} with value "{args.exc_value}" ' \
                f'in thread {args.thread}'

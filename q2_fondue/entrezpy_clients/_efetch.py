@@ -28,7 +28,7 @@ class EFetchResult(EutilsResult):
     def __init__(self, response, request, log_level):
         super().__init__(request.eutil, request.query_id, request.db)
         self.metadata_raw = None
-        self.metadata = {}
+        self.metadata = []
         self.studies = {}
         self.samples = {}
         self.experiments = {}
@@ -50,15 +50,6 @@ class EFetchResult(EutilsResult):
 
     def get_link_parameter(self, reqnum=0):
         return {}
-
-    def metadata_to_series(self) -> pd.Series:
-        """Converts collected run ids into a Series.
-
-        Returns:
-            run_ids (pd.Series): Series of run ids.
-        """
-        run_ids = list(chain.from_iterable(self.metadata.values()))
-        return pd.Series(run_ids)
 
     def metadata_to_df(self) -> pd.DataFrame:
         """Converts collected metadata into a DataFrame.
@@ -99,7 +90,7 @@ class EFetchResult(EutilsResult):
         result = response['eSummaryResult'].get('DocSum')
         if result:
             result = [result] if not isinstance(result, list) else result
-            for i, content in enumerate(result):
+            for content in result:
                 content = content.get('Item')
                 for item in content:
                     for k, v in item.items():
@@ -108,7 +99,8 @@ class EFetchResult(EutilsResult):
                             runs = json.loads(json.dumps(parsexml(runs)))
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
-                            self.metadata[i] = [x.get('@acc') for x in runs]
+                            self.metadata += [x.get('@acc') for x in runs]
+                            self.metadata = list(set(self.metadata))
         else:
             self.logger.error(
                 'Document summary was not found in the result received from '
@@ -537,6 +529,7 @@ class EFetchAnalyzer(EutilsAnalyzer):
 
     # override the base method to enable parsing when retmode=text
     def parse(self, raw_response, request):
+        # todo: solve error if retmax/10'000 much larger than # run IDs
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
         if self.isErrorResponse(response, request):
