@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 import json
-from itertools import chain
 from typing import List, Union
 
 import pandas as pd
@@ -494,7 +493,7 @@ class EFetchResult(EutilsResult):
         for i, uid in enumerate(uids):
             if uid in found_uids:
                 current_run = run_ids_map[uid]
-                self.metadata[i] = self._process_single_id(
+                self.metadata += self._process_single_id(
                     parsed_results[current_run], desired_id=uid)
 
 
@@ -529,7 +528,6 @@ class EFetchAnalyzer(EutilsAnalyzer):
 
     # override the base method to enable parsing when retmode=text
     def parse(self, raw_response, request):
-        # todo: solve error if retmax/10'000 much larger than # run IDs
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
         if self.isErrorResponse(response, request):

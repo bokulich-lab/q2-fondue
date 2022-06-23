@@ -25,7 +25,6 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 
 threading.excepthook = handle_threaded_exception
 BATCH_SIZE = 150
-RUN_RETMAX = 10000  # todo: set even higher: > 40'000
 
 
 def _chunker(seq, size):
@@ -129,8 +128,7 @@ def _get_other_meta(
         email, n_jobs, project_ids, id_type, log_level, logger
 ) -> (pd.DataFrame, dict):
     run_ids = _get_run_ids(
-                    email, n_jobs, RUN_RETMAX, project_ids,
-                    id_type, log_level)
+                    email, n_jobs, project_ids, id_type, log_level)
 
     return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
 

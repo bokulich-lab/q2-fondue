@@ -7,15 +7,16 @@
 # ----------------------------------------------------------------------------
 
 from entrezpy import conduit as ec
-
+import math
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
+import entrezpy.esearch.esearcher as searcher
 
 
 def _get_run_ids(
-        email: str, n_jobs: int, retmax: int, ids: list,
+        email: str, n_jobs: int, ids: list,
         source: str, log_level: str) -> list:
     """Pipeline to retrieve metadata of run IDs associated with
     studies (`source`='study'), bioprojects (`source`='bioproject'),
@@ -25,7 +26,6 @@ def _get_run_ids(
     Args:
         email (str): User email.
         n_jobs (int): Number of jobs.
-        retmax (int): Number of IDs to get in one fetch.
         ids (list): List of study, bioproject, sample or experiment IDs.
         source (str): Type of IDs provided ('study', 'bioproject',
                       'sample' or 'experiment').
@@ -34,17 +34,29 @@ def _get_run_ids(
     Returns:
         list: Run IDs associated with provided ids.
     """
-    econduit = ec.Conduit(email=email, threads=n_jobs)
-    set_up_entrezpy_logging(econduit, log_level)
+    # get retmax number
+    esearch_count = searcher.Esearcher(
+        'esearcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None)
+    esearch_response = esearch_count.inquire(
+            {'db': 'sra', 'term': " OR ".join(ids)},
+            analyzer=ESearchAnalyzer(ids, log_level))
+    nb_runs = esearch_response.result.result.sum()
+    # source for rounding up to next 1k: https://stackoverflow.com/a/8866125
+    retmax = int(math.ceil(nb_runs / 10000.0)) * 10000
+    del esearch_response
 
-    samp_ids_pipeline = econduit.new_pipeline()
-
+    # create pipeline to fetch all run IDs
     if source == 'bioproject':
         db = 'bioproject'
         elink = True
     else:
         db = 'sra'
         elink = False
+
+    econduit = ec.Conduit(email=email, threads=n_jobs)
+    set_up_entrezpy_logging(econduit, log_level)
+    samp_ids_pipeline = econduit.new_pipeline()
 
     # search for IDs
     es = samp_ids_pipeline.add_search(
@@ -67,6 +79,5 @@ def _get_run_ids(
     )
 
     a = econduit.run(samp_ids_pipeline)
-    # deleting conduit object to avoid thread error
-    del econduit
-    return a.result.metadata
+
+    return sorted(a.result.metadata)
