@@ -340,29 +340,25 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 cm.output
             )
 
-    # @parameterized.expand([
-    #     ("study", "sra"),
-    #     ("bioproject", "bioproject"),
-    #     ("experiment", "sra"),
-    #     ("sample", "sra")
-    #     ])
+    @parameterized.expand([
+        ("study", "sra"),
+        ("bioproject", "bioproject"),
+        ("experiment", "sra"),
+        ("sample", "sra")
+    ])
+    @patch('q2_fondue.entrezpy_clients._pipelines.get_run_id_count')
     @patch('q2_fondue.metadata._get_run_meta')
-    def test_get_other_meta_dirty(self, patched_get):
-        # todo: proper testing of functionality with
-        # todo: esearch_result mocking (probably with):
-        # from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
-        # patched_es_iq.return_value =
-        #   self.generate_es_result('multi', '_correct')
-        # todo: parameterize again
-        id_type = "bioproject"
-        db2search = "bioproject"
+    def test_get_other_meta_different_ids(
+            self, id_type, db2search, mock_get, mock_count):
         exp_ids = [
             'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
             'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
             'SRR000057', 'SRR000058', 'SRR13961759', 'SRR13961771']
         with patch.object(conduit, 'Conduit') as mock_conduit:
+            mock_count.return_value = 12
             mock_conduit.return_value = self.fake_econduit
-            patched_get.return_value = exp_ids
+            mock_get.return_value = exp_ids
+
             _ = _get_other_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd'], id_type,
                 'INFO', MagicMock()
@@ -371,8 +367,34 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             self.fake_econduit.pipeline.add_search.assert_called_once_with(
                 {'db': db2search, 'term': "AB OR cd"}, analyzer=ANY
             )
-            patched_get.assert_called_once_with(
+            self.fake_econduit.pipeline.add_fetch.assert_called_once_with(
+                {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
+                analyzer=ANY, dependency=ANY
+            )
+            mock_get.assert_called_once_with(
                 'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
+            )
+
+    @patch('q2_fondue.entrezpy_clients._pipelines.get_run_id_count')
+    @patch('q2_fondue.metadata._get_run_meta')
+    def test_get_other_meta_large_retmax(self, mock_get, mock_count):
+        exp_ids = [
+            'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+            'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+            'SRR000057', 'SRR000058', 'SRR13961759', 'SRR13961771']
+        with patch.object(conduit, 'Conduit') as mock_conduit:
+            mock_count.return_value = 234000
+            mock_conduit.return_value = self.fake_econduit
+            mock_get.return_value = exp_ids
+
+            _ = _get_other_meta(
+                'someone@somewhere.com', 1, ['AB', 'cd'], 'bioproject',
+                'INFO', MagicMock()
+            )
+
+            self.fake_econduit.pipeline.add_fetch.assert_called_once_with(
+                {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 240000},
+                analyzer=ANY, dependency=ANY
             )
 
     @patch('q2_fondue.metadata._get_run_meta')

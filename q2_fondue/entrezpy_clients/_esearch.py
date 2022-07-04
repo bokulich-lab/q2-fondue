@@ -13,6 +13,7 @@ import pandas as pd
 from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
 from q2_fondue.entrezpy_clients._utils import set_up_logger
+import entrezpy.esearch.esearcher as searcher
 
 
 class ESearchResult(EutilsResult):
@@ -136,3 +137,29 @@ class ESearchAnalyzer(EutilsAnalyzer):
     def analyze_result(self, response, request):
         self.init_result(response, request)
         self.result.parse_search_results(response, self.uids)
+
+
+def get_run_id_count(
+        email: str, n_jobs: int, ids: list, log_level: str) -> int:
+    """Returns number of run IDs for provided ids.
+
+    Args:
+        email (str): User email.
+        n_jobs (int): Number of jobs.
+        ids (list): List of study, bioproject, sample or experiment IDs.
+        log_level (str): The log level to set.
+
+    Returns:
+        int: Number of run IDs associated with provided ids.
+    """
+    # not testing as it's already tested individually - might require
+    # tests in future
+    esearch_count = searcher.Esearcher(
+        'esearcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None)
+    esearch_response = esearch_count.inquire(
+        {'db': 'sra', 'term': " OR ".join(ids)},
+        analyzer=ESearchAnalyzer(ids, log_level))
+    nb_runs = esearch_response.result.result.sum()
+    del esearch_response
+    return nb_runs

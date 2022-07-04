@@ -10,9 +10,9 @@ from entrezpy import conduit as ec
 import math
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
-from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
+from q2_fondue.entrezpy_clients._esearch import (
+    ESearchAnalyzer, get_run_id_count)
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
-import entrezpy.esearch.esearcher as searcher
 
 
 def _get_run_ids(
@@ -34,17 +34,9 @@ def _get_run_ids(
     Returns:
         list: Run IDs associated with provided ids.
     """
-    # get retmax number
-    esearch_count = searcher.Esearcher(
-        'esearcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None)
-    esearch_response = esearch_count.inquire(
-            {'db': 'sra', 'term': " OR ".join(ids)},
-            analyzer=ESearchAnalyzer(ids, log_level))
-    nb_runs = esearch_response.result.result.sum()
+    nb_runs = get_run_id_count(email, n_jobs, ids, log_level)
     # source for rounding up to next 1k: https://stackoverflow.com/a/8866125
     retmax = int(math.ceil(nb_runs / 10000.0)) * 10000
-    del esearch_response
 
     # create pipeline to fetch all run IDs
     if source == 'bioproject':
