@@ -152,8 +152,6 @@ def get_run_id_count(
     Returns:
         int: Number of run IDs associated with provided ids.
     """
-    # not testing as it's already tested individually - might require
-    # tests in future
     esearch_count = searcher.Esearcher(
         'esearcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None)
