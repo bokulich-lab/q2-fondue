@@ -25,7 +25,6 @@ from q2_fondue.tests.test_sequences import SequenceTests
 class TestGetAll(SequenceTests):
     package = 'q2_fondue.tests'
 
-    @patch('q2_fondue.metadata.es.Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
@@ -38,7 +37,7 @@ class TestGetAll(SequenceTests):
     def test_get_all_single(
             self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
             mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation, mock_esearcher
+            mock_validation
     ):
         """
         Test verifying that pipeline get_all calls all expected actions,
@@ -79,10 +78,8 @@ class TestGetAll(SequenceTests):
         fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
 
         # function call assertions for get_metadata within
-        mock_esearcher.assert_called_once_with(
-            'esearcher', 'fake@email.com', apikey=None, apikey_var=None,
-            threads=1, qid=None)
-        mock_validation.assert_called_once_with(ANY, [acc_id], 'INFO')
+        mock_validation.assert_called_once_with(
+            'fake@email.com', 1, [acc_id], 'INFO')
         mock_efetcher.assert_called_once_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
@@ -102,7 +99,6 @@ class TestGetAll(SequenceTests):
         )
 
     @patch('q2_fondue.metadata.BATCH_SIZE', 1)
-    @patch('q2_fondue.metadata.es.Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
@@ -115,7 +111,7 @@ class TestGetAll(SequenceTests):
     def test_get_all_multi_with_missing_ids(
             self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
             mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation, mock_esearcher
+            mock_validation
     ):
         """
         Test verifying that pipeline get_all calls all expected actions,
@@ -168,10 +164,8 @@ class TestGetAll(SequenceTests):
             missing_ids_exp)
 
         # function call assertions for get_metadata within
-        mock_esearcher.assert_called_once_with(
-            'esearcher', 'fake@email.com', apikey=None, apikey_var=None,
-            threads=1, qid=None)
-        mock_validation.assert_called_once_with(ANY, acc_ids, 'INFO')
+        mock_validation.assert_called_once_with(
+            'fake@email.com', 1, acc_ids, 'INFO')
         mock_efetcher.assert_called_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)

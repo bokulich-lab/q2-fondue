@@ -20,6 +20,7 @@ from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
 from unittest.mock import patch, MagicMock, ANY, call
 
+from q2_fondue.entrezpy_clients import _esearch
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.metadata import (
@@ -50,6 +51,15 @@ class FakeConduit:
         analyzer.result = self.fake_efetch_result
         analyzer.result.extract_run_ids(self.fake_efetch_response)
         return analyzer
+
+
+class FakeAnalyzerValidation():
+    def __init__(self, ids, counts):
+        self.log_level = 'INFO'
+        self.result = MagicMock()
+        self.result.validate_result = MagicMock()
+        self.result.result = pd.Series(
+            data=counts, index=ids)
 
 
 class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
@@ -88,7 +98,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("bioproject", ['PRJNA123', 'PRJNA123']),
         ("experiment", ['ERX123', 'SRX123']),
         ("sample", ['ERS123', 'SRS123'])
-        ])
+    ])
     def test_determine_id_type(self, id_type, acc_ids):
         obs = _determine_id_type(acc_ids)
         self.assertEqual(id_type, obs)
@@ -167,12 +177,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 'FAKEID1': '<?xml version="1.0"  ?>\n<ERROR>\n</ERROR>\n'}
             self.assertDictEqual(obs_missing, exp_missing)
 
-    def test_esearcher_inquire_single(self):
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    def test_esearcher_inquire_single(self, mock_search):
         with patch.object(Requester, 'request') as mock_request:
+            mock_search.return_value = self.fake_esearcher
             mock_request.return_value = self.json_to_response(
                 'single', '_correct', True)
             obs_result = _validate_esearch_result(
-                self.fake_esearcher, ['SRR000001'], 'INFO'
+                'someone@somewhere.com', 1, ['SRR000001'], 'INFO'
             )
         obs_request, = mock_request.call_args.args
         exp_request = self.generate_es_request('SRR000001')
@@ -183,12 +195,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_request.assert_called_once()
         self.assertDictEqual(obs_result, {})
 
-    def test_esearcher_inquire_multi(self):
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    def test_esearcher_inquire_multi(self, mock_search):
         with patch.object(Requester, 'request') as mock_request:
+            mock_search.return_value = self.fake_esearcher
             mock_request.return_value = self.json_to_response(
                 'multi', '_correct', True)
             obs_result = _validate_esearch_result(
-                self.fake_esearcher,
+                'someone@somewhere.com', 1,
                 ['SRR000001', 'SRR000013', 'ERR3978173'],
                 'INFO'
             )
@@ -201,6 +215,48 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 getattr(exp_request, arg), getattr(obs_request, arg))
         mock_request.assert_called_once()
         self.assertDictEqual(obs_result, {})
+
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    @patch.object(_esearch, 'ESearchAnalyzer')
+    def test_validate_esearch_result_one_batch(
+            self, mock_analyzer, mock_search):
+        ids = ['SRR000001', 'SRR000013', 'ERR3978173']
+        mock_analyzer.return_value = FakeAnalyzerValidation(
+            ids, [1, 1, 1])
+        mock_search.return_value.inquire = mock_analyzer
+
+        obs_invalid = _validate_esearch_result(
+            'someone@somewhere.com', 1, ids, 'INFO')
+
+        self.assertEqual(
+            mock_analyzer.return_value.result.validate_result.call_count,
+            1)
+        self.assertDictEqual(obs_invalid, {})
+
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    @patch.object(_esearch, 'ESearchAnalyzer')
+    @patch('q2_fondue.utils._chunker')
+    def test_validate_esearch_result_multiple_batches(
+            self, mock_chunker, mock_analyzer, mock_search):
+        ids = ['SRR000001', 'SRR000013', 'ERR3978173']
+        mock_chunker.return_value = (
+            ['SRR000001', 'SRR000013'], ['ERR3978173'])
+
+        first_analyzer = FakeAnalyzerValidation(
+            ['SRR000001', 'SRR000013'], [1, 1])
+        second_analyzer = FakeAnalyzerValidation(
+            ['ERR3978173'], [1])
+        mock_analyzer.side_effect = [first_analyzer, second_analyzer]
+        mock_search.return_value.inquire = mock_analyzer
+
+        obs_invalid = _validate_esearch_result(
+            'someone@somewhere.com', 1, ids, 'INFO')
+
+        self.assertEqual(
+            first_analyzer.result.validate_result.call_count, 1)
+        self.assertEqual(
+            second_analyzer.result.validate_result.call_count, 1)
+        self.assertDictEqual(obs_invalid, {})
 
     def test_find_all_run_ids(self):
         fake_results = [
@@ -239,10 +295,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         exp_map = {'ab12': 0, 'bc23': 0, 'cd34': 0, 'de45': 0, 'ef56': 1}
         self.assertDictEqual(exp_map, obs_map)
 
-    @patch.object(esearcher, 'Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
     @patch('q2_fondue.metadata._execute_efetcher')
-    def test_get_run_meta(self, patch_ef, patch_val, patch_es):
+    def test_get_run_meta(self, patch_ef, patch_val):
         exp_df = pd.DataFrame(
             {'meta1': [1, 2, 3], 'meta2': ['a', 'b', 'c']},
             index=['AB', 'cd', 'Ef']
@@ -254,20 +309,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
 
         assert_frame_equal(exp_df, obs_df)
-        patch_es.assert_called_once_with(
-            'esearcher', 'someone@somewhere.com', apikey=None,
-            apikey_var=None, threads=1, qid=None
-        )
-        patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'], 'INFO')
+        patch_val.assert_called_once_with(
+            'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO')
         patch_ef.assert_called_once_with(
             'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
             self.fake_logger
         )
 
-    @patch.object(esearcher, 'Esearcher')
     @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
     @patch('q2_fondue.metadata._execute_efetcher')
-    def test_get_run_meta_missing_ids(self, patch_ef, patch_val, patch_es):
+    def test_get_run_meta_missing_ids(self, patch_ef, patch_val):
         exp_meta = pd.DataFrame(
             {'meta1': [1, 2], 'meta2': ['a', 'b']},
             index=['AB', 'cd']
@@ -290,11 +341,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                  'independently.']
             )
 
-            patch_es.assert_called_once_with(
-                'esearcher', 'someone@somewhere.com', apikey=None,
-                apikey_var=None, threads=1, qid=None
-            )
-            patch_val.assert_called_once_with(ANY, ['AB', 'cd', 'Ef'], 'INFO')
+            patch_val.assert_called_once_with(
+                'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO')
             patch_ef.assert_called_once_with(
                 'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
                 self.fake_logger
@@ -416,7 +464,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("bioproject", ['PRJNA123', 'PRJNA234']),
         ("experiment", ['ERX115020', 'SRX10331465']),
         ("sample", ['ERS147978', 'ERS3588233'])
-        ])
+    ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_other(
@@ -449,7 +497,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("bioproject", "Bioproject ID"),
         ("experiment", "Experiment ID"),
         ("sample", "Sample Accession")
-        ])
+    ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_other_w_doi(

@@ -10,13 +10,13 @@ import threading
 from typing import List, Tuple
 
 import entrezpy.efetch.efetcher as ef
-import entrezpy.esearch.esearcher as es
 import pandas as pd
 from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type, handle_threaded_exception
+    _validate_esearch_result, _determine_id_type, handle_threaded_exception,
+    _chunker
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger, InvalidIDs)
@@ -25,11 +25,6 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 
 threading.excepthook = handle_threaded_exception
 BATCH_SIZE = 150
-
-
-def _chunker(seq, size):
-    # source: https://stackoverflow.com/a/434328/579416
-    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
 def _efetcher_inquire(
@@ -89,13 +84,7 @@ def _execute_efetcher(email, n_jobs, run_ids, log_level, logger):
 def _get_run_meta(
         email, n_jobs, run_ids, log_level, logger
 ) -> (pd.DataFrame, dict):
-    # validate the IDs
-    esearcher = es.Esearcher(
-        'esearcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None
-    )
-    set_up_entrezpy_logging(esearcher, log_level)
-    invalid_ids = _validate_esearch_result(esearcher, run_ids, log_level)
+    invalid_ids = _validate_esearch_result(email, n_jobs, run_ids, log_level)
     valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
 
     if not valid_ids:

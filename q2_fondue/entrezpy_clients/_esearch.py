@@ -159,5 +159,5 @@ def get_run_id_count(
         {'db': 'sra', 'term': " OR ".join(ids)},
         analyzer=ESearchAnalyzer(ids, log_level))
     nb_runs = esearch_response.result.result.sum()
-    del esearch_response
+    del esearch_response, esearch_count
     return nb_runs

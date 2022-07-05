@@ -15,7 +15,8 @@ from entrezpy.esearch import esearcher as es
 from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
-from q2_fondue.entrezpy_clients._utils import PREFIX, InvalidIDs, set_up_logger
+from q2_fondue.entrezpy_clients._utils import (
+    PREFIX, InvalidIDs, set_up_logger, set_up_entrezpy_logging)
 
 LOGGER = set_up_logger('INFO', logger_name=__name__)
 
@@ -24,27 +25,44 @@ class DownloadError(Exception):
     pass
 
 
+def _chunker(seq, size):
+    # source: https://stackoverflow.com/a/434328/579416
+    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+
+
 def _validate_esearch_result(
-        esearcher: es.Esearcher, run_ids: List[str], log_level: str) -> dict:
+        email: str, n_jobs: int, run_ids: List[str], log_level: str) -> dict:
     """Validates provided accession IDs using ESearch.
 
     Args:
-        esearcher (es.Esearcher): A valid instance of an Entrezpy Esearcher.
+        email (str): A valid e-mail address.
+        n_jobs (int): Number of threads to be used in parallel.
         run_ids (List[str]): List of all the run IDs to be validated.
         log_level (str): Logging level.
 
     Returns:
         dict: Dictionary of invalid IDs (as keys) with a description.
     """
-    esearch_response = esearcher.inquire(
-        {
-            'db': 'sra',
-            'term': " OR ".join(run_ids),
-            'usehistory': False
-        }, analyzer=ESearchAnalyzer(run_ids, log_level)
-    )
+    # must process in batches because esearch requests with
+    # runID count > 10'000 fail
+    invalid_ids = {}
+    for batch in _chunker(run_ids, 10000):
+        esearcher = es.Esearcher(
+            'esearcher', email, apikey=None,
+            apikey_var=None, threads=n_jobs, qid=None
+        )
+        set_up_entrezpy_logging(esearcher, log_level)
 
-    return esearch_response.result.validate_result()
+        esearch_response = esearcher.inquire(
+            {
+                'db': 'sra',
+                'term': " OR ".join(batch),
+                'usehistory': False
+            }, analyzer=ESearchAnalyzer(batch, log_level)
+        )
+        invalid_ids.update(esearch_response.result.validate_result())
+
+    return invalid_ids
 
 
 def _determine_id_type(ids: list):
