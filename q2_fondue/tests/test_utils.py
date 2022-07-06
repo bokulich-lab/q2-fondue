@@ -17,7 +17,7 @@ from qiime2.plugin.testing import TestPluginBase
 from tqdm import tqdm
 
 from q2_fondue.utils import (handle_threaded_exception, _has_enough_space,
-                             _find_next_id)
+                             _find_next_id, _chunker)
 
 
 class TestExceptHooks(unittest.TestCase):
@@ -118,6 +118,18 @@ class TestSRAUtils(TestPluginBase):
         pbar = tqdm(['A', 'B', 'C'])
         obs = _find_next_id('C', pbar)
         self.assertIsNone(obs)
+
+    def test_chunker(self):
+        obs_out = _chunker(['A', 'B', 'C'], 2)
+        exp_out_1 = ['A', 'B']
+        exp_out_2 = ['C']
+        self.assertEqual(next(obs_out), exp_out_1)
+        self.assertEqual(next(obs_out), exp_out_2)
+
+    def test_chunker_no_chunks(self):
+        obs_out = _chunker(['A', 'B', 'C'], 4)
+        exp_out = ['A', 'B', 'C']
+        self.assertEqual(next(obs_out), exp_out)
 
 
 if __name__ == "__main__":
