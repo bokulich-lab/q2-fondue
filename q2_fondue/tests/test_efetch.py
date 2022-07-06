@@ -305,6 +305,21 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         exp = ['FAKEID1']
         self.assertListEqual(exp, self.efetch_analyzer.result.metadata)
 
+    def test_efanalyzer_analyze_error(self):
+        raw_response = self.xml_to_response('error')
+        request = self.generate_ef_request(['FAKEID1'])
+        response = self.efetch_analyzer.convert_response(
+            raw_response.read().decode('utf-8'), request)
+
+        self.efetch_analyzer.analyze_error(
+            response=response, request=request
+        )
+
+        self.assertEqual(
+            self.efetch_analyzer.error_msg,
+            '<?xml version="1.0"  ?>\n<ERROR>\n</ERROR>\n'
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
