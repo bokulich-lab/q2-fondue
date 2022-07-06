@@ -141,7 +141,7 @@ def _find_doi_mapping_and_type(
 def get_metadata(
         accession_ids: Metadata, email: str,
         n_jobs: int = 1, log_level: str = 'INFO',
-        linked_doi_names: Metadata = None,
+        linked_doi_names: Metadata = None
 ) -> (pd.DataFrame, pd.DataFrame):
     """Fetches metadata using the provided run/bioproject/study/sample or
     experiment accession IDs.

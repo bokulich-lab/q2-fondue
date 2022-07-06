@@ -52,6 +52,12 @@ common_param_descr = {
     'log_level': 'Logging level.'
 }
 
+input_descriptions = {
+    'linked_doi_names': 'Optional table containing linked DOI names that is '
+                        'only used if accession_ids does not contain any '
+                        'DOI names.'
+}
+
 output_descriptions = {
     'metadata': 'Table containing metadata for all the requested IDs.',
     'single_reads': 'Artifact containing single-read fastq.gz files '
@@ -90,7 +96,7 @@ plugin.methods.register_function(
     outputs=[('metadata', SRAMetadata), ('failed_runs', SRAFailedIDs)],
     input_descriptions={
         **common_input_descriptions,
-        'linked_doi_names': 'Optional artifact containing associated DOI names'
+        'linked_doi_names': input_descriptions['linked_doi_names']
         },
     parameter_descriptions=common_param_descr,
     output_descriptions={
@@ -136,7 +142,8 @@ plugin.methods.register_function(
 
 plugin.pipelines.register_function(
     function=get_all,
-    inputs={**common_inputs},
+    inputs={**common_inputs,
+            'linked_doi_names': NCBIAccessionIDs},
     parameters={
         **common_params,
         'retries': Int % Range(0, None)
@@ -147,7 +154,10 @@ plugin.pipelines.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={**common_input_descriptions},
+    input_descriptions={
+        **common_input_descriptions,
+        'linked_doi_names': input_descriptions['linked_doi_names']
+        },
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).'
