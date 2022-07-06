@@ -143,7 +143,8 @@ def get_metadata(
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
-        pd.DataFrame: DataFrame with invalid IDs and their descriptions.
+        pd.DataFrame: DataFrame with runs IDs for which no metadata was
+            fetched and the associated error messages.
     """
     logger = set_up_logger(log_level, logger_name=__name__)
 
