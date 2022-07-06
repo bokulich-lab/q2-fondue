@@ -9,6 +9,7 @@
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
+import numpy as np
 import unittest
 from parameterized import parameterized
 from entrezpy import conduit
@@ -396,6 +397,25 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             assert_array_equal(
                 obs_meta[[match_id, 'DOI']].values[row],
                 ids_meta.to_dataframe().reset_index().values[0])
+
+    @patch('q2_fondue.metadata._get_run_meta')
+    def test_get_metadata_missing_ids_w_doi_refetch(self, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path(
+            'sra-metadata-failed-ids.tsv'), sep='\t', index_col=0)
+        patched_get_run.return_value = (meta_df, {})
+
+        runids_nodoi = Metadata.load(self.get_data_path(
+            'failed_ids_no_doi.tsv'))
+        ids_doi = Metadata.load(self.get_data_path(
+            'study_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(
+            runids_nodoi, 'anja@gmail.com', linked_doi_names=ids_doi)
+        self.assertTrue('DOI' in obs_meta.columns)
+        assert_array_equal(
+            np.unique(obs_meta[['Study ID', 'DOI']].values),
+            ids_doi.to_dataframe().reset_index().values[0]
+        )
 
     def test_merge_metadata_3dfs_nodupl(self):
         # Test merging metadata with no duplicated run IDs

@@ -35,7 +35,9 @@ common_inputs = {
 common_input_descriptions = {
     'accession_ids': 'Artifact containing run, study, BioProject, experiment '
                      'or sample IDs for which the metadata and/or sequences '
-                     'should be fetched.',
+                     'should be fetched. Associated DOI names can be provided'
+                     'in an optional column and are preserved in `get-all`'
+                     'and `get-metadata actions`.',
 }
 
 common_params = {
@@ -80,10 +82,16 @@ plugin = Plugin(
 
 plugin.methods.register_function(
     function=get_metadata,
-    inputs={**common_inputs},
+    inputs={
+        **common_inputs,
+        'linked_doi_names': NCBIAccessionIDs
+        },
     parameters=common_params,
     outputs=[('metadata', SRAMetadata), ('failed_runs', SRAFailedIDs)],
-    input_descriptions={**common_input_descriptions},
+    input_descriptions={
+        **common_input_descriptions,
+        'linked_doi_names': 'Optional artifact containing associated DOI names'
+        },
     parameter_descriptions=common_param_descr,
     output_descriptions={
         'metadata': output_descriptions['metadata'],

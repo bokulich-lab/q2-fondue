@@ -121,19 +121,25 @@ def _get_other_meta(
 
 def get_metadata(
         accession_ids: Metadata, email: str,
-        n_jobs: int = 1, log_level: str = 'INFO'
+        n_jobs: int = 1, log_level: str = 'INFO',
+        linked_doi_names: Metadata = None,
 ) -> (pd.DataFrame, pd.DataFrame):
     """Fetches metadata using the provided run/bioproject/study/sample or
     experiment accession IDs.
 
     The IDs will be first validated using an ESearch query. The metadata
-    will be fetched only if all the IDs are valid. Otherwise, the user
+    will be fetched only for the valid IDs. Otherwise, the user
     will be informed on which IDs require checking.
 
     Args:
-        accession_ids (Metadata): List of all the accession IDs
+        accession_ids (Metadata): Table of all the accession IDs
             to be fetched (either run, bioproject, study, sample or
-            experiment IDs).
+            experiment IDs). If table does not contain DOI names, names
+            from `linked_doi_names` will be matched.
+        linked_doi_names (Metadata): Optional table of accession IDs with
+            associated DOI names. Preferably used when refetching failed
+            run IDs that can be matched after metadata was fetched
+            successfully.
         email (str): A valid e-mail address (required by NCBI).
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
@@ -147,8 +153,15 @@ def get_metadata(
     # if present, save DOI to IDs mapping for later
     if any(x in accession_ids.columns for x in ['doi', 'DOI']):
         id2doi = accession_ids.to_dataframe().iloc[:, 0]
+        id2doi_type = None
+    elif (linked_doi_names is not None and
+          any(x in linked_doi_names.columns for x in ['doi', 'DOI'])):
+        id2doi = linked_doi_names.to_dataframe().iloc[:, 0]
+        doi_ids = sorted(list(linked_doi_names.get_ids()))
+        id2doi_type = _determine_id_type(doi_ids)
     else:
         id2doi = None
+        id2doi_type = None
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
@@ -156,21 +169,33 @@ def get_metadata(
     # figure out if we're dealing with project or run ids
     id_type = _determine_id_type(accession_ids)
 
+    # IDs matched to DOI are not on same aggregation level
+    # as provided accessionIDs are
+    # if id2doi_type != id_type:
+
+    match_study_meta = {
+        'bioproject': 'Bioproject ID', 'study': 'Study ID',
+        'experiment': 'Experiment ID', 'sample': 'Sample Accession'
+    }
     if id_type == 'run':
         meta, invalid_ids = _get_run_meta(
             email, n_jobs, accession_ids, log_level, logger
         )
+        # todo: check if below can be made more compact
         # if available, join DOI to meta by run ID:
-        if id2doi is not None:
+        if id2doi is not None and id2doi_type is None:
             meta = meta.join(id2doi, how='left')
+        # matching must be done on other field than run ID (case with
+        # failed_runs)
+        elif id2doi is not None and id2doi_type is not None:
+            meta = meta.merge(id2doi, how='left',
+                              left_on=match_study_meta[id2doi_type],
+                              right_index=True)
+
     else:
         meta, invalid_ids = _get_other_meta(
             email, n_jobs, accession_ids, id_type, log_level, logger
         )
-        match_study_meta = {
-            'bioproject': 'Bioproject ID', 'study': 'Study ID',
-            'experiment': 'Experiment ID', 'sample': 'Sample Accession'
-        }
         # if available, join DOI to meta by respective ID:
         if id2doi is not None:
             meta = meta.merge(id2doi, how='left',
