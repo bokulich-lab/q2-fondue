@@ -15,7 +15,7 @@ from qiime2 import Metadata
 
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type, handle_threaded_exception,
+    _validate_run_ids, _determine_id_type, handle_threaded_exception,
     _chunker
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
@@ -51,9 +51,8 @@ def _efetcher_inquire(
     )
 
     if metadata_response.result is None:
-        error_msg = metadata_response.error_msg
         return (pd.DataFrame(),
-                {m_id: error_msg for m_id in run_ids})
+                {m_id: metadata_response.error_msg for m_id in run_ids})
     else:
         return (metadata_response.result.metadata_to_df(), {})
 
@@ -84,7 +83,7 @@ def _execute_efetcher(email, n_jobs, run_ids, log_level, logger):
 def _get_run_meta(
         email, n_jobs, run_ids, log_level, logger
 ) -> (pd.DataFrame, dict):
-    invalid_ids = _validate_esearch_result(email, n_jobs, run_ids, log_level)
+    invalid_ids = _validate_run_ids(email, n_jobs, run_ids, log_level)
     valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
 
     if not valid_ids:

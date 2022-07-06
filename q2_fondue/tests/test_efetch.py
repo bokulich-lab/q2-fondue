@@ -210,7 +210,6 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
                              ['FAKEID1'])
         self.assertEqual(1, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
-        self.assertEqual(self.efetch_result_single.error_msg, None)
 
     def test_efetch_add_metadata_one_experiment_many_runs(self):
         self.efetch_result_single.add_metadata(
@@ -220,7 +219,6 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
                              ['FAKEID1', 'FAKEID3'])
         self.assertEqual(2, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
-        self.assertEqual(self.efetch_result_single.error_msg, None)
 
     def test_efetch_add_metadata_many_experiments_one_run(self):
         self.efetch_result_single.add_metadata(
@@ -230,7 +228,6 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
                              ['FAKEID1'])
         self.assertEqual(1, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
-        self.assertEqual(self.efetch_result_single.error_msg, None)
 
     def test_efetch_add_metadata_many_experiments_many_runs(self):
         self.efetch_result_single.add_metadata(
@@ -240,7 +237,6 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
                              ['FAKEID1', 'FAKEID2'])
         self.assertEqual(2, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
-        self.assertEqual(self.efetch_result_single.error_msg, None)
 
     def test_efetch_to_df(self):
         self.efetch_result_single.add_metadata(

@@ -29,7 +29,7 @@ from q2_fondue.metadata import (
 )
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 from q2_fondue.utils import (
-    _validate_esearch_result, _determine_id_type
+    _validate_run_ids, _determine_id_type
 )
 
 
@@ -183,7 +183,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             mock_search.return_value = self.fake_esearcher
             mock_request.return_value = self.json_to_response(
                 'single', '_correct', True)
-            obs_result = _validate_esearch_result(
+            obs_result = _validate_run_ids(
                 'someone@somewhere.com', 1, ['SRR000001'], 'INFO'
             )
         obs_request, = mock_request.call_args.args
@@ -201,7 +201,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             mock_search.return_value = self.fake_esearcher
             mock_request.return_value = self.json_to_response(
                 'multi', '_correct', True)
-            obs_result = _validate_esearch_result(
+            obs_result = _validate_run_ids(
                 'someone@somewhere.com', 1,
                 ['SRR000001', 'SRR000013', 'ERR3978173'],
                 'INFO'
@@ -218,14 +218,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
 
     @patch('entrezpy.esearch.esearcher.Esearcher')
     @patch.object(_esearch, 'ESearchAnalyzer')
-    def test_validate_esearch_result_one_batch(
+    def test_validate_run_ids_one_batch(
             self, mock_analyzer, mock_search):
         ids = ['SRR000001', 'SRR000013', 'ERR3978173']
         mock_analyzer.return_value = FakeAnalyzerValidation(
             ids, [1, 1, 1])
         mock_search.return_value.inquire = mock_analyzer
 
-        obs_invalid = _validate_esearch_result(
+        obs_invalid = _validate_run_ids(
             'someone@somewhere.com', 1, ids, 'INFO')
 
         self.assertEqual(
@@ -236,7 +236,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     @patch('entrezpy.esearch.esearcher.Esearcher')
     @patch.object(_esearch, 'ESearchAnalyzer')
     @patch('q2_fondue.utils._chunker')
-    def test_validate_esearch_result_multiple_batches(
+    def test_validate_run_ids_multiple_batches(
             self, mock_chunker, mock_analyzer, mock_search):
         ids = ['SRR000001', 'SRR000013', 'ERR3978173']
         mock_chunker.return_value = (
@@ -249,7 +249,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         mock_analyzer.side_effect = [first_analyzer, second_analyzer]
         mock_search.return_value.inquire = mock_analyzer
 
-        obs_invalid = _validate_esearch_result(
+        obs_invalid = _validate_run_ids(
             'someone@somewhere.com', 1, ids, 'INFO')
 
         self.assertEqual(
@@ -295,7 +295,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         exp_map = {'ab12': 0, 'bc23': 0, 'cd34': 0, 'de45': 0, 'ef56': 1}
         self.assertDictEqual(exp_map, obs_map)
 
-    @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
+    @patch('q2_fondue.metadata._validate_run_ids', return_value={})
     @patch('q2_fondue.metadata._execute_efetcher')
     def test_get_run_meta(self, patch_ef, patch_val):
         exp_df = pd.DataFrame(
@@ -316,7 +316,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             self.fake_logger
         )
 
-    @patch('q2_fondue.metadata._validate_esearch_result', return_value={})
+    @patch('q2_fondue.metadata._validate_run_ids', return_value={})
     @patch('q2_fondue.metadata._execute_efetcher')
     def test_get_run_meta_missing_ids(self, patch_ef, patch_val):
         exp_meta = pd.DataFrame(
@@ -349,7 +349,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             )
 
     @patch.object(esearcher, 'Esearcher')
-    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata._execute_efetcher')
     def test_get_run_meta_no_valid_ids(self, patch_ef, patch_val, patch_es):
         patch_val.return_value = {
@@ -365,7 +365,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             )
 
     @patch.object(esearcher, 'Esearcher')
-    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata._execute_efetcher')
     def test_get_run_meta_one_invalid_id(self, patch_ef, patch_val, patch_es):
         patch_val.return_value = {

@@ -32,7 +32,6 @@ class EFetchResult(EutilsResult):
         self.samples = {}
         self.experiments = {}
         self.runs = {}
-        self.error_msg = None
         self.logger = set_up_logger(log_level, self)
 
     def size(self):
@@ -99,7 +98,7 @@ class EFetchResult(EutilsResult):
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
                             self.metadata += [x.get('@acc') for x in runs]
-                            self.metadata = list(set(self.metadata))
+            self.metadata = list(set(self.metadata))
         else:
             self.logger.error(
                 'Document summary was not found in the result received from '
@@ -503,6 +502,7 @@ class EFetchAnalyzer(EutilsAnalyzer):
         self.log_level = log_level
         self.response_type = None
         self.logger = set_up_logger(log_level, self)
+        self.error_msg = None
 
     def init_result(self, response, request):
         self.response_type = request.rettype
@@ -510,12 +510,12 @@ class EFetchAnalyzer(EutilsAnalyzer):
             self.result = EFetchResult(response, request, self.log_level)
 
     def analyze_error(self, response, request):
+        self.error_msg = response.getvalue()
         self.logger.error(json.dumps({
             __name__: {
                 'Response': {
                     'dump': request.dump(),
-                    'error': response.getvalue()}}}))
-        self.error_msg = response.getvalue()
+                    'error': self.error_msg}}}))
 
     def analyze_result(self, response, request):
         self.init_result(response, request)
@@ -526,7 +526,8 @@ class EFetchAnalyzer(EutilsAnalyzer):
             # we asked for metadata
             self.result.add_metadata(response, request.uids)
 
-    # override the base method to enable parsing when retmode=text
+    # override the base method to enable continuation even if
+    # self.result is None
     def parse(self, raw_response, request):
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)

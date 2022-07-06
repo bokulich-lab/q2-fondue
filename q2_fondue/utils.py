@@ -30,7 +30,7 @@ def _chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
 
-def _validate_esearch_result(
+def _validate_run_ids(
         email: str, n_jobs: int, run_ids: List[str], log_level: str) -> dict:
     """Validates provided accession IDs using ESearch.
 
@@ -87,10 +87,6 @@ def handle_threaded_exception(args):
     # silence threads exiting correctly
     elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '0':
         return
-    # todo: remove or uncomment below
-    # # silence empty threads (happens when RETMAX >>> fetched run IDs)
-    # elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '':
-    #     return
     else:
         msg += f'Caught {args.exc_type} with value "{args.exc_value}" ' \
                f'in thread {args.thread}'

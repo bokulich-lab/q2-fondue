@@ -25,7 +25,7 @@ from q2_fondue.tests.test_sequences import SequenceTests
 class TestGetAll(SequenceTests):
     package = 'q2_fondue.tests'
 
-    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
     @patch('time.sleep')
@@ -99,7 +99,7 @@ class TestGetAll(SequenceTests):
         )
 
     @patch('q2_fondue.metadata.BATCH_SIZE', 1)
-    @patch('q2_fondue.metadata._validate_esearch_result')
+    @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
     @patch('time.sleep')
