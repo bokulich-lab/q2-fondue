@@ -123,6 +123,16 @@ def _get_other_meta(
 
 def _find_doi_mapping_and_type(
         mapping_doi_ids: Metadata) -> (pd.Series, str):
+    """If present, save DOI name to ID mappings together with type
+    of IDs the DOI names are matching to.
+
+    Args:
+        mapping_doi_ids (Metadata): Table of accession IDs with
+            associated DOI names.
+    Returns:
+        pd.Series: Series of DOI names with matched accession IDs.
+        str: Type of accession IDs in matching.
+    """
     id2doi = mapping_doi_ids.to_dataframe().iloc[:, 0]
     doi_ids = sorted(list(mapping_doi_ids.get_ids()))
     id2doi_type = _determine_id_type(doi_ids)
