@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"  ?>
+<!DOCTYPE eSummaryResult PUBLIC "-//NLM//DTD esummary v1 20041029//EN"
+        "https://eutils.ncbi.nlm.nih.gov/eutils/dtd/20041029/esummary-v1.dtd">
+<eSummaryResult>
+
+    <DocSum>
+        <Id>13481774</Id>
+        <Item Name="ExpXml" Type="String">&lt;Summary&gt;&lt;Title&gt;18&lt;/Title&gt;&lt;Platform
+            instrument_model="Illumina HiSeq 3000"&gt;ILLUMINA&lt;/Platform&gt;&lt;Statistics
+            total_runs="1" total_spots="63703" total_bases="38349206"
+            total_size="22735317" load_done="true" cluster_name="public"/&gt;&lt;/Summary&gt;&lt;Submitter
+            acc="SRA1206349" center_name="Jiangxi Agricultural University"
+            contact_name="huan chen" lab_name="Jiangxi Province Key Laboratory
+            of Animal Nutritio"/&gt;&lt;Experiment acc="SRX10339760" ver="1"
+            status="public" name="18"/&gt;&lt;Study acc="SRP310597" name="PRJNA
+            Chuanzhong black lamb Raw sequence reads"/&gt;&lt;Organism
+            taxid="1904483" ScientificName="sheep gut metagenome"/&gt;&lt;Sample
+            acc="SRS8459117" name=""/&gt;&lt;Instrument ILLUMINA="Illumina
+            HiSeq 3000"/&gt;&lt;Library_descriptor&gt;&lt;LIBRARY_NAME&gt;18&lt;/LIBRARY_NAME&gt;&lt;LIBRARY_STRATEGY&gt;AMPLICON&lt;/LIBRARY_STRATEGY&gt;&lt;LIBRARY_SOURCE&gt;GENOMIC&lt;/LIBRARY_SOURCE&gt;&lt;LIBRARY_SELECTION&gt;PCR&lt;/LIBRARY_SELECTION&gt;&lt;LIBRARY_LAYOUT&gt;
+            &lt;PAIRED/&gt; &lt;/LIBRARY_LAYOUT&gt;&lt;/Library_descriptor&gt;&lt;Bioproject&gt;PRJNA707607&lt;/Bioproject&gt;&lt;Biosample&gt;SAMN18309312&lt;/Biosample&gt;
+        </Item>
+        <Item Name="Runs" Type="String">&lt;Run acc="SRR13961771"
+            total_spots="63703" total_bases="38349206" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;
+        </Item>
+        <Item Name="ExtLinks" Type="String"></Item>
+        <Item Name="CreateDate" Type="String">2021/03/17</Item>
+        <Item Name="UpdateDate" Type="String">2021/03/15</Item>
+    </DocSum>
+
+    <DocSum>
+        <Id>13481786</Id>
+        <Item Name="ExpXml" Type="String">&lt;Summary&gt;&lt;Title&gt;12&lt;/Title&gt;&lt;Platform
+            instrument_model="Illumina HiSeq 3000"&gt;ILLUMINA&lt;/Platform&gt;&lt;Statistics
+            total_runs="1" total_spots="59130" total_bases="35596260"
+            total_size="21079845" load_done="true" cluster_name="public"/&gt;&lt;/Summary&gt;&lt;Submitter
+            acc="SRA1206349" center_name="Jiangxi Agricultural University"
+            contact_name="huan chen" lab_name="Jiangxi Province Key Laboratory
+            of Animal Nutritio"/&gt;&lt;Experiment acc="SRX10339772" ver="1"
+            status="public" name="12"/&gt;&lt;Study acc="SRP310597" name="PRJNA
+            Chuanzhong black lamb Raw sequence reads"/&gt;&lt;Organism
+            taxid="1904483" ScientificName="sheep gut metagenome"/&gt;&lt;Sample
+            acc="SRS8459130" name=""/&gt;&lt;Instrument ILLUMINA="Illumina
+            HiSeq 3000"/&gt;&lt;Library_descriptor&gt;&lt;LIBRARY_NAME&gt;12&lt;/LIBRARY_NAME&gt;&lt;LIBRARY_STRATEGY&gt;AMPLICON&lt;/LIBRARY_STRATEGY&gt;&lt;LIBRARY_SOURCE&gt;GENOMIC&lt;/LIBRARY_SOURCE&gt;&lt;LIBRARY_SELECTION&gt;PCR&lt;/LIBRARY_SELECTION&gt;&lt;LIBRARY_LAYOUT&gt;
+            &lt;PAIRED/&gt; &lt;/LIBRARY_LAYOUT&gt;&lt;/Library_descriptor&gt;&lt;Bioproject&gt;PRJNA707607&lt;/Bioproject&gt;&lt;Biosample&gt;SAMN18309306&lt;/Biosample&gt;
+        </Item>
+        <Item Name="Runs" Type="String">&lt;Run acc="SRR13961759"
+            total_spots="59130" total_bases="35596260" load_done="true"
+            is_public="true" cluster_name="public"
+            static_data_available="true"/&gt;
+        </Item>
+        <Item Name="ExtLinks" Type="String"></Item>
+        <Item Name="CreateDate" Type="String">2021/03/17</Item>
+        <Item Name="UpdateDate" Type="String">2021/03/15</Item>
+    </DocSum>
+</eSummaryResult>

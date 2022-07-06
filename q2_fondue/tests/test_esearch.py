@@ -7,11 +7,22 @@
 # ----------------------------------------------------------------------------
 
 import unittest
+from unittest.mock import patch, MagicMock, ANY, call
 
 import pandas as pd
-
-from q2_fondue.entrezpy_clients._esearch import ESearchResult, ESearchAnalyzer
+from q2_fondue.entrezpy_clients import _esearch
+from q2_fondue.entrezpy_clients._esearch import (
+    ESearchResult, ESearchAnalyzer, get_run_id_count)
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
+
+
+class FakeESAnalyzer():
+    def __init__(self, uids):
+        self.uids = uids
+        self.log_level = 'INFO'
+        self.result = MagicMock()
+        self.result.result = pd.Series(
+            data=[6, 6], index=['ABC', '123'])
 
 
 class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
@@ -154,6 +165,23 @@ class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
 
         self.assertTrue(
             isinstance(es_analyzer.result, ESearchResult))
+
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    @patch.object(_esearch, 'ESearchAnalyzer')
+    def test_get_run_id_count(self, mock_analyzer, mock_search):
+        ids = ['ABC', '123']
+        mock_analyzer.return_value = FakeESAnalyzer(ids)
+        mock_search.return_value.inquire = mock_analyzer
+
+        _ = get_run_id_count(
+            'someone@somewhere.com', 1, ids, 'INFO')
+
+        mock_search.assert_called_once_with(
+            ANY, 'someone@somewhere.com', apikey=None, apikey_var=None,
+            threads=1, qid=None)
+        mock_analyzer.assert_has_calls([
+            call(ids, 'INFO'),
+            call({'db': 'sra', 'term': 'ABC OR 123'}, analyzer=ANY)])
 
 
 if __name__ == "__main__":

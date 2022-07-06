@@ -51,7 +51,7 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 
 ## Usage
 ### Available actions
-q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run, study, BioProject, experiment and study IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
+q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run, study, BioProject, experiment and sample IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
 
 | Action           | Description                                                              |
 |------------------|--------------------------------------------------------------------------|
