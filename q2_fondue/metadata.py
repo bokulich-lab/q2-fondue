@@ -177,14 +177,19 @@ def get_metadata(
     logger = set_up_logger(log_level, logger_name=__name__)
 
     # extract DOI names to IDs mapping for later
+    # todo: prettify below code
     if any(x in accession_ids.columns for x in ['doi', 'DOI']):
         id2doi, id2doi_type = _find_doi_mapping_and_type(accession_ids)
+    elif linked_doi_names is None:
+        id2doi, id2doi_type = None, None
     else:
-        # todo: prettify below + add warning raising in _find_doi
-        if linked_doi_names is None:
-            id2doi, id2doi_type = None, None
-        else:
+        if any(x in linked_doi_names.columns for x in ['doi', 'DOI']):
             id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi_names)
+        else:
+            logger.warning(
+                'Provided linked_doi_names does not contain any DOI names.'
+            )
+            id2doi, id2doi_type = None, None
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
