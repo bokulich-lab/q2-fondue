@@ -179,11 +179,12 @@ def get_metadata(
     # extract DOI names to IDs mapping for later
     if any(x in accession_ids.columns for x in ['doi', 'DOI']):
         id2doi, id2doi_type = _find_doi_mapping_and_type(accession_ids)
-    elif linked_doi_names is not None and any(
-            x in linked_doi_names.columns for x in ['doi', 'DOI']):
-        id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi_names)
     else:
-        id2doi, id2doi_type = None, None
+        # todo: prettify below + add warning raising in _find_doi
+        if linked_doi_names is None:
+            id2doi, id2doi_type = None, None
+        else:
+            id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi_names)
 
     # Retrieve input IDs
     accession_ids = sorted(list(accession_ids.get_ids()))
