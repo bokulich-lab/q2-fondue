@@ -532,6 +532,23 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 obs_meta[[match_id, 'DOI']].values[row],
                 ids_meta.to_dataframe().reset_index().values[0])
 
+    @patch('q2_fondue.metadata._get_run_meta')
+    def test_get_metadata_missing_ids_refetch_w_doi_run(
+            self, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path(
+            'sra-metadata-failed-ids.tsv'), sep='\t', index_col=0)
+        patched_get_run.return_value = (meta_df, {})
+
+        failed_ids = Metadata.load(self.get_data_path(
+            'failed_ids_no_doi.tsv'))
+        ids_doi = Metadata.load(self.get_data_path(
+            'run_ids_w_doi_2.tsv'))
+
+        obs_meta, _ = get_metadata(
+            failed_ids, 'abc@def.com', linked_doi_names=ids_doi)
+        self.assertTrue('DOI' in obs_meta.columns)
+        assert_frame_equal(obs_meta[['DOI']], ids_doi.to_dataframe())
+
     @parameterized.expand([
         ("study", "Study ID"),
         ("bioproject", "Bioproject ID"),
