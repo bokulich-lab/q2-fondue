@@ -8,7 +8,7 @@
 
 import pandas as pd
 import unittest
-from pandas._testing import assert_frame_equal, assert_series_equal
+from pandas._testing import assert_frame_equal
 from unittest.mock import MagicMock
 
 from q2_fondue.entrezpy_clients._efetch import EFetchResult
@@ -206,8 +206,8 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('single'), ['FAKEID1']
         )
-        self.assertDictEqual(self.efetch_result_single.metadata,
-                             {0: ['FAKEID1']})
+        self.assertListEqual(self.efetch_result_single.metadata,
+                             ['FAKEID1'])
         self.assertEqual(1, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
 
@@ -215,8 +215,8 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('single', '_complex'), ['FAKEID1', 'FAKEID3']
         )
-        self.assertDictEqual(self.efetch_result_single.metadata,
-                             {0: ['FAKEID1'], 1: ['FAKEID3']})
+        self.assertListEqual(self.efetch_result_single.metadata,
+                             ['FAKEID1', 'FAKEID3'])
         self.assertEqual(2, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
 
@@ -224,8 +224,8 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('multi'), ['FAKEID1']
         )
-        self.assertDictEqual(self.efetch_result_single.metadata,
-                             {0: ['FAKEID1']})
+        self.assertListEqual(self.efetch_result_single.metadata,
+                             ['FAKEID1'])
         self.assertEqual(1, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
 
@@ -233,22 +233,10 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         self.efetch_result_single.add_metadata(
             self.xml_to_response('multi'), ['FAKEID1', 'FAKEID2']
         )
-        self.assertDictEqual(self.efetch_result_single.metadata,
-                             {0: ['FAKEID1'], 1: ['FAKEID2']})
+        self.assertListEqual(self.efetch_result_single.metadata,
+                             ['FAKEID1', 'FAKEID2'])
         self.assertEqual(2, self.efetch_result_single.size())
         self.assertFalse(self.efetch_result_single.isEmpty())
-
-    def test_efetch_add_metadata_many_experiments_many_runs_missing_ids(self):
-        self.efetch_result_single.add_metadata(
-            self.xml_to_response('single'), ['FAKEID1', 'FAKEID2']
-        )
-
-        self.assertDictEqual(self.efetch_result_single.metadata,
-                             {0: ['FAKEID1']})
-        self.assertEqual(1, self.efetch_result_single.size())
-        self.assertFalse(self.efetch_result_single.isEmpty())
-        self.assertListEqual(['FAKEID2'],
-                             self.efetch_result_single.missing_uids)
 
     def test_efetch_to_df(self):
         self.efetch_result_single.add_metadata(
@@ -287,37 +275,25 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
     def test_efetch_extract_run_ids(self):
         self.efetch_result_single.extract_run_ids(
             self.xml_to_response('runs', prefix='efetch'))
-        exp_ids = {
-            0: ['SRR13961771'],
-            1: ['SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
-                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
-                'SRR000057', 'SRR000058'],
-            2: ['SRR13961759']
-        }
-        self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
+        exp_ids = [
+            'SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
+            'SRR000038', 'SRR000043', 'SRR000046', 'SRR000048',
+            'SRR000050', 'SRR000057', 'SRR000058', 'SRR13961759']
+
+        self.assertListEqual(
+            sorted(exp_ids), sorted(self.efetch_result_single.metadata))
 
     def test_efetch_extract_run_ids_single_element(self):
         response = self.xml_to_response(
             'runs', prefix='efetch', suffix='_single_item'
         )
         self.efetch_result_single.extract_run_ids(response)
-        exp_ids = {
-            0: ['SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
-                'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
-                'SRR000057', 'SRR000058']
-        }
-        self.assertDictEqual(exp_ids, self.efetch_result_single.metadata)
-
-    def test_efetch_metadata_to_series(self):
-        self.efetch_result_single.extract_run_ids(
-            self.xml_to_response('runs', prefix='efetch'))
-
-        obs_ids = self.efetch_result_single.metadata_to_series()
-        exp_ids = pd.Series([
-            'SRR13961771', 'SRR000007', 'SRR000018', 'SRR000020',
-            'SRR000038', 'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
-            'SRR000057', 'SRR000058', 'SRR13961759'], index=range(12))
-        assert_series_equal(exp_ids, obs_ids)
+        exp_ids = [
+            'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
+            'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
+            'SRR000057', 'SRR000058']
+        self.assertListEqual(
+            sorted(exp_ids), sorted(self.efetch_result_single.metadata))
 
     def test_efanalyzer_analyze_result(self):
         self.efetch_analyzer.analyze_result(
@@ -326,8 +302,23 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
         )
 
         self.assertTrue(isinstance(self.efetch_analyzer.result, EFetchResult))
-        exp = {0: ['FAKEID1']}
-        self.assertDictEqual(exp, self.efetch_analyzer.result.metadata)
+        exp = ['FAKEID1']
+        self.assertListEqual(exp, self.efetch_analyzer.result.metadata)
+
+    def test_efanalyzer_analyze_error(self):
+        raw_response = self.xml_to_response('error')
+        request = self.generate_ef_request(['FAKEID1'])
+        response = self.efetch_analyzer.convert_response(
+            raw_response.read().decode('utf-8'), request)
+
+        self.efetch_analyzer.analyze_error(
+            response=response, request=request
+        )
+
+        self.assertEqual(
+            self.efetch_analyzer.error_msg,
+            '<?xml version="1.0"  ?>\n<ERROR>\n</ERROR>\n'
+            )
 
 
 if __name__ == "__main__":

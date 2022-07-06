@@ -7,7 +7,6 @@
 # ----------------------------------------------------------------------------
 
 import json
-from itertools import chain
 from typing import List, Union
 
 import pandas as pd
@@ -28,12 +27,11 @@ class EFetchResult(EutilsResult):
     def __init__(self, response, request, log_level):
         super().__init__(request.eutil, request.query_id, request.db)
         self.metadata_raw = None
-        self.metadata = {}
+        self.metadata = []
         self.studies = {}
         self.samples = {}
         self.experiments = {}
         self.runs = {}
-        self.missing_uids = []
         self.logger = set_up_logger(log_level, self)
 
     def size(self):
@@ -50,15 +48,6 @@ class EFetchResult(EutilsResult):
 
     def get_link_parameter(self, reqnum=0):
         return {}
-
-    def metadata_to_series(self) -> pd.Series:
-        """Converts collected run ids into a Series.
-
-        Returns:
-            run_ids (pd.Series): Series of run ids.
-        """
-        run_ids = list(chain.from_iterable(self.metadata.values()))
-        return pd.Series(run_ids)
 
     def metadata_to_df(self) -> pd.DataFrame:
         """Converts collected metadata into a DataFrame.
@@ -99,7 +88,7 @@ class EFetchResult(EutilsResult):
         result = response['eSummaryResult'].get('DocSum')
         if result:
             result = [result] if not isinstance(result, list) else result
-            for i, content in enumerate(result):
+            for content in result:
                 content = content.get('Item')
                 for item in content:
                     for k, v in item.items():
@@ -108,7 +97,8 @@ class EFetchResult(EutilsResult):
                             runs = json.loads(json.dumps(parsexml(runs)))
                             runs = runs['Runs'].get('Run')
                             runs = [runs] if isinstance(runs, dict) else runs
-                            self.metadata[i] = [x.get('@acc') for x in runs]
+                            self.metadata += [x.get('@acc') for x in runs]
+            self.metadata = list(set(self.metadata))
         else:
             self.logger.error(
                 'Document summary was not found in the result received from '
@@ -502,11 +492,8 @@ class EFetchResult(EutilsResult):
         for i, uid in enumerate(uids):
             if uid in found_uids:
                 current_run = run_ids_map[uid]
-                self.metadata[i] = self._process_single_id(
+                self.metadata += self._process_single_id(
                     parsed_results[current_run], desired_id=uid)
-
-        self.missing_uids.extend(set(uids) - found_uids)
-        # TODO: add a logging statement here
 
 
 class EFetchAnalyzer(EutilsAnalyzer):
@@ -515,6 +502,7 @@ class EFetchAnalyzer(EutilsAnalyzer):
         self.log_level = log_level
         self.response_type = None
         self.logger = set_up_logger(log_level, self)
+        self.error_msg = None
 
     def init_result(self, response, request):
         self.response_type = request.rettype
@@ -522,11 +510,12 @@ class EFetchAnalyzer(EutilsAnalyzer):
             self.result = EFetchResult(response, request, self.log_level)
 
     def analyze_error(self, response, request):
+        self.error_msg = response.getvalue()
         self.logger.error(json.dumps({
             __name__: {
                 'Response': {
                     'dump': request.dump(),
-                    'error': response.getvalue()}}}))
+                    'error': self.error_msg}}}))
 
     def analyze_result(self, response, request):
         self.init_result(response, request)
@@ -537,8 +526,13 @@ class EFetchAnalyzer(EutilsAnalyzer):
             # we asked for metadata
             self.result.add_metadata(response, request.uids)
 
-    # override the base method to enable parsing when retmode=text
+    # override the base method to enable continuation even if
+    # self.result is None
     def parse(self, raw_response, request):
         response = self.convert_response(
             raw_response.read().decode('utf-8'), request)
-        self.analyze_result(response, request)
+        if self.isErrorResponse(response, request):
+            self.hasErrorResponse = True
+            self.analyze_error(response, request)
+        else:
+            self.analyze_result(response, request)
