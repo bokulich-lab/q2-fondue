@@ -482,19 +482,19 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         patched_get_run.assert_not_called()
 
     @parameterized.expand([
-        "run",
-        "study",
-        "bioproject",
-        "experiment",
-        "sample"
+        ("run", "DOI"),
+        ("study", "doi"),
+        ("bioproject", "DOI"),
+        ("experiment", "DOI"),
+        ("sample", "DOI")
         ])
-    def test_find_doi_mapping_and_type(self, id_type):
+    def test_find_doi_mapping_and_type(self, id_type, doi):
         map_ids_doi = Metadata.load(self.get_data_path(
             f'{id_type}_ids_w_doi.tsv'))
 
         obs_map, obs_type = _find_doi_mapping_and_type(map_ids_doi)
         self.assertEqual(obs_type, id_type)
-        assert_series_equal(obs_map, map_ids_doi.to_dataframe()['DOI'])
+        assert_series_equal(obs_map, map_ids_doi.to_dataframe()[doi])
 
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
@@ -510,15 +510,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         assert_frame_equal(obs_meta[['DOI']], ids_meta.to_dataframe())
 
     @parameterized.expand([
-        ("study", "Study ID"),
-        ("bioproject", "Bioproject ID"),
-        ("experiment", "Experiment ID"),
-        ("sample", "Sample Accession")
+        ("study", "Study ID", "doi"),
+        ("bioproject", "Bioproject ID", "DOI"),
+        ("experiment", "Experiment ID", "DOI"),
+        ("sample", "Sample Accession", "DOI")
     ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_other_w_doi(
-            self, id_type, match_id, patched_get_other_study, patched_get_run):
+            self, id_type, match_id, doi, patched_get_other_study,
+            patched_get_run):
         meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
                               sep='\t', index_col=0)
         patched_get_other_study.return_value = (meta_df, {})
@@ -526,10 +527,10 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             f'{id_type}_ids_w_doi.tsv'))
 
         obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
-        self.assertTrue('DOI' in obs_meta.columns)
+        self.assertTrue(doi in obs_meta.columns)
         for row in range(0, obs_meta.shape[0]):
             assert_array_equal(
-                obs_meta[[match_id, 'DOI']].values[row],
+                obs_meta[[match_id, doi]].values[row],
                 ids_meta.to_dataframe().reset_index().values[0])
 
     @patch('q2_fondue.metadata._get_run_meta')
@@ -550,14 +551,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         assert_frame_equal(obs_meta[['DOI']], ids_doi.to_dataframe())
 
     @parameterized.expand([
-        ("study", "Study ID"),
-        ("bioproject", "Bioproject ID"),
-        ("experiment", "Experiment ID"),
-        ("sample", "Sample Accession")
+        ("study", "Study ID", "doi"),
+        ("bioproject", "Bioproject ID", "DOI"),
+        ("experiment", "Experiment ID", "DOI"),
+        ("sample", "Sample Accession", "DOI")
     ])
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_metadata_missing_ids_refetch_w_doi_other(
-            self, id_type, match_id, patched_get_run):
+            self, id_type, match_id, doi, patched_get_run):
         meta_df = pd.read_csv(self.get_data_path(
             'sra-metadata-failed-ids.tsv'), sep='\t', index_col=0)
         patched_get_run.return_value = (meta_df, {})
@@ -569,9 +570,9 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
 
         obs_meta, _ = get_metadata(
             failed_ids, 'abc@def.com', linked_doi_names=ids_doi)
-        self.assertTrue('DOI' in obs_meta.columns)
+        self.assertTrue(doi in obs_meta.columns)
         assert_array_equal(
-            np.unique(obs_meta[[match_id, 'DOI']].values),
+            np.unique(obs_meta[[match_id, doi]].values),
             ids_doi.to_dataframe().reset_index().values[0]
         )
 
