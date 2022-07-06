@@ -27,7 +27,7 @@ from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.metadata import (
     _efetcher_inquire, _get_other_meta,
     get_metadata, _get_run_meta, merge_metadata,
-    _find_doi_mapping_and_type
+    _find_doi_mapping_and_type, _execute_efetcher
 )
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 from q2_fondue.utils import (
