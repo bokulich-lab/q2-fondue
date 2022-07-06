@@ -128,9 +128,12 @@ def get_metadata(
     """Fetches metadata using the provided run/bioproject/study/sample or
     experiment accession IDs.
 
-    The IDs will be first validated using an ESearch query. The metadata
-    will be fetched only if all the IDs are valid. Otherwise, the user
-    will be informed on which IDs require checking.
+    If aggregate IDs (such as bioproject, study, sample, experiment IDs) were
+    provided, first run IDs will be fetched using a Conduit Pipeline.
+    The run IDs will be validated using an ESearch query. The metadata will
+    be fetched only for the valid run IDs. Invalid run IDs will be raised
+    with a warning. Run IDs for which the metadata could not be fetched will
+    be returned with the corresponding error message as missing_ids.
 
     Args:
         accession_ids (Metadata): List of all the accession IDs
