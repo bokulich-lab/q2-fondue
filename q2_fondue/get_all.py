@@ -20,7 +20,7 @@ threading.excepthook = handle_threaded_exception
 
 def get_all(
         ctx, accession_ids, email, n_jobs=1, retries=2, log_level='INFO',
-        linked_doi_names=None):
+        linked_doi=None):
 
     # get required methods
     get_metadata = ctx.get_action('fondue', 'get_metadata')
@@ -28,7 +28,7 @@ def get_all(
 
     # fetch metadata
     metadata, failed_ids = get_metadata(
-        accession_ids, email, n_jobs, log_level, linked_doi_names
+        accession_ids, email, n_jobs, log_level, linked_doi
     )
     failed_ids_df = failed_ids.view(pd.DataFrame)
 

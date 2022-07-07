@@ -143,7 +143,7 @@ def _find_doi_mapping_and_type(
 def get_metadata(
         accession_ids: Metadata, email: str,
         n_jobs: int = 1, log_level: str = 'INFO',
-        linked_doi_names: Metadata = None
+        linked_doi: Metadata = None
 ) -> (pd.DataFrame, pd.DataFrame):
     """Fetches metadata using the provided run/bioproject/study/sample or
     experiment accession IDs.
@@ -159,8 +159,8 @@ def get_metadata(
         accession_ids (Metadata): Table of all the accession IDs
             to be fetched (either run, bioproject, study, sample or
             experiment IDs). If table does not contain DOI names, names
-            from `linked_doi_names` will be matched.
-        linked_doi_names (Metadata): Optional table of accession IDs with
+            from `linked_doi` will be matched.
+        linked_doi (Metadata): Optional table of accession IDs with
             associated DOI names. Preferably used when refetching failed
             run IDs that can be matched after metadata was fetched
             successfully. Ignored if `accession_ids` already contains DOI
@@ -179,9 +179,8 @@ def get_metadata(
     # extract DOI names to IDs mapping for later
     if any(x in accession_ids.columns for x in ['doi', 'DOI']):
         id2doi, id2doi_type = _find_doi_mapping_and_type(accession_ids)
-    elif linked_doi_names and any(
-            x in linked_doi_names.columns for x in ['doi', 'DOI']):
-        id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi_names)
+    elif linked_doi and any(x in linked_doi.columns for x in ['doi', 'DOI']):
+        id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi)
     else:
         id2doi, id2doi_type = None, None
 

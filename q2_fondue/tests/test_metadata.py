@@ -553,7 +553,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             f'{id_type}_ids_w_doi.tsv'))
 
         obs_meta, _ = get_metadata(
-            failed_ids, 'abc@def.com', linked_doi_names=ids_doi)
+            failed_ids, 'abc@def.com', linked_doi=ids_doi)
         self.assertTrue('DOI' in obs_meta.columns)
         if id_type == 'run':
             assert_frame_equal(obs_meta[['DOI']], ids_doi.to_dataframe())
