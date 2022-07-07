@@ -179,7 +179,7 @@ def get_metadata(
     # extract DOI names to IDs mapping for later
     if any(x in accession_ids.columns for x in ['doi', 'DOI']):
         id2doi, id2doi_type = _find_doi_mapping_and_type(accession_ids)
-    elif (linked_doi and any(x in linked_doi.columns for x in ['doi', 'DOI'])):
+    elif linked_doi and any(x in linked_doi.columns for x in ['doi', 'DOI']):
         id2doi, id2doi_type = _find_doi_mapping_and_type(linked_doi)
     else:
         id2doi, id2doi_type = None, None
