@@ -11,6 +11,8 @@ import entrezpy.esearch.esearcher as es
 import pandas as pd
 import numpy as np
 import unittest
+
+from entrezpy.elink.elink_analyzer import ElinkAnalyzer
 from parameterized import parameterized
 from entrezpy import conduit
 from entrezpy.esearch import esearcher
@@ -19,7 +21,7 @@ from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal, assert_series_equal
 from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
-from unittest.mock import patch, MagicMock, ANY
+from unittest.mock import patch, MagicMock, ANY, call
 
 from q2_fondue.entrezpy_clients import _esearch
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
@@ -41,6 +43,7 @@ class FakeConduit:
         self.fake_efetch_result = fake_efetch_result
         self.fake_efetch_response = fake_efetch_response
         self.pipeline = MagicMock()
+        self.analyzers = {}
 
     def new_pipeline(self):
         self.pipeline.add_search = MagicMock(return_value='fake_search')
@@ -391,31 +394,71 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("sample", "sra")
     ])
     @patch('q2_fondue.metadata._get_run_meta')
+    @patch('entrezpy.esearch.esearcher.Esearcher')
+    @patch.object(_esearch, 'ESearchAnalyzer')
+    @patch('q2_fondue.entrezpy_clients._pipelines.BATCH_SIZE', 6)
     def test_get_other_meta_different_ids(
-            self, id_type, db2search, mock_get):
+            self, id_type, db2search,
+            mock_analyzer, mock_search, mock_get
+    ):
         exp_ids = [
             'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
             'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
             'SRR000057', 'SRR000058', 'SRR13961759', 'SRR13961771']
+        mock_search.return_value = self.fake_esearcher
+        fake_uids = [str(i) for i in range(len(exp_ids))]
+        mock_analyzer.return_value = MagicMock(
+            result=MagicMock(uids=fake_uids)
+        )
+        mock_search.return_value.inquire = mock_analyzer
         with patch.object(conduit, 'Conduit') as mock_conduit:
+            fake_analyzer1 = EFetchAnalyzer('INFO')
+            fake_analyzer1.result = MagicMock(metadata=exp_ids[:6])
+            fake_analyzer2 = EFetchAnalyzer('INFO')
+            fake_analyzer2.result = MagicMock(metadata=exp_ids[6:])
+            self.fake_econduit.analyzers = {
+                '1': ElinkAnalyzer,
+                '2': fake_analyzer1,
+                '3': fake_analyzer2
+            }
             mock_conduit.return_value = self.fake_econduit
             mock_get.return_value = exp_ids
 
-            _ = _get_other_meta(
+            obs_ids = _get_other_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd'], id_type,
                 'INFO', MagicMock()
             )
 
-            self.fake_econduit.pipeline.add_search.assert_called_once_with(
-                {'db': db2search, 'term': "AB OR cd"}, analyzer=ANY
-            )
-            self.fake_econduit.pipeline.add_fetch.assert_called_once_with(
-                {'rettype': 'docsum', 'retmode': 'xml'},
-                analyzer=ANY, dependency=ANY
-            )
+            if db2search != 'sra':
+                self.fake_econduit.pipeline.add_link.assert_has_calls([
+                    call(
+                        {
+                            'db': 'sra', 'dbfrom': db2search,
+                            'id': fake_uids[:6], 'link': False
+                        },
+                        analyzer=ANY
+                    ),
+                    call(
+                        {
+                            'db': 'sra', 'dbfrom': db2search,
+                            'id': fake_uids[6:], 'link': False
+                        },
+                        analyzer=ANY
+                    )
+                ])
+            self.fake_econduit.pipeline.add_fetch.has_calls([
+                call(
+                    {
+                        'rettype': 'docsum', 'retmode': 'xml',
+                        'reqsize': 6, 'retmax': 2
+                    },
+                    analyzer=ANY, dependency=ANY)
+
+            ] * 2)
             mock_get.assert_called_once_with(
                 'someone@somewhere.com', 1, exp_ids, True, 'INFO', ANY
             )
+            self.assertListEqual(sorted(exp_ids), obs_ids)
 
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')

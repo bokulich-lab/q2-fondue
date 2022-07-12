@@ -5,6 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+from typing import Union
 
 from entrezpy import conduit as ec
 
@@ -14,10 +15,17 @@ from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
 
+import entrezpy.esearch.esearcher as searcher
+
+from q2_fondue.utils import _chunker
+
+BATCH_SIZE = 500
+
 
 def _get_run_ids(
-        email: str, n_jobs: int, ids: list,
-        source: str, log_level: str) -> list:
+        email: str, n_jobs: int, ids: Union[list, None],
+        query: Union[str, None], source: str, log_level: str
+) -> list:
     """Pipeline to retrieve metadata of run IDs associated with
     studies (`source`='study'), bioprojects (`source`='bioproject'),
     samples (`source`='sample') or experiments (`source`='experiment')
@@ -27,6 +35,7 @@ def _get_run_ids(
         email (str): User email.
         n_jobs (int): Number of jobs.
         ids (list): List of study, bioproject, sample or experiment IDs.
+        query (str): Search query to find IDs by.
         source (str): Type of IDs provided ('study', 'bioproject',
                       'sample' or 'experiment').
         log_level (str): The log level to set.
@@ -34,38 +43,64 @@ def _get_run_ids(
     Returns:
         list: Run IDs associated with provided ids.
     """
+    term = " OR ".join(ids) if ids else query
+
     # create pipeline to fetch all run IDs
+    elink = True
     if source == 'bioproject':
         db = 'bioproject'
-        elink = True
+    elif source == 'biosample':
+        db = 'biosample'
     else:
         db = 'sra'
         elink = False
 
-    econduit = ec.Conduit(email=email, threads=n_jobs)
+    # find UIDS based on a query
+    esearcher = searcher.Esearcher(
+        'esearcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None)
+    esearch_response = esearcher.inquire(
+        {
+            'db': db, 'term': term,
+            'usehistory': False, 'rettype': 'json'
+        },
+        analyzer=ESearchAnalyzer(ids))
+
+    # use the UIDS to link to other DBs and fetch related records
+    # we won't be using multi-threading here as this shouldn't take
+    # long (we're only fetching IDs) and we don't want those dead
+    # threads afterwards
+    econduit = ec.Conduit(email=email, threads=0)
     set_up_entrezpy_logging(econduit, log_level)
-    samp_ids_pipeline = econduit.new_pipeline()
+    run_ids_pipeline = econduit.new_pipeline()
 
-    # search for IDs
-    es = samp_ids_pipeline.add_search(
-        {'db': db, 'term': " OR ".join(ids)},
-        analyzer=ESearchAnalyzer(ids)
-    )
-    if elink:
-        # given bioproject, find linked SRA runs
-        el = samp_ids_pipeline.add_link(
-            {'db': 'sra'},
-            analyzer=ElinkAnalyzer(), dependency=es
+    for _ids in _chunker(esearch_response.result.uids, BATCH_SIZE):
+        if elink:
+            el = run_ids_pipeline.add_link(
+                {
+                    'db': 'sra', 'dbfrom': db,
+                    'id': _ids, 'link': False
+                },
+                analyzer=ElinkAnalyzer(),
+            )
+        else:
+            el = None
+
+        # given SRA run IDs, fetch all metadata
+        run_ids_pipeline.add_fetch(
+            {
+                'rettype': 'docsum', 'retmode': 'xml',
+                'reqsize': BATCH_SIZE, 'retmax': len(_ids)
+            },
+            analyzer=EFetchAnalyzer(log_level), dependency=el
         )
-    else:
-        el = es
 
-    # given SRA run IDs, fetch all metadata
-    samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml'},
-        analyzer=EFetchAnalyzer(log_level), dependency=el
-    )
+    econduit.run(run_ids_pipeline)
 
-    a = econduit.run(samp_ids_pipeline)
+    # recover metadata from all instances of EFetchAnalyzer
+    all_meta = []
+    for x in econduit.analyzers.values():
+        if isinstance(x, EFetchAnalyzer):
+            all_meta.extend(x.result.metadata)
 
-    return sorted(a.result.metadata)
+    return sorted(all_meta)

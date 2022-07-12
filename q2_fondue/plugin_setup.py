@@ -18,6 +18,7 @@ from qiime2.plugin import (
 
 from q2_fondue import __version__
 from q2_fondue.get_all import get_all
+from q2_fondue.query import get_ids_from_query
 from q2_fondue.metadata import get_metadata, merge_metadata
 from q2_fondue.sequences import get_sequences, combine_seqs
 from q2_fondue.scraper import scrape_collection
@@ -65,7 +66,8 @@ output_descriptions = {
     'paired_reads': 'Artifact containing paired-end fastq.gz files '
                     'for all the requested IDs.',
     'failed_runs': 'List of all run IDs for which fetching {} failed, '
-                   'with their corresponding error messages.'
+                   'with their corresponding error messages.',
+    'ids': 'Artifact containing retrieved SRA accession IDs.'
 }
 
 output_scraper_txt = 'Artifact containing all {} IDs scraped from ' \
@@ -255,6 +257,29 @@ plugin.methods.register_function(
         'BioProject, experiment and sample IDs, and associated DOI names.'
     ),
     citations=[citations['stephan_hugel_2019_2917290']]
+)
+
+plugin.methods.register_function(
+    function=get_ids_from_query,
+    inputs={},
+    parameters={
+        'query': Str,
+        **common_params
+    },
+    outputs=[('ids', NCBIAccessionIDs)],
+    input_descriptions={},
+    parameter_descriptions={
+        'query': 'Search query to find SRA IDs by.',
+        **common_param_descr
+    },
+    output_descriptions={
+        'ids': output_descriptions['metadata'],
+    },
+    name='Find SRA accession IDs based on a search query.',
+    description=(
+        'Find SRA accession IDs based on a search query.'
+    ),
+    citations=[]
 )
 
 plugin.register_formats(
