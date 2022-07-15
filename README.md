@@ -31,16 +31,24 @@ bash install-sra-tools.sh
 
 rm install-sra-tools.sh
 ```
-* Install q2-fondue and refresh the QIIME 2 CLI cache.
+* Run the `vdb-config` tool to make sure the wrapped SRA Toolkit is configured on your system.
+The command below will open the configuration interface - everything should be already configured, so you 
+can directly exit by pressing **x** (this step is still required to ensure everything is working as expected). 
+Feel free to adjust the configuration, if you need to change e.g. the cache location. 
+For more information see [here](https://github.com/ncbi/sra-tools/wiki/05.-Toolkit-Configuration).
+```shell
+vdb-config -i
+```
+* In case you need to configure a proxy server, run the following command 
+(this can also be done using the graphical interface described above):
+```shell
+vdb-config --proxy <your proxy URL> --proxy-disable no
+```
+* Finally, install q2-fondue and refresh the QIIME 2 CLI cache.
 ```shell
 pip install git+https://github.com/bokulich-lab/q2-fondue.git
 
 qiime dev refresh-cache
-```
-
-* Configuration of the wrapped SRA Toolkit should be automatically performed by the installation script executed above. In case you need to configure a proxy server run:
-```shell
-vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
 
 ## Space requirements
