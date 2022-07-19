@@ -207,6 +207,21 @@ class TestUtils4CollectionScraping(TestPluginBase):
         obs_run = _find_accession_ids(txt_w_2ids, 'run')
         self.assertListEqual(exp_run, obs_run)
 
+    @parameterized.expand([
+        "SRP1 32205",
+        "SRP13 2205",
+        "SRP132 205",
+        "SRP1322 05",
+        "SRP13220 5"
+        ])
+    def test_find_accession_ids_random_empty_space(self, txt_id):
+        # example inspired by this publication:
+        # https://doi.org/10.3389/fmicb.2018.02755
+        txt = f'sra.cgi?study = {txt_id}'
+        exp_out = ['SRP132205']
+        obs_out = _find_accession_ids(txt, 'study')
+        self.assertListEqual(exp_out, obs_out)
+
     def test_find_accession_ids_special_cases_one_comma(self):
         # example inspired by this publication:
         # https://doi.org/10.1038/s41467-021-26215-w
@@ -287,6 +302,16 @@ class TestUtils4CollectionScraping(TestPluginBase):
                     'PRJEB1479101', 'PRJEB1479102']
         obs_proj = _find_accession_ids(txt_diff, 'bioproject')
         self.assertListEqual(sorted(exp_proj), sorted(obs_proj))
+
+    def test_find_accession_ids_special_cases_no_hyphen(
+            self):
+        # example inspired by this publication:
+        # https://doi.org/10.1186/s40168-015-0089-2 where a former regex
+        # implementation mistakenly took this text as a hyphenated sequence
+        txt = 'at http://www.ebi.ac.uk/data/view/ERP00191 1&display=html [27]'
+        exp_out = ['ERP001911']
+        obs_out = _find_accession_ids(txt, 'study')
+        self.assertListEqual(exp_out, obs_out)
 
     def test_find_accession_ids_no_ids(self):
         txt = 'this text has no run ids and no bioproject ids.'
