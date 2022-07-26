@@ -1,0 +1,16 @@
+[build-system]
+requires = ["maturin>=0.13,<0.14"]
+build-backend = "maturin"
+
+[tool.poetry]
+name = "fastq_writer"
+version = "0.1.0"
+description = "Quick FASTQ files rewriting in rust."
+authors = ["Michal Ziemski <ziemski.michal@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+maturin = "^0.10.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.1"
