@@ -10,8 +10,8 @@ import json
 from typing import List, Union
 
 import pandas as pd
-from entrezpy.base.analyzer import EutilsAnalyzer
 from entrezpy.base.result import EutilsResult
+from entrezpy.efetch.efetch_analyzer import EfetchAnalyzer
 from xmltodict import parse as parsexml
 
 from q2_fondue.entrezpy_clients._utils import (rename_columns, set_up_logger)
@@ -496,26 +496,17 @@ class EFetchResult(EutilsResult):
                     parsed_results[current_run], desired_id=uid)
 
 
-class EFetchAnalyzer(EutilsAnalyzer):
+class EFetchAnalyzer(EfetchAnalyzer):
     def __init__(self, log_level):
         super().__init__()
         self.log_level = log_level
         self.response_type = None
-        self.logger = set_up_logger(log_level, self)
         self.error_msg = None
 
     def init_result(self, response, request):
         self.response_type = request.rettype
         if not self.result:
             self.result = EFetchResult(response, request, self.log_level)
-
-    def analyze_error(self, response, request):
-        self.error_msg = response.getvalue()
-        self.logger.error(json.dumps({
-            __name__: {
-                'Response': {
-                    'dump': request.dump(),
-                    'error': self.error_msg}}}))
 
     def analyze_result(self, response, request):
         self.init_result(response, request)

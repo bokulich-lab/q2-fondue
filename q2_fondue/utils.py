@@ -49,7 +49,7 @@ def _validate_run_ids(
     for batch in _chunker(run_ids, 10000):
         esearcher = es.Esearcher(
             'esearcher', email, apikey=None,
-            apikey_var=None, threads=n_jobs, qid=None
+            apikey_var=None, threads=0, qid=None
         )
         set_up_entrezpy_logging(esearcher, log_level)
 

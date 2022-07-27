@@ -6,46 +6,20 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import json
 from typing import List
 
 import pandas as pd
-from entrezpy.base.analyzer import EutilsAnalyzer
-from entrezpy.base.result import EutilsResult
-from q2_fondue.entrezpy_clients._utils import set_up_logger
-import entrezpy.esearch.esearcher as searcher
+from entrezpy.esearch.esearch_analyzer import EsearchAnalyzer
+from entrezpy.esearch.esearch_result import EsearchResult
 
 
-class ESearchResult(EutilsResult):
+class ESearchResult(EsearchResult):
     """Entrezpy client for ESearch utility used to search for or validate
         provided accession IDs.
     """
-    def __init__(self, response, request, log_level):
-        super().__init__(request.eutil, request.query_id, request.db)
-        self.result_raw = None
+    def __init__(self, response, request):
+        super().__init__(response, request)
         self.result = None
-        self.query_key = None
-        self.webenv = None
-        self.logger = set_up_logger(log_level, self)
-
-    def size(self):
-        return self.result.shape[0]
-
-    def isEmpty(self):
-        return True if self.size() == 0 else False
-
-    def dump(self):
-        return {self: {'dump': {'result': self.result,
-                                'query_id': self.query_id,
-                                'db': self.db,
-                                'eutil': self.function}}}
-
-    def get_link_parameter(self, reqnum=0):
-        """Generates params required for an ELink query"""
-        return {
-            'db': self.db, 'queryid': self.query_id, 'WebEnv': self.webenv,
-            'query_key': self.query_key, 'cmd': 'neighbor_history'
-        }
 
     def validate_result(self) -> dict:
         """Validates hit counts obtained for all the provided UIDs.
@@ -65,17 +39,17 @@ class ESearchResult(EutilsResult):
         leftover_ids = self.result[self.result != 1]
         if leftover_ids.shape[0] == 0:
             return {}
-        ambigous_ids = leftover_ids[leftover_ids > 0]
+        ambiguous_ids = leftover_ids[leftover_ids > 0]
         invalid_ids = leftover_ids[leftover_ids == 0]
 
         error_msg = 'Some of the IDs are invalid or ambiguous:'
-        if ambigous_ids.shape[0] > 0:
-            error_msg += f'\n Ambiguous IDs: {", ".join(ambigous_ids.index)}'
+        if ambiguous_ids.shape[0] > 0:
+            error_msg += f'\n Ambiguous IDs: {", ".join(ambiguous_ids.index)}'
         if invalid_ids.shape[0] > 0:
             error_msg += f'\n Invalid IDs: {", ".join(invalid_ids.index)}'
         self.logger.warning(error_msg)
         return {
-            **{_id: 'ID is ambiguous.' for _id in ambigous_ids.index},
+            **{_id: 'ID is ambiguous.' for _id in ambiguous_ids.index},
             **{_id: 'ID is invalid.' for _id in invalid_ids.index}
         }
 
@@ -92,12 +66,7 @@ class ESearchResult(EutilsResult):
                 as a query.
 
         """
-        self.result_raw = response
-        self.webenv = self.result_raw['esearchresult'].get('webenv')
-        self.query_key = self.result_raw['esearchresult'].get('querykey')
-
-        translation_stack = self.result_raw[
-            'esearchresult'].get('translationstack')
+        translation_stack = response['esearchresult'].get('translationstack')
         if not translation_stack:
             self.result = pd.Series({x: 0 for x in uids}, name='count')
             return
@@ -114,50 +83,26 @@ class ESearchResult(EutilsResult):
         missing_ids = {x: 0 for x in missing_ids}
         found_terms.update(missing_ids)
 
-        self.result = pd.Series(found_terms, name='count')
+        if not self.result:
+            self.result = pd.Series(found_terms, name='count')
+        else:
+            self.result.append(pd.Series(found_terms, name='count'))
 
 
-class ESearchAnalyzer(EutilsAnalyzer):
+class ESearchAnalyzer(EsearchAnalyzer):
     def __init__(self, uids, log_level):
         super().__init__()
         self.uids = uids
         self.log_level = log_level
 
+    # override the base method to use our own ESResult
     def init_result(self, response, request):
         if not self.result:
-            self.result = ESearchResult(response, request, self.log_level)
+            self.result = ESearchResult(response, request)
+            return True
+        return False
 
-    def analyze_error(self, response, request):
-        print(json.dumps({
-            __name__: {
-                'Response': {
-                    'dump': request.dump(),
-                    'error': response.getvalue()}}}))
-
+    # override the base method to additionally parse the result
     def analyze_result(self, response, request):
-        self.init_result(response, request)
+        super().analyze_result(response, request)
         self.result.parse_search_results(response, self.uids)
-
-
-def get_run_id_count(
-        email: str, n_jobs: int, ids: list, log_level: str) -> int:
-    """Returns number of run IDs for provided ids.
-
-    Args:
-        email (str): User email.
-        n_jobs (int): Number of jobs.
-        ids (list): List of study, bioproject, sample or experiment IDs.
-        log_level (str): The log level to set.
-
-    Returns:
-        int: Number of run IDs associated with provided ids.
-    """
-    esearch_count = searcher.Esearcher(
-        'esearcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None)
-    esearch_response = esearch_count.inquire(
-        {'db': 'sra', 'term': " OR ".join(ids)},
-        analyzer=ESearchAnalyzer(ids, log_level))
-    nb_runs = esearch_response.result.result.sum()
-    del esearch_response, esearch_count
-    return nb_runs
