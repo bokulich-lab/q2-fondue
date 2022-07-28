@@ -429,29 +429,31 @@ class TestUtils4SequenceFetching(SequenceTests):
 
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
-        empty_seq_type = 'single'
-        with self.assertWarnsRegex(Warning,
-                                   'No {}-read sequences'.format(
-                                       empty_seq_type)):
-            _write_empty_casava(empty_seq_type, casava_out_single)
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
+            _write_empty_casava('single', casava_out_single)
             exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
             exp_casava_fpath = os.path.join(str(casava_out_single),
                                             exp_filename)
             self.assertTrue(os.path.isfile(exp_casava_fpath))
+            self.assertIn(
+                'INFO:q2_fondue.sequences:No single-end sequences '
+                'available for these accession IDs.', cm.output
+            )
 
     def test_write_empty_casava_paired(self):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
-        empty_seq_type = 'paired'
-        with self.assertWarnsRegex(Warning,
-                                   'No {}-read sequences'.format(
-                                       empty_seq_type)):
-            _write_empty_casava(empty_seq_type, casava_out_paired)
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
+            _write_empty_casava('paired', casava_out_paired)
 
             for exp_filename in ['xxx_00_L001_R1_001.fastq.gz',
                                  'xxx_00_L001_R2_001.fastq.gz']:
                 exp_casava_fpath = os.path.join(str(casava_out_paired),
                                                 exp_filename)
                 self.assertTrue(os.path.isfile(exp_casava_fpath))
+            self.assertIn(
+                'INFO:q2_fondue.sequences:No paired-end sequences '
+                'available for these accession IDs.', cm.output
+            )
 
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -583,7 +585,7 @@ class TestSequenceFetching(SequenceTests):
         test_temp_md = self.prepare_metadata(acc_id)
         mock_announce.return_value = {}, [ls_file_names[0]], []
 
-        with self.assertWarnsRegex(Warning, 'No paired-read sequences'):
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             casava_single, casava_paired, failed_ids = get_sequences(
                 test_temp_md, email='some@where.com', retries=0)
             self.assertIsInstance(casava_single,
@@ -607,6 +609,10 @@ class TestSequenceFetching(SequenceTests):
                 1, _write2casava_dir,
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
+            self.assertIn(
+                'INFO:q2_fondue.sequences:No paired-end sequences '
+                'available for these accession IDs.', cm.output
+            )
 
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
@@ -624,7 +630,7 @@ class TestSequenceFetching(SequenceTests):
         test_temp_md = self.prepare_metadata(acc_id)
         mock_announce.return_value = {}, [], ls_file_names[:2]
 
-        with self.assertWarnsRegex(Warning, 'No single-read sequences'):
+        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             casava_single, casava_paired, failed_ids = get_sequences(
                 test_temp_md, email='some@where.com', retries=0)
             self.assertIsInstance(casava_single,
@@ -647,6 +653,10 @@ class TestSequenceFetching(SequenceTests):
             mock_pool.assert_called_once_with(
                 1, _write2casava_dir,
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+            )
+            self.assertIn(
+                'INFO:q2_fondue.sequences:No single-end sequences '
+                'available for these accession IDs.', cm.output
             )
 
     @patch('q2_fondue.sequences.Process')
