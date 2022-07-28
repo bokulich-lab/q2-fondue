@@ -83,10 +83,7 @@ class ESearchResult(EsearchResult):
         missing_ids = {x: 0 for x in missing_ids}
         found_terms.update(missing_ids)
 
-        if not self.result:
-            self.result = pd.Series(found_terms, name='count')
-        else:
-            self.result.append(pd.Series(found_terms, name='count'))
+        self.result = pd.Series(found_terms, name='count')
 
 
 class ESearchAnalyzer(EsearchAnalyzer):

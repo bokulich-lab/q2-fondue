@@ -87,6 +87,9 @@ def _get_run_meta(
                 f'try fetching those independently.'
             )
     else:
+        # we assume that IDs retrieved by linking from aggregate IDs
+        # (e.g., BioProject or study) should only return valid IDs,
+        # since we asked NCBI to get those for us
         valid_ids = run_ids
 
     # fetch metadata
