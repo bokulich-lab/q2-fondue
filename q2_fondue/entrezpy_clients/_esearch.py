@@ -90,10 +90,9 @@ class ESearchResult(EsearchResult):
 
 
 class ESearchAnalyzer(EsearchAnalyzer):
-    def __init__(self, uids, log_level):
+    def __init__(self, uids):
         super().__init__()
         self.uids = uids
-        self.log_level = log_level
 
     # override the base method to use our own ESResult
     def init_result(self, response, request):

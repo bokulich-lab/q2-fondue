@@ -508,6 +508,10 @@ class EFetchAnalyzer(EfetchAnalyzer):
         if not self.result:
             self.result = EFetchResult(response, request, self.log_level)
 
+    def analyze_error(self, response, request):
+        super().analyze_error(response, request)
+        self.error_msg = response.getvalue()
+
     def analyze_result(self, response, request):
         self.init_result(response, request)
         if self.response_type == 'docsum':

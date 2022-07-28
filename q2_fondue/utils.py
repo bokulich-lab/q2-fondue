@@ -58,7 +58,7 @@ def _validate_run_ids(
                 'db': 'sra',
                 'term': " OR ".join(batch),
                 'usehistory': False
-            }, analyzer=ESearchAnalyzer(batch, log_level)
+            }, analyzer=ESearchAnalyzer(batch)
         )
         invalid_ids.update(esearch_response.result.validate_result())
 

@@ -127,10 +127,8 @@ class TestGetAll(SequenceTests):
 
         path2df = self.get_data_path('sra-metadata-mock.tsv')
         missing_ids_dic = {'SRR123457': 'Some error message'}
-        mock_inquire.side_effect = [
-            (pd.read_csv(path2df, sep='\t', index_col=0), {}),
-            (pd.DataFrame(), missing_ids_dic)
-        ]
+        mock_inquire.return_value = \
+            (pd.read_csv(path2df, sep='\t', index_col=0), missing_ids_dic)
 
         # define mocked return values for get_sequences mocks
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(
@@ -166,14 +164,10 @@ class TestGetAll(SequenceTests):
         # function call assertions for get_metadata within
         mock_validation.assert_called_once_with(
             'fake@email.com', 1, acc_ids, 'INFO')
-        mock_efetcher.assert_called_with(
+        mock_efetcher.assert_called_once_with(
             'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
             threads=1, qid=None)
-        self.assertEqual(mock_efetcher.call_count, 2)
-        mock_inquire.assert_has_calls([
-            call(ANY, [acc_ids[0]], 'INFO'),
-            call(ANY, [acc_ids[1]], 'INFO')
-        ])
+        mock_inquire.assert_called_once_with(ANY, acc_ids, 'INFO')
         # function call assertions for get_sequences within
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(

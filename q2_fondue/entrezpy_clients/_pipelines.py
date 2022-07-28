@@ -49,7 +49,7 @@ def _get_run_ids(
     # search for IDs
     es = samp_ids_pipeline.add_search(
         {'db': db, 'term': " OR ".join(ids)},
-        analyzer=ESearchAnalyzer(ids, log_level)
+        analyzer=ESearchAnalyzer(ids)
     )
     if elink:
         # given bioproject, find linked SRA runs

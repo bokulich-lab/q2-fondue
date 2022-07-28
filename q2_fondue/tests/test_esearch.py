@@ -7,12 +7,11 @@
 # ----------------------------------------------------------------------------
 
 import unittest
-from unittest.mock import patch, MagicMock, ANY, call
+from unittest.mock import MagicMock
 
 import pandas as pd
-from q2_fondue.entrezpy_clients import _esearch
 from q2_fondue.entrezpy_clients._esearch import (
-    ESearchResult, ESearchAnalyzer, get_run_id_count)
+    ESearchResult, ESearchAnalyzer)
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 
 
@@ -138,26 +137,8 @@ class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
         }
         self.assertDictEqual(obs, exp)
 
-    def test_esresult_size(self):
-        esearch_result = self.generate_es_result('multi', '_mixed')
-        esearch_result.parse_search_results(
-            self.json_to_response('multi', '_mixed'),
-            ["SRR000001", "SRR000013", "SR012", "ABCD123", "SRR001"])
-
-        obs = esearch_result.size()
-        self.assertEqual(5, obs)
-
-    def test_esearch_is_not_empty(self):
-        esearch_result = self.generate_es_result('multi', '_mixed')
-        esearch_result.parse_search_results(
-            self.json_to_response('multi', '_mixed'),
-            ["SRR000001", "SRR000013", "SR012", "ABCD123", "SRR001"])
-
-        obs = esearch_result.isEmpty()
-        self.assertFalse(obs)
-
     def test_esanalyzer_analyze_result(self):
-        es_analyzer = ESearchAnalyzer(["SRR000001"], 'INFO')
+        es_analyzer = ESearchAnalyzer(["SRR000001"])
         es_analyzer.analyze_result(
             response=self.json_to_response('single', '_correct'),
             request=self.generate_es_request("SRR000001")
@@ -165,23 +146,6 @@ class TestEsearchClients(_TestPluginWithEntrezFakeComponents):
 
         self.assertTrue(
             isinstance(es_analyzer.result, ESearchResult))
-
-    @patch('entrezpy.esearch.esearcher.Esearcher')
-    @patch.object(_esearch, 'ESearchAnalyzer')
-    def test_get_run_id_count(self, mock_analyzer, mock_search):
-        ids = ['ABC', '123']
-        mock_analyzer.return_value = FakeESAnalyzer(ids)
-        mock_search.return_value.inquire = mock_analyzer
-
-        _ = get_run_id_count(
-            'someone@somewhere.com', 1, ids, 'INFO')
-
-        mock_search.assert_called_once_with(
-            ANY, 'someone@somewhere.com', apikey=None, apikey_var=None,
-            threads=1, qid=None)
-        mock_analyzer.assert_has_calls([
-            call(ids, 'INFO'),
-            call({'db': 'sra', 'term': 'ABC OR 123'}, analyzer=ANY)])
 
 
 if __name__ == "__main__":

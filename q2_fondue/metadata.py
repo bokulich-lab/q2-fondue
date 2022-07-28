@@ -34,10 +34,12 @@ def _efetcher_inquire(
     Args:
         efetcher (ef.Efetcher): A valid instance of an Entrezpy Efetcher.
         run_ids (List[str]): List of all the run IDs to be fetched.
+        log_level (str): Logging level.
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
-        list: List of all the run IDs that were not found.
+        dict: Dictionary of the run IDs that were not found with
+            respective error messages.
     """
     metadata_response = efetcher.inquire(
         {
@@ -88,6 +90,7 @@ def _get_run_meta(
         valid_ids = run_ids
 
     # fetch metadata
+    logger.info('Fetching metadata for %i run IDs.', len(valid_ids))
     meta_df, missing_ids = _execute_efetcher(
         email, n_jobs, valid_ids, log_level
     )
