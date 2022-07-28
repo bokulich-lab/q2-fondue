@@ -223,9 +223,10 @@ def _write_empty_casava(read_type, casava_out_path):
     Warns about `read_type` sequences that are not available
     and saves empty casava file.
     """
-    LOGGER.info(
-        'No %s-end sequences available for these accession IDs.', read_type
-    )
+    warn_msg = f'No {read_type}-read sequences available ' \
+               f'for these accession IDs.'
+    warn(warn_msg)
+    LOGGER.warning(warn_msg)
 
     if read_type == 'single':
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
