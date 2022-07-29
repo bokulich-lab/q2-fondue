@@ -12,12 +12,10 @@ import logging
 
 import pandas as pd
 from entrezpy.efetch.efetch_request import EfetchRequest
-from entrezpy.elink.elink_request import ElinkRequest
 from entrezpy.esearch.esearch_request import EsearchRequest
 from qiime2.plugin.testing import TestPluginBase
 
 from q2_fondue.entrezpy_clients._efetch import (EFetchAnalyzer, EFetchResult)
-from q2_fondue.entrezpy_clients._elink import ELinkResult
 from q2_fondue.entrezpy_clients._esearch import ESearchResult
 from q2_fondue.entrezpy_clients._sra_meta import (SRAStudy, SRASample,
                                                   SRAExperiment,
@@ -171,17 +169,7 @@ class _TestPluginWithEntrezFakeComponents(TestPluginBase):
 
     def generate_es_result(self, kind, suffix):
         return ESearchResult(
-            response=self.json_to_response(kind, suffix, utility='esearch'),
-            request=self.generate_es_request(term="abc OR 123"),
-            log_level='INFO'
+            response=self.json_to_response(
+                kind, suffix, utility='esearch')['esearchresult'],
+            request=self.generate_es_request(term="abc OR 123")
         )
-
-    def generate_el_request(self):
-        request_params = FakeParams(self.temp_dir.name, retmode='json',
-                                    eutil='elink.fcgi')
-        return ElinkRequest(eutil='elink.fcgi', parameter=request_params)
-
-    def generate_el_result(self, kind, suffix):
-        return ELinkResult(
-            response=self.json_to_response(kind, suffix, utility='elink'),
-            request=self.generate_el_request())

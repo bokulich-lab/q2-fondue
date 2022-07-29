@@ -7,11 +7,11 @@
 # ----------------------------------------------------------------------------
 
 from entrezpy import conduit as ec
-import math
+
+from entrezpy.elink.elink_analyzer import ElinkAnalyzer
+
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
-from q2_fondue.entrezpy_clients._elink import ELinkAnalyzer
-from q2_fondue.entrezpy_clients._esearch import (
-    ESearchAnalyzer, get_run_id_count)
+from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import set_up_entrezpy_logging
 
 
@@ -34,10 +34,6 @@ def _get_run_ids(
     Returns:
         list: Run IDs associated with provided ids.
     """
-    nb_runs = get_run_id_count(email, n_jobs, ids, log_level)
-    # source for rounding up to next 1k: https://stackoverflow.com/a/8866125
-    retmax = int(math.ceil(nb_runs / 10000.0)) * 10000
-
     # create pipeline to fetch all run IDs
     if source == 'bioproject':
         db = 'bioproject'
@@ -53,20 +49,20 @@ def _get_run_ids(
     # search for IDs
     es = samp_ids_pipeline.add_search(
         {'db': db, 'term': " OR ".join(ids)},
-        analyzer=ESearchAnalyzer(ids, log_level)
+        analyzer=ESearchAnalyzer(ids)
     )
     if elink:
         # given bioproject, find linked SRA runs
         el = samp_ids_pipeline.add_link(
             {'db': 'sra'},
-            analyzer=ELinkAnalyzer(), dependency=es
+            analyzer=ElinkAnalyzer(), dependency=es
         )
     else:
         el = es
 
     # given SRA run IDs, fetch all metadata
     samp_ids_pipeline.add_fetch(
-        {'rettype': 'docsum', 'retmode': 'xml', 'retmax': retmax},
+        {'rettype': 'docsum', 'retmode': 'xml'},
         analyzer=EFetchAnalyzer(log_level), dependency=el
     )
 

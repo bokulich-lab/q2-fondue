@@ -18,7 +18,7 @@ from entrezpy.requester.requester import Requester
 from pandas._testing import assert_frame_equal
 from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
-from unittest.mock import patch, MagicMock, ANY, call
+from unittest.mock import patch, MagicMock, ANY
 
 from q2_fondue.entrezpy_clients import _esearch
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
@@ -152,20 +152,16 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         pd.testing.assert_frame_equal(
             exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
 
-    @patch('q2_fondue.metadata.BATCH_SIZE', 2)
     @patch.object(efetcher, 'Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
-    def test_execute_efetcher_batchsize(self, patch_efetch_iq, patch_ef):
-        patch_efetch_iq.side_effect = [(pd.DataFrame(), {}),
-                                       (pd.DataFrame(), {})]
+    def test_execute_efetcher(self, patch_efetch_iq, patch_ef):
+        patch_efetch_iq.return_value = None, None
         _, _ = _execute_efetcher('someone@somewhere.com', 1,
                                  ['Valid1', 'Valid2', 'Valid3'],
-                                 'INFO', self.fake_logger)
-        patch_efetch_iq.assert_has_calls([
-            call(ANY, ['Valid1', 'Valid2'], 'INFO'),
-            call(ANY, ['Valid3'], 'INFO')
-        ])
-        self.assertEqual(patch_efetch_iq.call_count, 2)
+                                 'INFO')
+        patch_efetch_iq.assert_called_once_with(
+            ANY, ['Valid1', 'Valid2', 'Valid3'], 'INFO'
+        )
 
     def test_efetcher_inquire_error(self):
         with patch.object(Requester, 'request') as mock_response:
@@ -305,15 +301,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         patch_ef.return_value = (exp_df, [])
         obs_df, obs_dict = _get_run_meta(
             'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
-            'INFO', self.fake_logger
+            False, 'INFO', self.fake_logger
         )
 
         assert_frame_equal(exp_df, obs_df)
         patch_val.assert_called_once_with(
             'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO')
         patch_ef.assert_called_once_with(
-            'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
-            self.fake_logger
+            'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO'
         )
 
     @patch('q2_fondue.metadata._validate_run_ids', return_value={})
@@ -329,7 +324,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with self.assertLogs('test_log', level='WARNING') as cm:
             obs_df, missing_dict = _get_run_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'],
-                'INFO', self.fake_logger
+                False, 'INFO', self.fake_logger
             )
 
             assert_frame_equal(exp_meta, obs_df)
@@ -344,8 +339,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             patch_val.assert_called_once_with(
                 'someone@somewhere.com', 1, ['AB', 'cd', 'Ef'], 'INFO')
             patch_ef.assert_called_once_with(
-                'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO',
-                self.fake_logger
+                'someone@somewhere.com', 1, ['AB', 'Ef', 'cd'], 'INFO'
             )
 
     @patch.object(esearcher, 'Esearcher')
@@ -361,7 +355,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ):
             _ = _get_run_meta(
                 'someone@somewhere.com', 1, ['AB', 'cd'],
-                'INFO', self.fake_logger
+                False, 'INFO', self.fake_logger
             )
 
     @patch.object(esearcher, 'Esearcher')
@@ -380,7 +374,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         with self.assertLogs('test_log', level='WARNING') as cm:
             _ = _get_run_meta(
                 'someone@somewhere.com', 1, ['AA', 'AB'],
-                'INFO', self.fake_logger
+                False, 'INFO', self.fake_logger
             )
             self.assertIn(
                 'WARNING:test_log:The following provided IDs are invalid: AB. '
@@ -394,16 +388,14 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("experiment", "sra"),
         ("sample", "sra")
     ])
-    @patch('q2_fondue.entrezpy_clients._pipelines.get_run_id_count')
     @patch('q2_fondue.metadata._get_run_meta')
     def test_get_other_meta_different_ids(
-            self, id_type, db2search, mock_get, mock_count):
+            self, id_type, db2search, mock_get):
         exp_ids = [
             'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
             'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
             'SRR000057', 'SRR000058', 'SRR13961759', 'SRR13961771']
         with patch.object(conduit, 'Conduit') as mock_conduit:
-            mock_count.return_value = 12
             mock_conduit.return_value = self.fake_econduit
             mock_get.return_value = exp_ids
 
@@ -416,33 +408,11 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                 {'db': db2search, 'term': "AB OR cd"}, analyzer=ANY
             )
             self.fake_econduit.pipeline.add_fetch.assert_called_once_with(
-                {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 10000},
+                {'rettype': 'docsum', 'retmode': 'xml'},
                 analyzer=ANY, dependency=ANY
             )
             mock_get.assert_called_once_with(
-                'someone@somewhere.com', 1, exp_ids, 'INFO', ANY
-            )
-
-    @patch('q2_fondue.entrezpy_clients._pipelines.get_run_id_count')
-    @patch('q2_fondue.metadata._get_run_meta')
-    def test_get_other_meta_large_retmax(self, mock_get, mock_count):
-        exp_ids = [
-            'SRR000007', 'SRR000018', 'SRR000020', 'SRR000038',
-            'SRR000043', 'SRR000046', 'SRR000048', 'SRR000050',
-            'SRR000057', 'SRR000058', 'SRR13961759', 'SRR13961771']
-        with patch.object(conduit, 'Conduit') as mock_conduit:
-            mock_count.return_value = 234000
-            mock_conduit.return_value = self.fake_econduit
-            mock_get.return_value = exp_ids
-
-            _ = _get_other_meta(
-                'someone@somewhere.com', 1, ['AB', 'cd'], 'bioproject',
-                'INFO', MagicMock()
-            )
-
-            self.fake_econduit.pipeline.add_fetch.assert_called_once_with(
-                {'rettype': 'docsum', 'retmode': 'xml', 'retmax': 240000},
-                analyzer=ANY, dependency=ANY
+                'someone@somewhere.com', 1, exp_ids, True, 'INFO', ANY
             )
 
     @patch('q2_fondue.metadata._get_run_meta')
@@ -455,7 +425,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
 
         patched_get_run.assert_called_once_with(
             'abc@def.com', 2, ['SRR123', 'SRR234', 'SRR345'],
-            'INFO', ANY
+            False, 'INFO', ANY
         )
         patched_get_other.assert_not_called()
 
