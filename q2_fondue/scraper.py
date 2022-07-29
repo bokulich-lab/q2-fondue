@@ -234,9 +234,10 @@ def _find_hyphen_sequence(
         list: List of accession IDs with hyphenated IDs included.
     """
     # source of hyphens: https://stackoverflow.com/a/48923796 with \u00ad added
-    hyphens = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A\
-    \u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63\uFF0D\
-    \u00AD]'
+    hyphens_1 = r'[\u002D\u058A\u05BE\u1400\u1806\u2010-\u2015\u2E17\u2E1A'
+    hyphens_2 = r'\u2E3A\u2E3B\u2E40\u301C\u3030\u30A0\uFE31\uFE32\uFE58\uFE63'
+    hyphens_3 = r'\uFF0D\u00AD]'
+    hyphens = hyphens_1 + hyphens_2 + hyphens_3
     pattern_hyphen = pattern + r'\s*' + hyphens + r'\s*' + after_hyphen
     ids = []
     matches = re.findall(f'({pattern_hyphen})', txt)
@@ -285,12 +286,13 @@ def _find_accession_ids(txt: str, id_type: str) -> list:
     Returns:
         list: List of run, study, BioProject, experiment or sample IDs found.
     """
-    # DEFAULT: Find plain accession ID: PREFIX12345 or PREFIX 12345
+    # DEFAULT: Find plain accession ID:
+    # PREFIX12345 or PREFIX 12345 or PREFIX1 2345 (and variants thereof)
     patterns = {
-        'run': r'[EDS]RR\s?\d+', 'study': r'[EDS]RP\s?\d+',
-        'bioproject': r'PRJ[EDN][A-Z]\s?\d+',
-        'experiment': r'[EDS]RX\s?\d+',
-        'sample': r'[EDS]RS\s?\d+',
+        'run': r'[EDS]RR\s?\d+\s?\d+', 'study': r'[EDS]RP\s?\d+\s?\d+',
+        'bioproject': r'PRJ[EDN][A-Z]\s?\d+\s?\d+',
+        'experiment': r'[EDS]RX\s?\d+\s?\d+',
+        'sample': r'[EDS]RS\s?\d+\s?\d+',
     }
     pattern = patterns[id_type]
 
