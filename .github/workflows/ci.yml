@@ -23,8 +23,18 @@ jobs:
     - name: lint
       run: flake8
 
+  rust-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo test
+        working-directory: ./q2_fondue/fastq_writer
+
   build-and-test:
-    needs: lint
+    needs: [lint, rust-test]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
