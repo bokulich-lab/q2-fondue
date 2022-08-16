@@ -25,8 +25,6 @@ jobs:
 
   rust-test:
     runs-on: ubuntu-latest
-    env:
-      RUSTFLAGS: "-C link-arg=-undefined -C link-arg=dynamic_lookup"
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
