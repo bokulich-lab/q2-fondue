@@ -391,7 +391,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         ("study", "sra"),
         ("bioproject", "bioproject"),
         ("experiment", "sra"),
-        ("sample", "sra")
+        ("sample", "sra"),
+        ("biosample", "biosample")
     ])
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('entrezpy.esearch.esearcher.Esearcher')
