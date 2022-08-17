@@ -55,7 +55,15 @@ def _get_run_ids(
         db = 'sra'
         elink = False
 
-    # find UIDS based on a query
+    # find UIDS based on a query;
+    # instead of saving the result on the history server
+    # we will store all the UIDs recovered based on the
+    # search query and use those in the mini-pipeline below;
+    # this way we are not limited by ELink only accepting up to
+    # who knows how many IDs and erroring out if we provide too
+    # many (which could be the case e.g.: when we ask for more
+    # than 10000 BioProject IDs or the text query returns more
+    # than 10000 IDs presumably)
     esearcher = searcher.Esearcher(
         'esearcher', email, apikey=None,
         apikey_var=None, threads=n_jobs, qid=None)
@@ -66,7 +74,7 @@ def _get_run_ids(
         },
         analyzer=ESearchAnalyzer(ids))
 
-    # use the UIDS to link to other DBs and fetch related records
+    # use the UIDs to link to other DBs and fetch related records;
     # we won't be using multi-threading here as this shouldn't take
     # long (we're only fetching IDs) and we don't want those dead
     # threads afterwards
