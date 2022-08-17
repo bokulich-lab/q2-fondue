@@ -31,7 +31,7 @@ jobs:
         with:
           toolchain: stable
       - run: cargo test
-        working-directory: ./q2_fondue/fastq_writer
+        working-directory: ./fastq_writer
 
   build-and-test:
     needs: [lint, rust-test]
