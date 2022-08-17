@@ -269,7 +269,8 @@ plugin.methods.register_function(
     outputs=[('ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
-        'query': 'Search query to find SRA IDs by.',
+        'query': 'Search query to retrieve SRA IDs from '
+                 'the BioSample database.',
         **common_param_descr
     },
     output_descriptions={
@@ -277,7 +278,8 @@ plugin.methods.register_function(
     },
     name='Find SRA accession IDs based on a search query.',
     description=(
-        'Find SRA accession IDs based on a search query.'
+        'Find SRA accession IDs in the BioSample database '
+        'using a text search query.'
     ),
     citations=[]
 )
