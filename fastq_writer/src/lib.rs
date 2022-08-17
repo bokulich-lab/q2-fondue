@@ -66,6 +66,7 @@ fn rewrite_fastq(fin: &str, fout: &str) -> PyResult<()> {
     Ok(())
 }
 
+#[cfg(not(test))]
 mod tests {
     use super::*;
     use flate2::read::GzDecoder;
