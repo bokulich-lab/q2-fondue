@@ -95,11 +95,17 @@ def _get_run_ids(
             el = None
 
         # given SRA run IDs, fetch all metadata
+        efetch_params = {
+            'rettype': 'docsum', 'retmode': 'xml',
+            'reqsize': BATCH_SIZE, 'retmax': len(_ids)
+        }
+        if not elink:
+            # we need to specify these manually as in this scenario
+            # EFetch is not linked to anything
+            efetch_params.update({'id': _ids, 'db': db})
+
         run_ids_pipeline.add_fetch(
-            {
-                'rettype': 'docsum', 'retmode': 'xml',
-                'reqsize': BATCH_SIZE, 'retmax': len(_ids)
-            },
+            efetch_params,
             analyzer=EFetchAnalyzer(log_level), dependency=el
         )
 
