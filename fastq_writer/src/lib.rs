@@ -73,6 +73,7 @@ mod tests {
     use std::env::temp_dir;
     use std::io::{BufRead, BufReader};
 
+    #[cfg(not(test))]
     fn create_tmp_file(name: &str) -> String {
         let mut dir = temp_dir();
         dir.push(name);
@@ -81,6 +82,7 @@ mod tests {
         a
     }
 
+    #[cfg(not(test))]
     fn assert_file_content(f1: &str, f2: &str) {
         let buff1 = BufReader::new(File::open(f1).expect("Could not open file for reading."));
         let buff2 = BufReader::new(GzDecoder::new(File::open(f2).expect("Could not open gz file.")));
