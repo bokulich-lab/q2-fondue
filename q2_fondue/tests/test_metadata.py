@@ -9,13 +9,14 @@
 import entrezpy.efetch.efetcher as ef
 import entrezpy.esearch.esearcher as es
 import pandas as pd
+import numpy as np
 import unittest
 from parameterized import parameterized
 from entrezpy import conduit
 from entrezpy.esearch import esearcher
 from entrezpy.efetch import efetcher
 from entrezpy.requester.requester import Requester
-from pandas._testing import assert_frame_equal
+from pandas._testing import assert_frame_equal, assert_series_equal
 from numpy.testing import assert_array_equal
 from qiime2.metadata import Metadata
 from unittest.mock import patch, MagicMock, ANY
@@ -24,8 +25,9 @@ from q2_fondue.entrezpy_clients import _esearch
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.entrezpy_clients._utils import InvalidIDs
 from q2_fondue.metadata import (
-    _efetcher_inquire, _execute_efetcher, _get_other_meta,
-    get_metadata, _get_run_meta, merge_metadata
+    _efetcher_inquire, _get_other_meta,
+    get_metadata, _get_run_meta, merge_metadata,
+    _find_doi_mapping_and_type, _execute_efetcher
 )
 from q2_fondue.tests._utils import _TestPluginWithEntrezFakeComponents
 from q2_fondue.utils import (
@@ -449,6 +451,21 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         )
         patched_get_run.assert_not_called()
 
+    @parameterized.expand([
+        "run",
+        "study",
+        "bioproject",
+        "experiment",
+        "sample"
+    ])
+    def test_find_doi_mapping_and_type(self, id_type):
+        map_ids_doi = Metadata.load(self.get_data_path(
+            f'{id_type}_ids_w_doi.tsv'))
+
+        obs_map, obs_type = _find_doi_mapping_and_type(map_ids_doi)
+        self.assertEqual(obs_type, id_type)
+        assert_series_equal(obs_map, map_ids_doi.to_dataframe()["DOI"])
+
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_run_w_doi(
@@ -456,7 +473,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
                               sep='\t', index_col=0)
         patched_get_run.return_value = (meta_df, {})
-        ids_meta = Metadata.load(self.get_data_path('run_ids_w_doi.tsv'))
+        ids_meta = Metadata.load(self.get_data_path('run_ids_w_doi_2.tsv'))
 
         obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
         self.assertTrue('DOI' in obs_meta.columns)
@@ -471,7 +488,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     @patch('q2_fondue.metadata._get_run_meta')
     @patch('q2_fondue.metadata._get_other_meta')
     def test_get_metadata_other_w_doi(
-            self, id_type, match_id, patched_get_other_study, patched_get_run):
+            self, id_type, match_id, patched_get_other_study,
+            patched_get_run):
         meta_df = pd.read_csv(self.get_data_path('sra-metadata-1.tsv'),
                               sep='\t', index_col=0)
         patched_get_other_study.return_value = (meta_df, {})
@@ -479,11 +497,41 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
             f'{id_type}_ids_w_doi.tsv'))
 
         obs_meta, _ = get_metadata(ids_meta, 'abc@def.com', 1)
-        self.assertTrue('DOI' in obs_meta.columns)
+        self.assertTrue("DOI" in obs_meta.columns)
         for row in range(0, obs_meta.shape[0]):
             assert_array_equal(
-                obs_meta[[match_id, 'DOI']].values[row],
+                obs_meta[[match_id, "DOI"]].values[row],
                 ids_meta.to_dataframe().reset_index().values[0])
+
+    @parameterized.expand([
+        ("run", ""),
+        ("study", "Study ID"),
+        ("bioproject", "Bioproject ID"),
+        ("experiment", "Experiment ID"),
+        ("sample", "Sample Accession")
+    ])
+    @patch('q2_fondue.metadata._get_run_meta')
+    def test_get_metadata_missing_ids_refetch_w_doi(
+            self, id_type, match_id, patched_get_run):
+        meta_df = pd.read_csv(self.get_data_path(
+            'sra-metadata-failed-ids.tsv'), sep='\t', index_col=0)
+        patched_get_run.return_value = (meta_df, {})
+
+        failed_ids = Metadata.load(self.get_data_path(
+            'failed_ids_no_doi.tsv'))
+        ids_doi = Metadata.load(self.get_data_path(
+            f'{id_type}_ids_w_doi.tsv'))
+
+        obs_meta, _ = get_metadata(
+            failed_ids, 'abc@def.com', linked_doi=ids_doi)
+        self.assertTrue('DOI' in obs_meta.columns)
+        if id_type == 'run':
+            assert_frame_equal(obs_meta[['DOI']], ids_doi.to_dataframe())
+        else:
+            assert_array_equal(
+                np.unique(obs_meta[[match_id, "DOI"]].values),
+                ids_doi.to_dataframe().reset_index().values[0]
+            )
 
     def test_merge_metadata_3dfs_nodupl(self):
         # Test merging metadata with no duplicated run IDs
