@@ -26,9 +26,10 @@ def _get_run_ids(
         email: str, n_jobs: int, ids: Union[list, None],
         query: Union[str, None], source: str, log_level: str
 ) -> list:
-    """Pipeline to retrieve metadata of run IDs associated with
-    studies (`source`='study'), bioprojects (`source`='bioproject'),
-    samples (`source`='sample') or experiments (`source`='experiment')
+    """Pipeline to retrieve run IDs associated with BioSample query
+    (provided in `query`) or other aggregate IDs like studies
+    (`source`='study'), bioprojects (`source`='bioproject'), samples
+    (`source`='sample') or experiments (`source`='experiment')
     provided in `ids`.
 
     Args:
@@ -82,6 +83,10 @@ def _get_run_ids(
     set_up_entrezpy_logging(econduit, log_level)
     run_ids_pipeline = econduit.new_pipeline()
 
+    # create a pipeline to link and fetch the run IDs;
+    # we process the IDs obtained from the previous step in batches
+    # as ELink cannot handle more than a certain amount of IDs
+    # at the same time (recommended by NCBI)
     for _ids in _chunker(esearch_response.result.uids, BATCH_SIZE):
         if elink:
             el = run_ids_pipeline.add_link(
@@ -111,10 +116,10 @@ def _get_run_ids(
 
     econduit.run(run_ids_pipeline)
 
-    # recover metadata from all instances of EFetchAnalyzer
-    all_meta = []
+    # recover run IDs from all instances of EFetchAnalyzer
+    all_run_ids = []
     for x in econduit.analyzers.values():
         if isinstance(x, EFetchAnalyzer):
-            all_meta.extend(x.result.metadata)
+            all_run_ids.extend(x.result.metadata)
 
-    return sorted(all_meta)
+    return sorted(all_run_ids)

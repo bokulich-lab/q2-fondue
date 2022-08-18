@@ -67,7 +67,7 @@ output_descriptions = {
                     'for all the requested IDs.',
     'failed_runs': 'List of all run IDs for which fetching {} failed, '
                    'with their corresponding error messages.',
-    'ids': 'Artifact containing retrieved SRA accession IDs.'
+    'ids': 'Artifact containing retrieved SRA run accession IDs.'
 }
 
 output_scraper_txt = 'Artifact containing all {} IDs scraped from ' \
@@ -269,16 +269,16 @@ plugin.methods.register_function(
     outputs=[('ids', NCBIAccessionIDs)],
     input_descriptions={},
     parameter_descriptions={
-        'query': 'Search query to retrieve SRA IDs from '
+        'query': 'Search query to retrieve SRA run IDs from '
                  'the BioSample database.',
         **common_param_descr
     },
     output_descriptions={
         'ids': output_descriptions['metadata'],
     },
-    name='Find SRA accession IDs based on a search query.',
+    name='Find SRA run accession IDs based on a search query.',
     description=(
-        'Find SRA accession IDs in the BioSample database '
+        'Find SRA run accession IDs in the BioSample database '
         'using a text search query.'
     ),
     citations=[]
