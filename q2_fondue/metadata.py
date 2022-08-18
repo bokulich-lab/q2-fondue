@@ -16,7 +16,6 @@ from qiime2 import Metadata
 from q2_fondue.entrezpy_clients._efetch import EFetchAnalyzer
 from q2_fondue.utils import (
     _validate_run_ids, _determine_id_type, handle_threaded_exception,
-    _chunker
 )
 from q2_fondue.entrezpy_clients._utils import (set_up_entrezpy_logging,
                                                set_up_logger, InvalidIDs)
@@ -35,10 +34,12 @@ def _efetcher_inquire(
     Args:
         efetcher (ef.Efetcher): A valid instance of an Entrezpy Efetcher.
         run_ids (List[str]): List of all the run IDs to be fetched.
+        log_level (str): Logging level.
 
     Returns:
         pd.DataFrame: DataFrame with metadata obtained for the provided IDs.
-        list: List of all the run IDs that were not found.
+        dict: Dictionary of the run IDs that were not found with
+            respective error messages.
     """
     metadata_response = efetcher.inquire(
         {
@@ -46,7 +47,8 @@ def _efetcher_inquire(
             'id': run_ids,
             'rettype': 'xml',
             'retmode': 'xml',
-            'retmax': BATCH_SIZE
+            'retmax': len(run_ids),
+            'reqsize': BATCH_SIZE
         }, analyzer=EFetchAnalyzer(log_level)
     )
 
@@ -54,52 +56,46 @@ def _efetcher_inquire(
         return (pd.DataFrame(),
                 {m_id: metadata_response.error_msg for m_id in run_ids})
     else:
-        return (metadata_response.result.metadata_to_df(), {})
+        return metadata_response.result.metadata_to_df(), {}
 
 
-def _execute_efetcher(email, n_jobs, run_ids, log_level, logger):
-    meta_df = []
-    missing_ids = {}
-    for num, batch in enumerate(_chunker(run_ids, BATCH_SIZE), 1):
-        # one efetcher object per loop because threads of one
-        # efetcher object can only be started once:
-        efetcher = ef.Efetcher(
-            'efetcher', email, apikey=None,
-            apikey_var=None, threads=n_jobs, qid=None
-        )
-        set_up_entrezpy_logging(efetcher, log_level)
+def _execute_efetcher(email, n_jobs, run_ids, log_level):
+    efetcher = ef.Efetcher(
+        'efetcher', email, apikey=None,
+        apikey_var=None, threads=n_jobs, qid=None
+    )
+    set_up_entrezpy_logging(efetcher, log_level)
 
-        logger.info(
-            f'Fetching metadata of run IDs from batch number {num}...'
-        )
-        df, missing_ids = _efetcher_inquire(efetcher, batch, log_level)
-
-        meta_df.append(df)
-        missing_ids.update(missing_ids)
-
-    return pd.concat(meta_df, axis=0), missing_ids
+    return _efetcher_inquire(efetcher, run_ids, log_level)
 
 
 def _get_run_meta(
-        email, n_jobs, run_ids, log_level, logger
+        email, n_jobs, run_ids, validated, log_level, logger
 ) -> (pd.DataFrame, dict):
-    invalid_ids = _validate_run_ids(email, n_jobs, run_ids, log_level)
-    valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
+    if not validated:
+        invalid_ids = _validate_run_ids(email, n_jobs, run_ids, log_level)
+        valid_ids = sorted(list(set(run_ids) - set(invalid_ids.keys())))
 
-    if not valid_ids:
-        raise InvalidIDs(
-            'All provided IDs were invalid. Please check your input.'
-        )
-    if invalid_ids:
-        logger.warning(
-            f'The following provided IDs are invalid: '
-            f'{",".join(invalid_ids.keys())}. Please correct them and '
-            f'try fetching those independently.'
-        )
+        if not valid_ids:
+            raise InvalidIDs(
+                'All provided IDs were invalid. Please check your input.'
+            )
+        if invalid_ids:
+            logger.warning(
+                f'The following provided IDs are invalid: '
+                f'{",".join(invalid_ids.keys())}. Please correct them and '
+                f'try fetching those independently.'
+            )
+    else:
+        # we assume that IDs retrieved by linking from aggregate IDs
+        # (e.g., BioProject or study) should only return valid IDs,
+        # since we asked NCBI to get those for us
+        valid_ids = run_ids
 
     # fetch metadata
+    logger.info('Fetching metadata for %i run IDs.', len(valid_ids))
     meta_df, missing_ids = _execute_efetcher(
-        email, n_jobs, valid_ids, log_level, logger
+        email, n_jobs, valid_ids, log_level
     )
 
     if missing_ids:
@@ -118,7 +114,7 @@ def _get_other_meta(
     run_ids = _get_run_ids(
                     email, n_jobs, project_ids, id_type, log_level)
 
-    return _get_run_meta(email, n_jobs, run_ids, log_level, logger)
+    return _get_run_meta(email, n_jobs, run_ids, True, log_level, logger)
 
 
 def _find_doi_mapping_and_type(
@@ -193,7 +189,7 @@ def get_metadata(
     # get actual metadata
     if id_type == 'run':
         meta, missing_ids = _get_run_meta(
-            email, n_jobs, accession_ids, log_level, logger
+            email, n_jobs, accession_ids, False, log_level, logger
         )
     else:
         meta, missing_ids = _get_other_meta(

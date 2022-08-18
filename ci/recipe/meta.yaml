@@ -1,6 +1,5 @@
 {% set data = load_setup_py_data() %}
 {% set version = data.get('version') or 'placehold' %}
-{% set release = '.'.join(version.split('.')[:2]) %}
 
 package:
   name: q2-fondue
@@ -26,8 +25,8 @@ requirements:
     - python-dotenv
     - tqdm >=4.62.3
     - entrezpy >=2.1.2
-    - q2-types {{ release }}.*
-    - qiime2 {{ release }}.*
+    - q2-types {{ qiime2_epoch }}.*
+    - qiime2 {{ qiime2_epoch }}.*
 
 test:
   imports:
@@ -35,6 +34,10 @@ test:
     - qiime2.plugins.fondue
   requires:
     - parameterized
+    - coverage
+    - pytest-cov
+  commands:
+    - pytest --cov q2_fondue --pyargs q2_fondue
 
 about:
   home: https://github.com/bokulich-lab/q2-fondue
