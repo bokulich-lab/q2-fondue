@@ -14,6 +14,10 @@ build:
     make install
 
 requirements:
+  build:
+    - maturin ==0.10.3
+    - rust ==1.58.1
+
   host:
     - python {{ python }}
     - setuptools
@@ -32,6 +36,7 @@ test:
   imports:
     - q2_fondue
     - qiime2.plugins.fondue
+    - fastq_writer
   requires:
     - parameterized
     - coverage
