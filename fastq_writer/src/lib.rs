@@ -9,8 +9,34 @@ use std::io::{BufRead, BufReader, Write};
 
 #[pymodule]
 fn fastq_writer(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(rewrite_fastq, m)?)?;
+    fn rewrite_fastq(fin: &str, fout: &str) {
+        _rewrite(fin, fout)
+    }
+
+    #[pyfn(m, "rewrite_fastq")]
+    fn rewrite_fastq_py<'py>(py: Python<'py>, fin: &str, fout: &str) {
+        rewrite_fastq(fin, fout)
+    }
+
     Ok(())
+}
+
+fn _rewrite(fin: &str, fout: &str) {
+    let buff_in = BufReader::new(File::open(fin).expect("Could not open file for reading."));
+    let mut buff_out = GzEncoder::new(
+        File::create(fout).expect("Could not open file for writing."),
+        Compression::default(),
+    );
+
+    for line in buff_in.lines() {
+        let l = line.expect("Unable to read line.");
+        buff_out
+            .write(l.as_bytes())
+            .expect("Unable to write sequence to file.");
+        buff_out
+            .write("\n".as_bytes())
+            .expect("Unable to write to file.");
+    }
 }
 
 // #[pyfunction]
@@ -45,28 +71,6 @@ fn fastq_writer(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 //     Ok(())
 // }
 
-#[pyfunction]
-fn rewrite_fastq(fin: &str, fout: &str) -> PyResult<()> {
-    let buff_in = BufReader::new(File::open(fin).expect("Could not open file for reading."));
-    let mut buff_out = GzEncoder::new(
-        File::create(fout).expect("Could not open file for writing."),
-        Compression::default(),
-    );
-
-    for line in buff_in.lines() {
-        let l = line.expect("Unable to read line.");
-        buff_out
-            .write(l.as_bytes())
-            .expect("Unable to write sequence to file.");
-        buff_out
-            .write("\n".as_bytes())
-            .expect("Unable to write to file.");
-    }
-
-    Ok(())
-}
-
-#[cfg(test)]
 mod tests {
     use super::*;
     use flate2::read::GzDecoder;
@@ -83,7 +87,9 @@ mod tests {
 
     fn assert_file_content(f1: &str, f2: &str) {
         let buff1 = BufReader::new(File::open(f1).expect("Could not open file for reading."));
-        let buff2 = BufReader::new(GzDecoder::new(File::open(f2).expect("Could not open gz file.")));
+        let buff2 = BufReader::new(GzDecoder::new(
+            File::open(f2).expect("Could not open gz file."),
+        ));
 
         let it = buff1.lines().zip(buff2.lines());
         for (l1, l2) in it {
@@ -96,13 +102,11 @@ mod tests {
 
     #[test]
     fn test_rewrite_ok() {
-        let fin = "../data/test_input.fastq";
-        let fout = create_tmp_file("test_seq.fastq.gz");
-        let fout = fout.as_str();
+        let fin = "./data/test_input.fastq";
+        let _fout = create_tmp_file("test_seq.fastq.gz");
+        let fout = _fout.as_str();
 
-        println!("Hello!");
-
-        rewrite_fastq(fin, fout).expect("Could not rewrite fastq file");
+        _rewrite(fin, fout);
 
         assert_file_content(fin, fout);
     }
