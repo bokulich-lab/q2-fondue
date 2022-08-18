@@ -1,9 +1,6 @@
-// use bio::io::fastq;
-// use itertools::Itertools;
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use pyo3::prelude::{pyfunction, pymodule, PyModule, PyResult, Python};
-use pyo3::wrap_pyfunction;
+use pyo3::prelude::{pymodule, PyModule, PyResult, Python};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 
@@ -14,7 +11,7 @@ fn fastq_writer(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     }
 
     #[pyfn(m, "rewrite_fastq")]
-    fn rewrite_fastq_py<'py>(py: Python<'py>, fin: &str, fout: &str) {
+    fn rewrite_fastq_py<'py>(_py: Python<'py>, fin: &str, fout: &str) {
         rewrite_fastq(fin, fout)
     }
 
@@ -39,44 +36,13 @@ fn _rewrite(fin: &str, fout: &str) {
     }
 }
 
-// #[pyfunction]
-// fn rewrite_fastq(fin: &str, fout: &str) -> PyResult<()> {
-//     let reader = fastq::Reader::from_file(fin).unwrap();
-//     let mut writer = fastq::Writer::to_file(fout).unwrap();
-//     for result in reader.records() {
-//         let record = &result.unwrap();
-//         writer.write_record(&record).unwrap();
-//     };
-//     Ok(())
-// }
-
-// #[pyfunction]
-// fn rewrite_fastq(fin: &str, fout: &str) -> PyResult<()> {
-//     let file_in = File::open(fin)?;
-//     let buff_in = BufReader::new(file_in);
-//
-//     let file_out = File::create(fout)?;
-//     let mut buff_out = BufWriter::new(file_out);
-//
-//     const N: usize = 4;
-//
-//     for lines in &buff_in.lines().chunks(N) {
-//         for (_i, line) in lines.enumerate() {
-//             let l = line.expect("Unable to read line.");
-//             buff_out.write(l.as_bytes()).expect("Unable to write to file.");
-//             buff_out.write("\n".as_bytes()).expect("Unable to write to file.");
-//         }
-//     }
-//
-//     Ok(())
-// }
-
 mod tests {
     use super::*;
     use flate2::read::GzDecoder;
     use std::env::temp_dir;
     use std::io::{BufRead, BufReader};
 
+    #[allow(dead_code)]
     fn create_tmp_file(name: &str) -> String {
         let mut dir = temp_dir();
         dir.push(name);
@@ -85,6 +51,7 @@ mod tests {
         a
     }
 
+    #[allow(dead_code)]
     fn assert_file_content(f1: &str, f2: &str) {
         let buff1 = BufReader::new(File::open(f1).expect("Could not open file for reading."));
         let buff2 = BufReader::new(GzDecoder::new(
