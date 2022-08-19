@@ -61,14 +61,15 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 ### Available actions
 q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run, study, BioProject, experiment and sample IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
 
-| Action           | Description                                                              |
-|------------------|--------------------------------------------------------------------------|
-| `get-sequences`  | Fetch sequences by IDs[*] from the SRA repository.        |
-| `get-metadata`   | Fetch metadata by IDs[*] from the SRA repository.         |
-| `get-all`        | Fetch sequences and metadata by IDs[*] from the SRA repo. |
-| `merge-metadata` | Merge several metadata files into a single metadata object.              |
-| `combine-seqs`   | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`| Scrape Zotero collection for IDs[*] and associated DOI names.|
+| Action               | Description                                                              |
+|----------------------|--------------------------------------------------------------------------|
+| `get-sequences`      | Fetch sequences by IDs[*] from the SRA repository.        |
+| `get-metadata`       | Fetch metadata by IDs[*] from the SRA repository.         |
+| `get-all`            | Fetch sequences and metadata by IDs[*] from the SRA repo. |
+| `get-ids-from-query` | Find SRA run accession IDs based on a search query. |
+| `merge-metadata`     | Merge several metadata files into a single metadata object.              |
+| `combine-seqs`       | Combine sequences from multiple artifacts into a single artifact.        |
+| `scrape-collection`  | Scrape Zotero collection for IDs[*] and associated DOI names.|
 
 [*]: Supported IDs include run, study, BioProject, experiment and study IDs.
 
@@ -115,6 +116,21 @@ where:
 - `--o-bioproject-ids` is the output artifact containing the scraped BioProject IDs.
 - `--o-experiment-ids` is the output artifact containing the scraped experiment IDs.
 - `--o-sample-ids` is the output artifact containing the scraped sample IDs.
+
+3) To retrieve run accession IDs based on a text search query (performed on the BioSample database) you can use the `get-ids-from-query` method:
+```shell
+qiime fondue get-ids-from-query \
+              --p-query "txid410656[Organism] AND \"public\"[Filter] AND (chicken OR poultry)" \
+              --p-email your_email@somewhere.com \
+              --p-n-jobs 2 \
+              --o-ids run_ids.qza \
+              --verbose
+```
+where:
+- `--p-query` is the text search query to be executed on the BioSample database.
+- `--p-email` is your email address (required by NCBI).
+- `--p-n-jobs` is the number of parallel download jobs (defaults to 1).
+- `--o-ids` is the output artifact containing the retrieved run IDs.
 
 ### Fetching metadata
 To fetch metadata associated with a set of output IDs, execute the following command:
