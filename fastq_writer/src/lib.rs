@@ -28,12 +28,13 @@ fn _rewrite(fin: &str, fout: &str) {
     for line in buff_in.lines() {
         let l = line.expect("Unable to read line.");
         buff_out
-            .write(l.as_bytes())
+            .write_all(l.trim().as_bytes())
             .expect("Unable to write sequence to file.");
         buff_out
-            .write("\n".as_bytes())
+            .write_all("\n".as_bytes())
             .expect("Unable to write to file.");
     }
+    buff_out.try_finish().expect("Could not close the stream.");
 }
 
 mod tests {
