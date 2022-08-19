@@ -22,7 +22,7 @@ install: all
 
 dev: all
 	bash install-sra-tools.sh
-	pip install coverage parameterized maturin==0.10.0
+	pip install coverage parameterized maturin==0.10.3
 	pip install -e .
 
 clean: distclean
