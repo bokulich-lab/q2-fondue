@@ -357,7 +357,7 @@ def get_sequences(
     id_type = _determine_id_type(accession_ids)
     if id_type != 'run':
         accession_ids = _get_run_ids(
-            email, n_jobs, accession_ids, id_type, log_level
+            email, n_jobs, accession_ids, None, id_type, log_level
         )
 
     fetched_q = Queue()

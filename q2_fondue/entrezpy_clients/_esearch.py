@@ -6,7 +6,7 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from typing import List
+from typing import List, Union
 
 import pandas as pd
 from entrezpy.esearch.esearch_analyzer import EsearchAnalyzer
@@ -53,7 +53,7 @@ class ESearchResult(EsearchResult):
             **{_id: 'ID is invalid.' for _id in invalid_ids.index}
         }
 
-    def parse_search_results(self, response, uids: List[str]):
+    def parse_search_results(self, response, uids: Union[List[str], None]):
         """Parses response received from Esearch as a pandas Series object.
 
         Hit counts obtained in the response will be extracted and assigned to
@@ -79,9 +79,10 @@ class ESearchResult(EsearchResult):
         }
 
         # find ids that are missing
-        missing_ids = [x for x in uids if x not in found_terms.keys()]
-        missing_ids = {x: 0 for x in missing_ids}
-        found_terms.update(missing_ids)
+        if uids:
+            missing_ids = [x for x in uids if x not in found_terms.keys()]
+            missing_ids = {x: 0 for x in missing_ids}
+            found_terms.update(missing_ids)
 
         self.result = pd.Series(found_terms, name='count')
 

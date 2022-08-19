@@ -112,7 +112,8 @@ def _get_other_meta(
         email, n_jobs, project_ids, id_type, log_level, logger
 ) -> (pd.DataFrame, dict):
     run_ids = _get_run_ids(
-                    email, n_jobs, project_ids, id_type, log_level)
+        email, n_jobs, project_ids, None, id_type, log_level
+    )
 
     return _get_run_meta(email, n_jobs, run_ids, True, log_level, logger)
 
