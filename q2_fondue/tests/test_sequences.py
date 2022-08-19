@@ -724,7 +724,7 @@ class TestSequenceFetching(SequenceTests):
             test_temp_md, email='some@where.com', retries=0)
 
         mock_get.assert_called_with(
-            'some@where.com', 1, [acc_id], id_type, 'INFO'
+            'some@where.com', 1, [acc_id], None, id_type, 'INFO'
         )
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
