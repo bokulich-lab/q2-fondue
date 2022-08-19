@@ -11,7 +11,6 @@ import glob
 from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
 import gzip
-import itertools
 import os
 import re
 import shutil
@@ -206,17 +205,6 @@ def _process_downloaded_sequences(
 
     # tell all the workers we are done
     [renaming_queue.put(None) for i in range(n_workers)]
-
-
-def _read_fastq_seqs(filepath):
-    # function adapted from q2_demux._demux import _read_fastq_seqs
-
-    # Originally func is adapted from @jairideout's SO post:
-    # http://stackoverflow.com/a/39302117/3424666
-    fh = open(filepath, 'rt')
-    for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
-        yield (seq_header.strip(), seq.strip(), qual_header.strip(),
-               qual.strip())
 
 
 def _write_empty_casava(read_type, casava_out_path):
