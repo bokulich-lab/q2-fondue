@@ -12,24 +12,24 @@
 </p><br>
 
 ## Installation
-Before q2-fondue is available *via* conda, you can use the following instructions to install it on your machine by creating a new conda environment. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
+You can install q2-fondue using conda by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
+* Install [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
+```shell
+conda install mamba -n base -c conda-forge
+```
 * Create and activate a conda environment with the required dependencies:
 ```shell
-conda create -y -n fondue \
-   -c qiime2 -c conda-forge -c bioconda -c defaults \
-  qiime2 q2cli q2-types "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero python-dotenv
+mamba create -y -n fondue \
+   -c https://packages.qiime2.org/qiime2/2022.8/tested/ \
+  q2cli q2-fondue
 
 conda activate fondue
 ```
-* Install sra-tools using the script provided in this repo.
+* Refresh the QIIME 2 CLI cache and see that everything worked:
 ```shell
-curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/contents/install-sra-tools.sh > install-sra-tools.sh
-
-chmod +x install-sra-tools.sh
-bash install-sra-tools.sh
-
-rm install-sra-tools.sh
+qiime dev refresh-cache
+qiime fondue --help
 ```
 * Run the `vdb-config` tool to make sure the wrapped SRA Toolkit is configured on your system.
 The command below will open the configuration interface - everything should be already configured, so you 
@@ -43,12 +43,6 @@ vdb-config -i
 (this can also be done using the graphical interface described above):
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
-```
-* Finally, install q2-fondue and refresh the QIIME 2 CLI cache.
-```shell
-pip install git+https://github.com/bokulich-lab/q2-fondue.git
-
-qiime dev refresh-cache
 ```
 
 ## Space requirements
