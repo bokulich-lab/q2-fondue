@@ -22,7 +22,8 @@ conda install mamba -n base -c conda-forge
 ```shell
 mamba create -y -n fondue \
    -c https://packages.qiime2.org/qiime2/2022.8/tested/ \
-  q2cli q2-fondue
+   -c conda-forge -c bioconda -c defaults \
+   q2cli q2-fondue
 
 conda activate fondue
 ```
