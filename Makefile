@@ -16,11 +16,13 @@ test-cov: all
 
 install: all
 	bash install-sra-tools.sh
+	maturin build --release -m fastq_writer/Cargo.toml
 	$(PYTHON) setup.py install
+	$(PYTHON) -m pip install --no-deps fastq_writer --find-links fastq_writer/target/wheels/
 
 dev: all
 	bash install-sra-tools.sh
-	pip install coverage parameterized
+	pip install coverage parameterized maturin==0.10.3
 	pip install -e .
 
 clean: distclean

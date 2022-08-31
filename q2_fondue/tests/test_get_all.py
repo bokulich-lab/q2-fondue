@@ -18,7 +18,7 @@ from unittest.mock import (patch, ANY, call)
 
 from q2_fondue.sequences import (_run_fasterq_dump_for_all,
                                  _process_downloaded_sequences,
-                                 _write2casava_dir, _copy_single_to_casava)
+                                 _write2casava_dir, _copy_to_casava)
 from q2_fondue.tests.test_sequences import SequenceTests
 
 
@@ -63,8 +63,8 @@ class TestGetAll(SequenceTests):
         casavas = [CasavaOneEightSingleLanePerSampleDirFmt(),
                    CasavaOneEightSingleLanePerSampleDirFmt()]
         mock_casava.side_effect = casavas
-        _copy_single_to_casava(
-            f'{acc_id}.fastq', mock_tmpdir.return_value.name,
+        _copy_to_casava(
+            [f'{acc_id}.fastq'], mock_tmpdir.return_value.name,
             str(casavas[0].path)
         )
         os.rename(
@@ -138,8 +138,8 @@ class TestGetAll(SequenceTests):
         casavas = [CasavaOneEightSingleLanePerSampleDirFmt(),
                    CasavaOneEightSingleLanePerSampleDirFmt()]
         mock_casava.side_effect = casavas
-        _copy_single_to_casava(
-            f'{acc_ids[0]}.fastq', mock_tmpdir.return_value.name,
+        _copy_to_casava(
+            [f'{acc_ids[0]}.fastq'], mock_tmpdir.return_value.name,
             str(casavas[0].path)
         )
         os.rename(

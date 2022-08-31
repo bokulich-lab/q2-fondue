@@ -11,7 +11,6 @@ import glob
 from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
 import gzip
-import itertools
 import os
 import re
 import shutil
@@ -19,6 +18,8 @@ import subprocess
 import tempfile
 import threading
 import time
+
+from fastq_writer import rewrite_fastq
 from qiime2 import Metadata
 from warnings import warn
 
@@ -206,17 +207,6 @@ def _process_downloaded_sequences(
     [renaming_queue.put(None) for i in range(n_workers)]
 
 
-def _read_fastq_seqs(filepath):
-    # function adapted from q2_demux._demux import _read_fastq_seqs
-
-    # Originally func is adapted from @jairideout's SO post:
-    # http://stackoverflow.com/a/39302117/3424666
-    fh = open(filepath, 'rt')
-    for seq_header, seq, qual_header, qual in itertools.zip_longest(*[fh] * 4):
-        yield (seq_header.strip(), seq.strip(), qual_header.strip(),
-               qual.strip())
-
-
 def _write_empty_casava(read_type, casava_out_path):
     """Writes empty casava file to output directory.
 
@@ -240,47 +230,22 @@ def _write_empty_casava(read_type, casava_out_path):
             pass
 
 
-def _copy_single_to_casava(
-        filename, tmp_dir, casava_result_path
+def _copy_to_casava(
+        filenames: list, tmp_dir: str, casava_result_path: str
 ):
-    """Copies single-end sequences to Casava directory.
+    """Copies single/paired-end sequences to Casava directory.
 
-    Downloaded sequence files will be copied from tmp_dir to
-    casava_result_path following single-end sequence rules.
+    Downloaded sequence files (single- or paired-end) will be
+    copied from tmp_dir to casava_result_path.
     """
-    # Edited from original in: q2_demux._subsample.subsample_single
-    # ensure correct order of file names:
-    fwd_path_in = os.path.join(tmp_dir, filename)
-    fwd_path_out = os.path.join(casava_result_path, f'{filename}.gz')
-
-    with gzip.open(fwd_path_out, mode='w') as fwd:
-        for fwd_rec in _read_fastq_seqs(fwd_path_in):
-            fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
-
-
-def _copy_paired_to_casava(
-        filenames, tmp_dir, casava_result_path
-):
-    """Copies paired-end sequences to Casava directory.
-
-    Downloaded sequence files will be copied from tmp_dir to
-    casava_result_path following paired-end sequence rules.
-    """
-    # Edited from original in: q2_demux._subsample.subsample_paired
-    # ensure correct order of file names:
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
     fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
-    rev_path_in = os.path.join(tmp_dir, filenames[1])
-    rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
+    rewrite_fastq(fwd_path_in, fwd_path_out)
 
-    with gzip.open(fwd_path_out, mode='w') as fwd, \
-            gzip.open(rev_path_out, mode='w') as rev:
-        file_pair = zip(
-            _read_fastq_seqs(fwd_path_in), _read_fastq_seqs(rev_path_in)
-        )
-        for fwd_rec, rev_rec in file_pair:
-            fwd.write(('\n'.join(fwd_rec) + '\n').encode('utf-8'))
-            rev.write(('\n'.join(rev_rec) + '\n').encode('utf-8'))
+    if len(filenames) > 1:
+        rev_path_in = os.path.join(tmp_dir, filenames[1])
+        rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
+        rewrite_fastq(rev_path_in, rev_path_out)
 
 
 def _write2casava_dir(
@@ -298,13 +263,13 @@ def _write2casava_dir(
     for filenames in iter(renaming_queue.get, None):
         if len(filenames) == 1:
             filename = os.path.split(filenames[0][0])[-1]
-            _copy_single_to_casava(filename, tmp_dir, casava_out_single)
+            _copy_to_casava([filename], tmp_dir, casava_out_single)
             done_queue.put([filename])
         elif len(filenames) == 2:
             filenames = [
                 os.path.split(x[0])[-1] for x in sorted(filenames)
             ]
-            _copy_paired_to_casava(filenames, tmp_dir, casava_out_paired)
+            _copy_to_casava(filenames, tmp_dir, casava_out_paired)
             done_queue.put(filenames)
         renaming_queue.task_done()
     return True

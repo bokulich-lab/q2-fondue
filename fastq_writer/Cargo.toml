@@ -1,0 +1,13 @@
+[package]
+name = "fastq_writer"
+version = "0.1.0"
+authors = ["Michal Ziemski <ziemski.michal@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+pyo3 = { version = "0.13", features = ["extension-module"] }
+flate2 = "1.0.24"
+
+[lib]
+name = "fastq_writer"
+crate-type = ["cdylib"]
