@@ -65,37 +65,7 @@ Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), a
 After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, we are super curious to explore the dataset this study was based on. Luckily, with _q2-fondue_ retrieving all this data is a cakewalk! :cake:
 
 ## Installation
-_q2-fondue_ will be installable as a conda package in the near future. 
-For now, we install it with pip into an existing QIIME 2 environment. 
-
-> _Note:_ the current q2-fondue version supports QIIME 2 **v2021.4** or higher - get the latest QIIME 2 release in the [Installation guide](docs.qiime2.org). 
-
-First, activate your QIIME 2 environment and install relevant dependencies:
-```shell
-conda activate qiime2
-
-conda install -c conda-forge -c bioconda -c defaults \
- "entrezpy>=2.1.2" "tqdm>=4.62.3" xmltodict pyzotero python-dotenv
-```
-
-Then, we are installing and configuring the wrapped SRA Toolkit with the script provided in this repo:
-```shell
-curl -sLH 'Accept: application/vnd.github.v3.raw' https://api.github.com/repos/bokulich-lab/q2-fondue/install-sra-tools.sh > install-sra-tools.sh
-
-chmod +x install-sra-tools.sh
-bash install-sra-tools.sh
-
-rm install-sra-tools.sh
-```
-
-Finally, install _q2-fondue_ and update your QIIME 2 libraries:
-```shell
-pip install git+https://github.com/bokulich-lab/q2-fondue.git
-
-qiime dev refresh-cache
-```
-
-Done! :muscle:
+To install _q2-fondue_ please follow the instructions available in the [README](../README.md).
  
 ## Getting started
 
