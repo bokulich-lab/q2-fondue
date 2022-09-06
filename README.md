@@ -68,6 +68,8 @@ q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequen
 
 [*]: Supported IDs include run, study, BioProject, experiment and study IDs.
 
+The next sections give a brief introduction to the most important actions in q2-fondue. More detailed instructions, background information and examples can be found in the associated [tutorial](https://github.com/bokulich-lab/q2-fondue/blob/main/tutorial/tutorial.md).
+
 ### Import accession IDs
 All _q2-fondue_ actions which fetch data from SRA require the list of run, study, BioProject, experiment or study IDs to be provided as a QIIME 2 artifact of `NCBIAccessionIDs` semantic type. You can either import an existing list of IDs (1.) or scrape a Zotero web library collection to obtain these IDs (2.).
 
@@ -186,6 +188,14 @@ where:
 - `--i-accession-ids` is an artifact containing run, study, BioProject, experiment or sample IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
+
+## Downstream analysis in QIIME 2
+For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.     
+
+## Exporting data for downstream analyses outside of QIIME 2
+Some downstream analyses may need to rely on tools outside of QIIME 2. Since q2-fondue outputs can be transformed directly into FASTQ and other interoperable formats, there are no restrictions for users when using these tools. Note that the exported files will no longer contain integrated provenance information (which is unique to QIIME 2 Artifacts), but this metadata can be exported also and the original artifacts will retain the provenance data for traceability purposes.
+
+To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section [Prepare downstream analysis outside of QIIME 2](./tutorial/tutorial.md#prepare-downstream-analysis-outside-of-qiime-2). 
 
 ## Getting Help
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).

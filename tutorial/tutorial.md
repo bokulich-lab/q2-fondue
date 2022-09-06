@@ -64,10 +64,10 @@ Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), a
 ## Using q2-fondue 
 After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, we are super curious to explore the dataset this study was based on. Luckily, with _q2-fondue_ retrieving all this data is a cakewalk! :cake:
 
-## Installation
+### Installation
 To install _q2-fondue_ please follow the instructions available in the [README](../README.md).
  
-## Getting started
+### Getting started
 
 First, let's move to the tutorial directory. 
 
@@ -88,7 +88,7 @@ The *metadata_file.tsv* contains the BioProject accession number (PRJEB14186) an
 
 > *Tip*: one can of course also pass several BioProject accession numbers at once by having them all in the same metadata file!
 
-## Fetching sequences and corresponding metadata together
+### Fetching sequences and corresponding metadata together
 
 We first have to convert our *metadata_file_runs.tsv* file to a QIIME2 artifact of semantic type `NCBIAccessionIDs`. 
 
@@ -143,8 +143,8 @@ How can we now find out which raw sequence file we should be using? These are yo
 
 In this case we will therefore [continue](#what-now) with the *single_reads.qza*! :fire:
 
-## Other q2-fondue functionalities
-### Fetching **only** metadata
+### Other q2-fondue functionalities
+#### Fetching **only** metadata
 We might just want to gain more insight into the metadata of a specific study. 
 Also for this action we can start with TSV a file with accession number of BioProjects, Studies, Experiments, Samples or individual Runs. 
 
@@ -167,7 +167,7 @@ qiime fondue get-metadata \
 The output file *output_metadata.qza* now contains all the metadata for the requested IDs. And *failed_metadata.qza* list all IDs where fetching metadata failed, with their corresponding error messages. 
 
 
-### Fetching **only** sequencing data
+#### Fetching **only** sequencing data
 
 In contrast, to only get the raw sequences associated with a number of runs, execute these commands:
 ```shell
@@ -187,7 +187,7 @@ qiime fondue get-sequences \
 
 > *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).  
 
-### Scraping IDs from a Zotero web library collection
+#### Scraping IDs from a Zotero web library collection
 
 For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject, experiment and samples IDs with associated DOI names from an existing Zotero web library collection, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:
 * `ZOTERO_TYPE` is the Zotero API library type 'user' or 'group'.
@@ -224,11 +224,11 @@ qiime tools view fondue-output/run_ids.qzv
 ```
 > *Note:* make sure to have q2-metadata installed in your conda environment with `conda install -c qiime2 q2-metadata`.
 
-## What now? 
+## Downstream analysis in QIIME 2 
 
 Here we show how the artifacts fetched through q2-fondue enable an easy entry to the QIIME 2 analysis pipeline, which is also further described in [other QIIME 2 tutorials](https://docs.qiime2.org). :sparkles:
 
-### Check out the metadata 
+### Investigate the metadata 
 While the metadata files we use in QIIME 2 commonly are in the TSV format, 
 the semantic type `SRAMetadata` that q2-fondue is creating can be used in the same way.
 
@@ -242,7 +242,7 @@ qiime tools view fondue-output/metadata.qzv
 ```
 > *Note:* make sure to have q2-metadata installed in your conda environment with `conda install -c qiime2 q2-metadata`.
 
-### Using the sequencing data 
+### Exploring the sequencing data 
 Apart from avoiding the tedious search and manual downloading of these large piles of data, 
 one of the biggest advantages of using q2-fondue is the fact that the output is already a QIIME 2 
 artifact and we don't have to import it! 
@@ -282,22 +282,21 @@ qiime tools view fondue-output/dada2_table.qzv
 In summary, we showed how the artifacts fetched through q2-fondue enable an easy entry 
 to the QIIME 2 analysis pipeline, which is further described in other tutorials. 
 
-## Extracting the metadata or sequences artifacts 
-All [QIIME 2 artifacts](docs.qiime2.org) fundamentally are zipped files, containing additional 
-information on the artifact's provenance, type and format. All this information can be exposed using 
-`qiime tools peek`. In case we want to work with the retrieved data outside of QIIME 2, 
-it is possible to extract the artifacts.
+## Prepare downstream analysis outside of QIIME 2
+All QIIME 2 and q2-fondue outputs are artifacts. [QIIME 2 artifacts](https://dev.qiime2.org/latest/storing-data/#accessibility-and-transferability) are zipped files of data 
+and associated metadata, containing additional information on the provenance, type and format. The data
+within an artifact can be easily extracted for use outside of QIIME 2. Just follow the below instructions to work with the retrieved data outside of QIIME 2.
 
-#### Get a metadata TSV file 
+### Extract the retrieved metadata as a TSV file 
 ```shell
 qiime tools extract \
       --input-path metadata.qza \
       --output-path metadata
 ```
 This creates a metadata directory with all information on provenance tracking, 
-and in the folder *data* we find the *sra-metadata.tsv*.
+and in the folder *data* we find the *sra-metadata.tsv* containing all metadata of the initially requested accession IDs.
 
-#### Get FASTA files 
+### Extract the retrieved sequences as FASTQ files 
 ```shell
 qiime tools extract \
       --input-path fondue-output/single_reads.qza \
