@@ -190,9 +190,9 @@ where:
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 
 ## Downstream analysis
-For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#Downstream-analysis-in-QIIME 2) in the tutorial.     
+For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.     
 
-To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section ["Prepare downstream analysis outside of QIIME 2"](./tutorial/tutorial.md#Prepare-downstream-analysis-outside-of-QIIME 2). 
+To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section ["Prepare downstream analysis outside of QIIME 2"](./tutorial/tutorial.md#prepare-downstream-analysis-outside-of-qiime-2). 
 
 ## Getting Help
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).
