@@ -283,7 +283,7 @@ In summary, we showed how the artifacts fetched through q2-fondue enable an easy
 to the QIIME 2 analysis pipeline, which is further described in other tutorials. 
 
 ## Prepare downstream analysis outside of QIIME 2
-All QIIME 2 and q2-fondue outputs are artifacts. [Q2 artifacts](https://docs.qiime2.org/) are zipped files of data 
+All QIIME 2 and q2-fondue outputs are artifacts. [QIIME 2 artifacts](https://dev.qiime2.org/latest/storing-data/#accessibility-and-transferability) are zipped files of data 
 and associated metadata, containing additional information on the provenance, type and format. The data
 within an artifact can be easily extracted for use outside of QIIME 2. Just follow the below instructions to work with the retrieved data outside of QIIME 2.
 
@@ -296,7 +296,7 @@ qiime tools extract \
 This creates a metadata directory with all information on provenance tracking, 
 and in the folder *data* we find the *sra-metadata.tsv* containing all metadata of the initially requested accession IDs.
 
-### Extract the retrieved sequences as FASTA/FASTQ files 
+### Extract the retrieved sequences as FASTQ files 
 ```shell
 qiime tools extract \
       --input-path fondue-output/single_reads.qza \

@@ -189,8 +189,11 @@ where:
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 
-## Downstream analysis
+## Downstream analysis in QIIME 2
 For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.     
+
+## Exporting data for downstream analyses outside of QIIME 2
+Some downstream analyses may need to rely on tools outside of QIIME 2. Since q2-fondue outputs can be transformed directly into FASTQ and other interoperable formats, there are no restrictions for users when using these tools. Note that the exported files will no longer contain integrated provenance information (which is unique to QIIME 2 Artifacts), but this metadata can be exported also and the original artifacts will retain the provenance data for traceability purposes.
 
 To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section [Prepare downstream analysis outside of QIIME 2](./tutorial/tutorial.md#prepare-downstream-analysis-outside-of-qiime-2). 
 
