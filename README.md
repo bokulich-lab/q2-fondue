@@ -205,7 +205,7 @@ Problem? Suggestion? Technical errors and user support requests can be filed on 
 If you use `fondue` in your research, please cite the following:
 
 Michal Ziemski, Anja Adamov, Lina Kim, Lena Flörl, Nicholas A. Bokulich. 2022. Reproducible acquisition, management, and meta-analysis of nucleotide sequence (meta)data using q2-fondue.
-_Bioinformatics_, 2022; doi: https://doi.org/10.1093/bioinformatics/btac639
+_Bioinformatics; doi: https://doi.org/10.1093/bioinformatics/btac639
 
 
 ## License
