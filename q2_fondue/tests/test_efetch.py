@@ -264,6 +264,9 @@ class TestEfetchClients(_TestPluginWithEntrezFakeComponents):
             'STUDY1': MagicMock(generate_meta=MagicMock(return_value=dfs[0])),
             'STUDY2': MagicMock(generate_meta=MagicMock(return_value=dfs[1]))
         }
+        self.efetch_result_single.runs = {
+            'A': 'some run', 'B': 'some run', 'C': 'some run', 'D': 'some run'
+        }
 
         obs = self.efetch_result_single.metadata_to_df()
         exp = pd.DataFrame(
