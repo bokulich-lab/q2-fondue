@@ -12,12 +12,14 @@
 </p><br>
 
 ## Installation
-You can install q2-fondue using conda by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
+You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
 
-* Install [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
+For both options 1 and 2 make sure to start by installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
 ```shell
 conda install mamba -n base -c conda-forge
 ```
+
+### Option 1: Minimal fondue environment:
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
@@ -27,6 +29,19 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
+
+### Option 2: Install fondue within existing QIIME 2 environment
+* Install QIIME 2 within a conda environment as described in [the official user documentation](https://docs.qiime2.org/). 
+* Activate the QIIME 2 environment (v2021.4 or higher) and install fondue within:
+```
+conda activate qiime2-2022.8
+mamba install \
+   -c https://packages.qiime2.org/qiime2/2022.8/tested/ \
+   -c conda-forge -c bioconda -c defaults \
+   q2-fondue -y
+```
+
+### Mandatory configuration for both options 1 and 2
 * Refresh the QIIME 2 CLI cache and see that everything worked:
 ```shell
 qiime dev refresh-cache

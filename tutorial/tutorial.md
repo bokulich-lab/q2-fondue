@@ -65,7 +65,7 @@ Some microbiome datasets are also uploaded on [Qiita](https://qiita.ucsd.edu), a
 After reading about regionally distinct microbial communities in vineyards in the publication by Bokulich et al. (2016)<sup>2</sup>, we are super curious to explore the dataset this study was based on. Luckily, with _q2-fondue_ retrieving all this data is a cakewalk! :cake:
 
 ### Installation
-To install _q2-fondue_ please follow the instructions available in the [README](../README.md).
+To install _q2-fondue_ please follow the instructions for installing _q2-fondue_ in an existing QIIME 2 environment (option 2) available in the [README](../README.md).
 
 ### Getting started
 
