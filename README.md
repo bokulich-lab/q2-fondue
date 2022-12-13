@@ -35,10 +35,10 @@ conda activate fondue
 * Activate the QIIME 2 environment (v2021.4 or higher) and install fondue within:
 ```
 conda activate qiime2-2022.8
-mamba install \
+mamba install -y \
    -c https://packages.qiime2.org/qiime2/2022.8/tested/ \
    -c conda-forge -c bioconda -c defaults \
-   q2-fondue -y
+   q2-fondue
 ```
 
 ### Mandatory configuration for both options 1 and 2
