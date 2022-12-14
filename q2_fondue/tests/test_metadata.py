@@ -139,6 +139,28 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
         pd.testing.assert_frame_equal(
             exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
 
+    def test_efetcher_inquire_single_multisample(self):
+        with patch.object(Requester, 'request') as mock_request:
+            mock_request.return_value = self.xml_to_response(
+                'single', '_multisample'
+            )
+            obs_df, _ = _efetcher_inquire(
+                self.fake_efetcher, ['FAKEID1'], 'INFO'
+            )
+        obs_request, = mock_request.call_args.args
+        exp_request = self.generate_ef_request(['FAKEID1'])
+        exp_df = self.generate_expected_df().iloc[[0]]
+        for col in ['Avg Spot Len', 'Bases', 'Bytes', 'Spots']:
+            exp_df[col] = exp_df[col].astype(float)
+        exp_df['Public'] = exp_df['Public'].astype(object)
+
+        for arg in self.efetch_request_properties:
+            self.assertEqual(
+                getattr(exp_request, arg), getattr(obs_request, arg))
+        mock_request.assert_called_once()
+        pd.testing.assert_frame_equal(
+            exp_df.sort_index(axis=1), obs_df.sort_index(axis=1))
+
     def test_efetcher_inquire_multi(self):
         with patch.object(Requester, 'request') as mock_request:
             mock_request.return_value = self.xml_to_response('multi')

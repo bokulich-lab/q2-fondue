@@ -68,6 +68,9 @@ class EFetchResult(EutilsResult):
         # remove potential column duplicates
         df = df.groupby(level=0, axis=1).first()
 
+        # remove rows which are not indexed by run IDs
+        df = df.loc[df.index.isin(self.runs.keys())]
+
         # reorder columns in a more sensible fashion
         cols = META_REQUIRED_COLUMNS.copy()
         cols.extend([c for c in df.columns if c not in cols])
