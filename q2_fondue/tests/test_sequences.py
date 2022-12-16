@@ -10,6 +10,7 @@ from multiprocessing import Queue, Manager
 import gzip
 import itertools
 import logging
+import filecmp
 import os
 import pandas as pd
 import shutil
@@ -61,6 +62,22 @@ class SequenceTests(TestPluginBase):
                 os.path.join(test_temp_dir.name, file)
             )
 
+        return test_temp_dir
+
+    def move_files_2_tmp_subdir(self, ls_files, name_subdir):
+        test_temp_dir = MockTempDir()
+        tmp_subdir = os.path.join(test_temp_dir.name, name_subdir)
+
+        if not os.path.exists(tmp_subdir):
+            os.makedirs(tmp_subdir)
+
+        for file in ls_files:
+            path_seq_single = self.get_data_path(file)
+
+            shutil.copy(
+                path_seq_single,
+                os.path.join(tmp_subdir, file)
+            )
         return test_temp_dir
 
     def _validate_sequences_in_samples(self, read_output):
@@ -413,19 +430,55 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         ls_act_single, ls_act_paired = [], []
         for _id in iter(self.renamed_q.get, None):
+            print(_id)
             ls_act_single.append(_id[0][0]) if not _id[0][1] else False
             ls_act_paired.append(_id[0][0]) if _id[0][1] else False
 
         ls_exp_single = [
-            os.path.join(test_temp_dir.name, 'testaccA_00_L001_R1_001.fastq')
+            os.path.join(
+                test_temp_dir.name, 'single', 'testaccA_00_L001_R1_001.fastq')
         ]
         ls_exp_paired = [
-            os.path.join(test_temp_dir.name, 'testacc_00_L001_R1_001.fastq'),
-            os.path.join(test_temp_dir.name, 'testacc_00_L001_R2_001.fastq')
+            os.path.join(
+                test_temp_dir.name, 'paired', 'testacc_00_L001_R1_001.fastq'),
+            os.path.join(
+                test_temp_dir.name, 'paired', 'testacc_00_L001_R2_001.fastq')
         ]
 
         self.assertEqual(set(ls_act_single), set(ls_exp_single))
         self.assertEqual(set(ls_act_paired), set(ls_exp_paired))
+
+    def test_process_downloaded_sequences_paired_n_single_content(self):
+        ids = ['testaccHYB', 'testaccHYB_1', 'testaccHYB_2']
+        test_temp_dir = self.move_files_2_tmp_dir([f'{x}.fastq' for x in ids])
+
+        [self.fetched_q.put(_id) for _id in ids]
+        self.fetched_q.put(None)
+
+        _ = _process_downloaded_sequences(
+            output_dir=test_temp_dir.name, fetched_queue=self.fetched_q,
+            renaming_queue=self.renamed_q, n_workers=1
+        )
+
+        ls_act_single, ls_act_paired = [], []
+        for _id in iter(self.renamed_q.get, None):
+            print(_id)
+            for i in range(0, len(_id)):
+                ls_act_single.append(_id[i][0]) if not _id[i][1] else False
+                ls_act_paired.append(_id[i][0]) if _id[i][1] else False
+
+        # test that file contents are the same
+        # single
+        self.assertTrue(
+            filecmp.cmp(
+                ls_act_single[0], self.get_data_path(f'{ids[0]}.fastq')))
+        # paired
+        self.assertTrue(
+            filecmp.cmp(
+                ls_act_paired[0], self.get_data_path(f'{ids[1]}.fastq')))
+        self.assertTrue(
+            filecmp.cmp(
+                ls_act_paired[1], self.get_data_path(f'{ids[2]}.fastq')))
 
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -459,7 +512,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_single = ['testaccA_00_L001_R1_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_file_single)
+        test_temp_dir = self.move_files_2_tmp_subdir(ls_file_single, "single")
 
         self.renamed_q.put(
             [(os.path.join(test_temp_dir.name, ls_file_single[0]), False)]
@@ -486,7 +539,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_paired = ['testacc_00_L001_R1_001.fastq',
                           'testacc_00_L001_R2_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(ls_file_paired)
+        test_temp_dir = self.move_files_2_tmp_subdir(ls_file_paired, "paired")
 
         self.renamed_q.put([
             (os.path.join(test_temp_dir.name, ls_file_paired[0]), True),
