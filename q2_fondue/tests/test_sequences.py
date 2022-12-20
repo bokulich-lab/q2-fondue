@@ -51,33 +51,26 @@ class SequenceTests(TestPluginBase):
         self.renamed_q = self.manager.Queue()
         self.processed_q = self.manager.Queue()
 
-    def move_files_2_tmp_dir(self, ls_files):
+    def move_files_2_tmp_dir(self, ls_files, name_subdir=None):
         test_temp_dir = MockTempDir()
+
+        if name_subdir:
+            tmp_subdir = os.path.join(test_temp_dir.name, name_subdir)
+
+            if not os.path.exists(tmp_subdir):
+                os.makedirs(tmp_subdir)
+            dir2move = tmp_subdir
+        else:
+            dir2move = test_temp_dir.name
 
         for file in ls_files:
             path_seq_single = self.get_data_path(file)
 
             shutil.copy(
                 path_seq_single,
-                os.path.join(test_temp_dir.name, file)
+                os.path.join(dir2move, file)
             )
 
-        return test_temp_dir
-
-    def move_files_2_tmp_subdir(self, ls_files, name_subdir):
-        test_temp_dir = MockTempDir()
-        tmp_subdir = os.path.join(test_temp_dir.name, name_subdir)
-
-        if not os.path.exists(tmp_subdir):
-            os.makedirs(tmp_subdir)
-
-        for file in ls_files:
-            path_seq_single = self.get_data_path(file)
-
-            shutil.copy(
-                path_seq_single,
-                os.path.join(tmp_subdir, file)
-            )
         return test_temp_dir
 
     def _validate_sequences_in_samples(self, read_output):
@@ -430,7 +423,6 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         ls_act_single, ls_act_paired = [], []
         for _id in iter(self.renamed_q.get, None):
-            print(_id)
             ls_act_single.append(_id[0][0]) if not _id[0][1] else False
             ls_act_paired.append(_id[0][0]) if _id[0][1] else False
 
@@ -462,23 +454,18 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         ls_act_single, ls_act_paired = [], []
         for _id in iter(self.renamed_q.get, None):
-            print(_id)
             for i in range(0, len(_id)):
                 ls_act_single.append(_id[i][0]) if not _id[i][1] else False
                 ls_act_paired.append(_id[i][0]) if _id[i][1] else False
 
         # test that file contents are the same
-        # single
         self.assertTrue(
             filecmp.cmp(
                 ls_act_single[0], self.get_data_path(f'{ids[0]}.fastq')))
-        # paired
-        self.assertTrue(
-            filecmp.cmp(
-                ls_act_paired[0], self.get_data_path(f'{ids[1]}.fastq')))
-        self.assertTrue(
-            filecmp.cmp(
-                ls_act_paired[1], self.get_data_path(f'{ids[2]}.fastq')))
+        for i in [0, 1]:
+            self.assertTrue(
+                filecmp.cmp(
+                    ls_act_paired[i], self.get_data_path(f'{ids[i+1]}.fastq')))
 
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
@@ -512,7 +499,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_single = ['testaccA_00_L001_R1_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_subdir(ls_file_single, "single")
+        test_temp_dir = self.move_files_2_tmp_dir(
+            ls_file_single, name_subdir="single")
 
         self.renamed_q.put(
             [(os.path.join(test_temp_dir.name, ls_file_single[0]), False)]
@@ -539,7 +527,8 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_paired = ['testacc_00_L001_R1_001.fastq',
                           'testacc_00_L001_R2_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_subdir(ls_file_paired, "paired")
+        test_temp_dir = self.move_files_2_tmp_dir(
+            ls_file_paired, name_subdir="paired")
 
         self.renamed_q.put([
             (os.path.join(test_temp_dir.name, ls_file_paired[0]), True),

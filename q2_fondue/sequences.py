@@ -165,6 +165,7 @@ def _run_fasterq_dump_for_all(
 def _process_one_sequence(filename, output_dir):
     """Renames sequence files to follow the required naming convention
     and moves them to single/paired subfolders."""
+    # Renaming
     new_name, is_paired = None, False
     if filename.endswith('_1.fastq'):
         # paired-end _1
@@ -180,9 +181,9 @@ def _process_one_sequence(filename, output_dir):
         new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, False
     else:
         return new_name, is_paired
-    # TODO: clean this fix
-    subfolder = "paired" if is_paired else "single"
-    nested_output_dir = os.path.join(output_dir, subfolder)
+    # Moving
+    nested_output_dir = os.path.join(
+        output_dir, "paired" if is_paired else "single")
     if not os.path.exists(nested_output_dir):
         os.makedirs(nested_output_dir)
     new_name = os.path.join(nested_output_dir, new_name)
