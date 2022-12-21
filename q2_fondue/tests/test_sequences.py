@@ -51,24 +51,15 @@ class SequenceTests(TestPluginBase):
         self.renamed_q = self.manager.Queue()
         self.processed_q = self.manager.Queue()
 
-    def move_files_2_tmp_dir(self, ls_files, name_subdir=None):
+    def move_files_2_tmp_dir(self, ls_files):
         test_temp_dir = MockTempDir()
-
-        if name_subdir:
-            tmp_subdir = os.path.join(test_temp_dir.name, name_subdir)
-
-            if not os.path.exists(tmp_subdir):
-                os.makedirs(tmp_subdir)
-            dir2move = tmp_subdir
-        else:
-            dir2move = test_temp_dir.name
 
         for file in ls_files:
             path_seq_single = self.get_data_path(file)
 
             shutil.copy(
                 path_seq_single,
-                os.path.join(dir2move, file)
+                os.path.join(test_temp_dir.name, file)
             )
 
         return test_temp_dir
@@ -427,14 +418,11 @@ class TestUtils4SequenceFetching(SequenceTests):
             ls_act_paired.append(_id[0][0]) if _id[0][1] else False
 
         ls_exp_single = [
-            os.path.join(
-                test_temp_dir.name, 'single', 'testaccA_00_L001_R1_001.fastq')
+            os.path.join(test_temp_dir.name, 'testaccA_01_L001_R1_001.fastq')
         ]
         ls_exp_paired = [
-            os.path.join(
-                test_temp_dir.name, 'paired', 'testacc_00_L001_R1_001.fastq'),
-            os.path.join(
-                test_temp_dir.name, 'paired', 'testacc_00_L001_R2_001.fastq')
+            os.path.join(test_temp_dir.name, 'testacc_00_L001_R1_001.fastq'),
+            os.path.join(test_temp_dir.name, 'testacc_00_L001_R2_001.fastq')
         ]
 
         self.assertEqual(set(ls_act_single), set(ls_exp_single))
@@ -471,7 +459,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _write_empty_casava('single', casava_out_single)
-            exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
+            exp_filename = 'xxx_01_L001_R1_001.fastq.gz'
             exp_casava_fpath = os.path.join(str(casava_out_single),
                                             exp_filename)
             self.assertTrue(os.path.isfile(exp_casava_fpath))
@@ -498,9 +486,8 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
-        ls_file_single = ['testaccA_00_L001_R1_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(
-            ls_file_single, name_subdir="single")
+        ls_file_single = ['testaccA_01_L001_R1_001.fastq']
+        test_temp_dir = self.move_files_2_tmp_dir(ls_file_single)
 
         self.renamed_q.put(
             [(os.path.join(test_temp_dir.name, ls_file_single[0]), False)]
@@ -527,8 +514,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
         ls_file_paired = ['testacc_00_L001_R1_001.fastq',
                           'testacc_00_L001_R2_001.fastq']
-        test_temp_dir = self.move_files_2_tmp_dir(
-            ls_file_paired, name_subdir="paired")
+        test_temp_dir = self.move_files_2_tmp_dir(ls_file_paired)
 
         self.renamed_q.put([
             (os.path.join(test_temp_dir.name, ls_file_paired[0]), True),

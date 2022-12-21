@@ -163,32 +163,25 @@ def _run_fasterq_dump_for_all(
 
 
 def _process_one_sequence(filename, output_dir):
-    """Renames sequence files to follow the required naming convention
-    and moves them to single/paired subfolders."""
+    """Renames sequence files to follow the required naming convention."""
     # Renaming
     new_name, is_paired = None, False
     if filename.endswith('_1.fastq'):
-        # paired-end _1
-        acc = re.search(r'^.*\/(.*)_1\.fastq$', filename).group(1)
+        # paired-end _1: barcode 00
+        acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
         new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, True
     elif filename.endswith('_2.fastq'):
         # paired-end _2
-        acc = re.search(r'^.*\/(.*)_2\.fastq$', filename).group(1)
+        acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
         new_name, is_paired = '%s_00_L001_R2_001.fastq' % acc, True
     elif filename.endswith('.fastq'):
-        # single-reads
-        acc = re.search(r'^.*\/(.*)\.fastq$', filename).group(1)
-        new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, False
+        # single-reads: barcode 01
+        acc = re.search(r'(.*)\.fastq$', filename).group(1)
+        new_name, is_paired = '%s_01_L001_R1_001.fastq' % acc, False
     else:
         return new_name, is_paired
-    # Moving
-    nested_output_dir = os.path.join(
-        output_dir, "paired" if is_paired else "single")
-    if not os.path.exists(nested_output_dir):
-        os.makedirs(nested_output_dir)
-    new_name = os.path.join(nested_output_dir, new_name)
-    shutil.move(os.path.join(output_dir, filename),
-                new_name)
+    os.rename(os.path.join(output_dir, filename),
+              os.path.join(output_dir, new_name))
     return new_name, is_paired
 
 
@@ -226,7 +219,7 @@ def _write_empty_casava(read_type, casava_out_path):
     )
 
     if read_type == 'single':
-        ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
+        ls_file_names = ['xxx_01_L001_R1_001.fastq.gz']
     else:
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz',
                          'xxx_00_L001_R2_001.fastq.gz']
@@ -271,17 +264,13 @@ def _write2casava_dir(
     for filenames in iter(renaming_queue.get, None):
         if len(filenames) == 1:
             filename = os.path.split(filenames[0][0])[-1]
-            _copy_to_casava(
-                [filename], os.path.join(tmp_dir, "single"), casava_out_single
-                )
+            _copy_to_casava([filename], tmp_dir, casava_out_single)
             done_queue.put([filename])
         elif len(filenames) == 2:
             filenames = [
                 os.path.split(x[0])[-1] for x in sorted(filenames)
             ]
-            _copy_to_casava(
-                filenames, os.path.join(tmp_dir, "paired"), casava_out_paired
-                )
+            _copy_to_casava(filenames, tmp_dir, casava_out_paired)
             done_queue.put(filenames)
         renaming_queue.task_done()
     return True
