@@ -10,6 +10,7 @@ from multiprocessing import Queue, Manager
 import gzip
 import itertools
 import logging
+import filecmp
 import os
 import pandas as pd
 import shutil
@@ -417,7 +418,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             ls_act_paired.append(_id[0][0]) if _id[0][1] else False
 
         ls_exp_single = [
-            os.path.join(test_temp_dir.name, 'testaccA_00_L001_R1_001.fastq')
+            os.path.join(test_temp_dir.name, 'testaccA_01_L001_R1_001.fastq')
         ]
         ls_exp_paired = [
             os.path.join(test_temp_dir.name, 'testacc_00_L001_R1_001.fastq'),
@@ -427,11 +428,38 @@ class TestUtils4SequenceFetching(SequenceTests):
         self.assertEqual(set(ls_act_single), set(ls_exp_single))
         self.assertEqual(set(ls_act_paired), set(ls_exp_paired))
 
+    def test_process_downloaded_sequences_paired_n_single_content(self):
+        ids = ['testaccHYB', 'testaccHYB_1', 'testaccHYB_2']
+        test_temp_dir = self.move_files_2_tmp_dir([f'{x}.fastq' for x in ids])
+
+        [self.fetched_q.put(_id) for _id in ids]
+        self.fetched_q.put(None)
+
+        _ = _process_downloaded_sequences(
+            output_dir=test_temp_dir.name, fetched_queue=self.fetched_q,
+            renaming_queue=self.renamed_q, n_workers=1
+        )
+
+        ls_act_single, ls_act_paired = [], []
+        for _id in iter(self.renamed_q.get, None):
+            for i in range(0, len(_id)):
+                ls_act_single.append(_id[i][0]) if not _id[i][1] else False
+                ls_act_paired.append(_id[i][0]) if _id[i][1] else False
+
+        # test that file contents are the same
+        self.assertTrue(
+            filecmp.cmp(
+                ls_act_single[0], self.get_data_path(f'{ids[0]}.fastq')))
+        for i in [0, 1]:
+            self.assertTrue(
+                filecmp.cmp(
+                    ls_act_paired[i], self.get_data_path(f'{ids[i+1]}.fastq')))
+
     def test_write_empty_casava_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _write_empty_casava('single', casava_out_single)
-            exp_filename = 'xxx_00_L001_R1_001.fastq.gz'
+            exp_filename = 'xxx_01_L001_R1_001.fastq.gz'
             exp_casava_fpath = os.path.join(str(casava_out_single),
                                             exp_filename)
             self.assertTrue(os.path.isfile(exp_casava_fpath))
@@ -458,7 +486,7 @@ class TestUtils4SequenceFetching(SequenceTests):
     def test_write2casava_dir_single(self):
         casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
         casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
-        ls_file_single = ['testaccA_00_L001_R1_001.fastq']
+        ls_file_single = ['testaccA_01_L001_R1_001.fastq']
         test_temp_dir = self.move_files_2_tmp_dir(ls_file_single)
 
         self.renamed_q.put(

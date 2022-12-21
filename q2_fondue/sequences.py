@@ -164,9 +164,10 @@ def _run_fasterq_dump_for_all(
 
 def _process_one_sequence(filename, output_dir):
     """Renames sequence files to follow the required naming convention."""
+    # Renaming
     new_name, is_paired = None, False
     if filename.endswith('_1.fastq'):
-        # paired-end _1
+        # paired-end _1: barcode 00
         acc = re.search(r'(.*)_1\.fastq$', filename).group(1)
         new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, True
     elif filename.endswith('_2.fastq'):
@@ -174,9 +175,9 @@ def _process_one_sequence(filename, output_dir):
         acc = re.search(r'(.*)_2\.fastq$', filename).group(1)
         new_name, is_paired = '%s_00_L001_R2_001.fastq' % acc, True
     elif filename.endswith('.fastq'):
-        # single-reads
+        # single-reads: barcode 01
         acc = re.search(r'(.*)\.fastq$', filename).group(1)
-        new_name, is_paired = '%s_00_L001_R1_001.fastq' % acc, False
+        new_name, is_paired = '%s_01_L001_R1_001.fastq' % acc, False
     else:
         return new_name, is_paired
     os.rename(os.path.join(output_dir, filename),
@@ -218,7 +219,7 @@ def _write_empty_casava(read_type, casava_out_path):
     )
 
     if read_type == 'single':
-        ls_file_names = ['xxx_00_L001_R1_001.fastq.gz']
+        ls_file_names = ['xxx_01_L001_R1_001.fastq.gz']
     else:
         ls_file_names = ['xxx_00_L001_R1_001.fastq.gz',
                          'xxx_00_L001_R2_001.fastq.gz']
