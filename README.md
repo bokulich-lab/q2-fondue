@@ -32,11 +32,11 @@ conda activate fondue
 
 ### Option 2: Install fondue within existing QIIME 2 environment
 * Install QIIME 2 within a conda environment as described in [the official user documentation](https://docs.qiime2.org/). 
-* Activate the QIIME 2 environment (v2022.8 or higher) and install fondue within:
+* Activate the QIIME 2 environment (v2022.8 or higher) and install fondue within while making sure that the used conda channel matches the version of the QIIME 2 environment (replace below `{ENV_VERSION}` with the version number of your QIIME 2 environment):
 ```
-conda activate qiime2-2022.11
+conda activate qiime2-{ENV_VERSION}
 mamba install -y \
-   -c https://packages.qiime2.org/qiime2/2022.11/tested/ \
+   -c https://packages.qiime2.org/qiime2/{ENV_VERSION}/tested/ \
    -c conda-forge -c bioconda -c defaults \
    q2-fondue
 ```
