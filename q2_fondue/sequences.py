@@ -242,11 +242,13 @@ def _copy_to_casava(
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
     fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
     rewrite_fastq(fwd_path_in, fwd_path_out)
+    os.remove(fwd_path_in)
 
     if len(filenames) > 1:
         rev_path_in = os.path.join(tmp_dir, filenames[1])
         rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
         rewrite_fastq(rev_path_in, rev_path_out)
+        os.remove(rev_path_in)
 
 
 def _write2casava_dir(

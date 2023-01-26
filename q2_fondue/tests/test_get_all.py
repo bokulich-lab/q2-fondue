@@ -25,6 +25,7 @@ from q2_fondue.tests.test_sequences import SequenceTests
 class TestGetAll(SequenceTests):
     package = 'q2_fondue.tests'
 
+    @patch('os.remove')
     @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata.ef.Efetcher')
     @patch('q2_fondue.metadata._efetcher_inquire')
@@ -37,7 +38,7 @@ class TestGetAll(SequenceTests):
     def test_get_all_single(
             self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
             mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation
+            mock_validation, mock_remove
     ):
         """
         Test verifying that pipeline get_all calls all expected actions,
@@ -97,7 +98,13 @@ class TestGetAll(SequenceTests):
             1, _write2casava_dir,
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
+        mock_remove.assert_has_calls([
+            call(os.path.join(
+                mock_tmpdir.return_value.name, f"{acc_id}.fastq"
+            ))
+        ])
 
+    @patch('os.remove')
     @patch('q2_fondue.metadata.BATCH_SIZE', 1)
     @patch('q2_fondue.metadata._validate_run_ids')
     @patch('q2_fondue.metadata.ef.Efetcher')
@@ -111,7 +118,7 @@ class TestGetAll(SequenceTests):
     def test_get_all_multi_with_missing_ids(
             self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
             mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation
+            mock_validation, mock_remove
     ):
         """
         Test verifying that pipeline get_all calls all expected actions,
@@ -180,6 +187,11 @@ class TestGetAll(SequenceTests):
             1, _write2casava_dir,
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
+        mock_remove.assert_has_calls([
+            call(os.path.join(
+                mock_tmpdir.return_value.name, f"{acc_ids[0]}.fastq"
+            ))
+        ])
 
 
 if __name__ == "__main__":
