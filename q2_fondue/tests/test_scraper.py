@@ -480,7 +480,8 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             obs_out = scrape_collection("test_collection")
             self.assertIn(
                 "WARNING:q2_fondue.scraper:Item DMJ4AQ48 doesn't contain "
-                "any full-text content or this item was not synchronized correctly.",
+                "any full-text content or this item was not synchronized "
+                "correctly.",
                 cm.output
             )
             for i in range(0, 4):
