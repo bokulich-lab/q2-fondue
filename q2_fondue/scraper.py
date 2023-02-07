@@ -387,7 +387,8 @@ def scrape_collection(
         except zotero_errors.ResourceNotFound:
             str_text = ''
             logger.warning(f'Item {attach_key} doesn\'t contain any '
-                           f'full-text content')
+                           f'full-text content or this item was not synchronized '
+                           f'correctly.')
 
         # find accession IDs
         for id_type in doi_dicts.keys():
