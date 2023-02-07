@@ -110,7 +110,7 @@ __Note:__ the input TSV file needs to consist of a single column named "ID".
 
 To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`). 
 
-__Note:__ To retrieve all required entries from Zotero, you must be logged in.
+__Note:__ To retrieve all required entries from Zotero, you must be logged in. Also, to allow for the `scrape-collection` action to work, make sure you enable file syncing on your Zotero account (see section "File Syncing" [here](https://www.zotero.org/support/sync)) and only attempt to use the action once all attachments were synchronized with your Web Library.
 
 ```shell
 qiime fondue scrape-collection \
