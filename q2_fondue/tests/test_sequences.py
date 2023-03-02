@@ -119,7 +119,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         _run_fasterq_dump_for_all(
-            ls_acc_ids, test_temp_dir.name, threads=6,
+            ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
             retries=0, fetched_queue=self.fetched_q,
             done_queue=self.processed_q
         )
@@ -153,7 +153,43 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         _run_fasterq_dump_for_all(
-            ls_acc_ids, test_temp_dir.name, threads=6,
+            ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
+            retries=0, fetched_queue=self.fetched_q,
+            done_queue=self.processed_q
+        )
+        mock_subprocess.assert_has_calls([
+            call(exp_prefetch, text=True,
+                 capture_output=True, cwd=test_temp_dir.name),
+            call(exp_fasterq, text=True,
+                 capture_output=True, cwd=test_temp_dir.name)
+        ])
+        mock_rm.assert_called_with(
+            os.path.join(test_temp_dir.name, ls_acc_ids[0])
+        )
+        mock_space_check.assert_not_called()
+
+    @patch('shutil.rmtree')
+    @patch('subprocess.run', return_value=MagicMock(returncode=0))
+    @patch('q2_fondue.sequences._has_enough_space', return_value=True)
+    def test_run_cmd_fasterq_with_restricted_key(
+            self, mock_space_check, mock_subprocess, mock_rm
+    ):
+        test_temp_dir = self.move_files_2_tmp_dir(['testaccA.fastq'])
+        os.makedirs(f'{test_temp_dir.name}/testaccA')
+
+        ls_acc_ids = ['testaccA']
+        key = 'mykey.ngc'
+        exp_prefetch = [
+            'prefetch', '-X', 'u', '-O', ls_acc_ids[0], '--ngc', key,
+            ls_acc_ids[0]
+        ]
+        exp_fasterq = [
+            'fasterq-dump', '-e', str(6), '--size-check', 'on', '-x',
+            '--ngc', key, ls_acc_ids[0]
+        ]
+
+        _run_fasterq_dump_for_all(
+            ls_acc_ids, test_temp_dir.name, threads=6, key_file=key,
             retries=0, fetched_queue=self.fetched_q,
             done_queue=self.processed_q
         )
@@ -187,7 +223,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=0, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -219,7 +255,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -255,7 +291,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -290,7 +326,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -329,7 +365,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -371,7 +407,7 @@ class TestUtils4SequenceFetching(SequenceTests):
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             _run_fasterq_dump_for_all(
-                ls_acc_ids, test_temp_dir.name, threads=6,
+                ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
             )
@@ -628,7 +664,7 @@ class TestSequenceFetching(SequenceTests):
             )
             mock_proc.assert_has_calls([
                 call(target=_run_fasterq_dump_for_all, args=(
-                    [acc_id], mock_tmpdir.return_value.name, 1, 0,
+                    [acc_id], mock_tmpdir.return_value.name, 1, '', 0,
                     ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
@@ -673,7 +709,7 @@ class TestSequenceFetching(SequenceTests):
             )
             mock_proc.assert_has_calls([
                 call(target=_run_fasterq_dump_for_all, args=(
-                    [acc_id], mock_tmpdir.return_value.name, 1, 0,
+                    [acc_id], mock_tmpdir.return_value.name, 1, '', 0,
                     ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
@@ -717,7 +753,7 @@ class TestSequenceFetching(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
-                0, ANY, ANY), daemon=True),
+                '', 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
@@ -756,7 +792,7 @@ class TestSequenceFetching(SequenceTests):
         )
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
-                [run_id], mock_tmpdir.return_value.name, 1,
+                [run_id], mock_tmpdir.return_value.name, 1, '',
                 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
@@ -794,7 +830,7 @@ class TestSequenceFetching(SequenceTests):
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
-                0, ANY, ANY), daemon=True),
+                '', 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])

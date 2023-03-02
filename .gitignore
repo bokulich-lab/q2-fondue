@@ -75,3 +75,7 @@ target/
 
 fasterq.tmp.*/**
 sratoolkit**/**
+
+# ignore dbGAP permission keys
+**.krt
+**.ngc

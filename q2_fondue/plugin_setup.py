@@ -13,7 +13,7 @@ from q2_types.per_sample_sequences import (
 from q2_types.sample_data import SampleData
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, List, Range
+    Plugin, Citations, Choices, Str, Int, List, Range, Bool
 )
 
 from q2_fondue import __version__
@@ -120,7 +120,8 @@ plugin.methods.register_function(
     inputs={**common_inputs},
     parameters={
         **common_params,
-        'retries': Int % Range(0, None)
+        'retries': Int % Range(0, None),
+        'restricted_access': Bool
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -131,6 +132,8 @@ plugin.methods.register_function(
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences (default: 2).',
+        'restricted_access': 'If sequence fetch requires dbGaP repository '
+        'key (default=False).'
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],

@@ -12,6 +12,7 @@ from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
 import gzip
 import os
+import dotenv
 import re
 import shutil
 import subprocess
@@ -41,12 +42,17 @@ LOGGER = set_up_logger('INFO', logger_name=__name__)
 
 
 def _run_cmd_fasterq(
-        acc: str, output_dir: str, threads: int):
+        acc: str, output_dir: str, threads: int, key_file: str):
     """Runs fasterq-dump command on a single accession."""
-    cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc, acc]
+    if key_file != '':
+        key_params = ['--ngc', key_file]
+    else:
+        key_params = []
+
+    cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc] + key_params + [acc]
     cmd_fasterq = [
-        'fasterq-dump', '-e', str(threads), '--size-check', 'on', '-x', acc
-    ]
+        'fasterq-dump', '-e', str(threads), '--size-check', 'on', '-x'] + \
+        key_params + [acc]
 
     result = subprocess.run(
         cmd_prefetch, text=True, capture_output=True, cwd=output_dir)
@@ -79,7 +85,7 @@ def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
 
 
 def _run_fasterq_dump_for_all(
-        accession_ids, tmpdirname, threads, retries,
+        accession_ids, tmpdirname, threads, key_file, retries,
         fetched_queue, done_queue
 ):
     """Runs prefetch & fasterq-dump for all ids in accession_ids.
@@ -88,6 +94,7 @@ def _run_fasterq_dump_for_all(
         accession_ids (list): List of all run IDs to be fetched.
         tmpdirname (str): Name of temporary directory to store the data.
         threads (int, default=1): Number of threads to be used in parallel.
+        key_file (str, default=''): Filepath to dbGaP repository key.
         retries (int, default=2): Number of retries to fetch sequences.
         fetched_queue (multiprocessing.Queue): Queue communicating IDs
             that were successfully fetched.
@@ -113,7 +120,7 @@ def _run_fasterq_dump_for_all(
                 f'(attempt {-retries + init_retries + 1})'
             )
             result = _run_cmd_fasterq(
-                acc, tmpdirname, threads)
+                acc, tmpdirname, threads, key_file)
             if result.returncode != 0:
                 failed_ids[acc] = result.stderr
             else:
@@ -311,6 +318,7 @@ def _announce_completion(queue: SyncManager.Queue):
 def get_sequences(
         accession_ids: Metadata, email: str, retries: int = 2,
         n_jobs: int = 1, log_level: str = 'INFO',
+        restricted_access: bool = False
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt,
       pd.DataFrame):
@@ -327,6 +335,8 @@ def get_sequences(
         accession_ids (Metadata): List of all run/project IDs to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
+        restricted_access (bool, default=False): If sequence fetch requires
+        dbGaP repository key.
         n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
 
@@ -357,11 +367,17 @@ def get_sequences(
     processed_q = manager.Queue()
 
     with tempfile.TemporaryDirectory() as tmp_dir:
+        # get dbGAP key for restricted access sequences
+        if restricted_access:
+            dotenv.load_dotenv()
+            key_file = os.getenv('KEY_FILEPATH')
+        else:
+            key_file = ''
         # run fasterq-dump for all accessions
         fetcher_process = Process(
             target=_run_fasterq_dump_for_all,
             args=(
-                sorted(accession_ids), tmp_dir, n_jobs, retries,
+                sorted(accession_ids), tmp_dir, n_jobs, key_file, retries,
                 fetched_q, processed_q
             ),
             daemon=True
