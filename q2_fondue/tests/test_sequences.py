@@ -868,6 +868,33 @@ class TestSequenceFetching(SequenceTests):
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
 
+    @patch.dict(os.environ, {"KEY_FILEPATH": "path/to/key.ngc"})
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
+    @patch('tempfile.TemporaryDirectory')
+    def test_get_sequences_restricted_access(
+        self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    ):
+        acc_id = 'SRR123456'
+        ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+
+        test_temp_md = self.prepare_metadata(acc_id)
+        mock_announce.return_value = {}, [ls_file_names[0]], []
+
+        _, _, _ = get_sequences(
+            test_temp_md, email='some@where.com', retries=0,
+            restricted_access=True
+        )
+        mock_proc.assert_has_calls([
+            call(target=_run_fasterq_dump_for_all, args=(
+                [acc_id], mock_tmpdir.return_value.name, 1,
+                'path/to/key.ngc', 0, ANY, ANY), daemon=True),
+            call(target=_process_downloaded_sequences, args=(
+                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
+        ])
+
 
 class TestSequenceCombining(SequenceTests):
 

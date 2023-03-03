@@ -23,7 +23,7 @@ conda install mamba -n base -c conda-forge
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
-   -c https://packages.qiime2.org/qiime2/2022.11/tested/ \
+   -c https://packages.qiime2.org/qiime2/2023.2/tested/ \
    -c conda-forge -c bioconda -c defaults \
    q2cli q2-fondue
 
@@ -166,7 +166,7 @@ where:
 The resulting artifact `--o-metadata ` will contain a TSV file with all the available metadata fields for all of the requested runs. If metadata for some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as `--i-accession-ids` to a subsequent `get-metadata` command. To pass associated DOI names for the failed runs, provide the table of accession IDs with associated DOI names as `--o-linked-doi` to the `get-metadata` command.
 
 ### Fetching sequences
-To get single-read and paired-end sequences associated with a number of IDs, execute this command:
+To get openly accessible single-read and paired-end sequences associated with a number of IDs, execute this command:
 ```shell
 qiime fondue get-sequences \
               --i-accession-ids ids.qza \
@@ -189,6 +189,20 @@ If one of the provided IDs only contains sequences of one type (e.g. single-read
 if none of the requested sequences failed to download, the corresponding artifact will be empty.
 
 If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as `--i-accession-ids` to a subsequent `get-sequence` command.
+
+#### Special case: Fetching restricted access sequences with a dbGAP repository key
+To get access to the respective dbGaP repository key users must first apply for approval and then retrieve the key from dbGAP (see prerequisites described [here](https://www.ncbi.nlm.nih.gov/sra/docs/sra-dbgap-download/)).    
+
+To retrieve sequencing data using the acquired dbGAP repository key, without revealing the sensitive key, set the filepath to the stored key as an environment variable. You can either do this by running the following command in your terminal `export KEY_FILEPATH=<path to key>` or by adding the variable assignment to your `.env` file. For the latter option, make sure to ignore this file in version control (add to `.gitignore`).        
+Having set the filepath of the key as an environment variable you can fetch the sequencing data by running `get-sequences` with the parameter `--p-restricted-access`:
+```shell
+qiime fondue get-sequences \
+              --i-accession-ids ids.qza \
+              --p-email your_email@somewhere.com \
+              --p-restricted-access \
+              --output-dir output_path
+```
+__Note:__ Fetching metadata with a dbGAP repository key is not supported. Hence, this flag is only available in the `get-sequences` action (and not in the `get-metadata` and `get-all` actions).
 
 ### Fetching metadata and sequences
 To fetch both sequence-associated metadata and sequences associated with the provided IDs, execute this command:
