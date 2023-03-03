@@ -166,7 +166,7 @@ where:
 The resulting artifact `--o-metadata ` will contain a TSV file with all the available metadata fields for all of the requested runs. If metadata for some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as `--i-accession-ids` to a subsequent `get-metadata` command. To pass associated DOI names for the failed runs, provide the table of accession IDs with associated DOI names as `--o-linked-doi` to the `get-metadata` command.
 
 ### Fetching sequences
-To get openly accessible single-read and paired-end sequences associated with a number of IDs, execute this command:
+To get openly accessible single- and paired-end sequences associated with a number of IDs, execute this command:
 ```shell
 qiime fondue get-sequences \
               --i-accession-ids ids.qza \

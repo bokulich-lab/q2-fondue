@@ -49,10 +49,10 @@ def _run_cmd_fasterq(
     else:
         key_params = []
 
-    cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc] + key_params + [acc]
+    cmd_prefetch = ['prefetch', '-X', 'u', '-O', acc, *key_params, acc]
     cmd_fasterq = [
-        'fasterq-dump', '-e', str(threads), '--size-check', 'on', '-x'] + \
-        key_params + [acc]
+        'fasterq-dump', '-e', str(threads), '--size-check', 'on', '-x',
+        *key_params, acc]
 
     result = subprocess.run(
         cmd_prefetch, text=True, capture_output=True, cwd=output_dir)
@@ -93,9 +93,9 @@ def _run_fasterq_dump_for_all(
     Args:
         accession_ids (list): List of all run IDs to be fetched.
         tmpdirname (str): Name of temporary directory to store the data.
-        threads (int, default=1): Number of threads to be used in parallel.
-        key_file (str, default=''): Filepath to dbGaP repository key.
-        retries (int, default=2): Number of retries to fetch sequences.
+        threads (int): Number of threads to be used in parallel.
+        key_file (str): Filepath to dbGaP repository key.
+        retries (int): Number of retries to fetch sequences.
         fetched_queue (multiprocessing.Queue): Queue communicating IDs
             that were successfully fetched.
         done_queue (SyncManager.Queue): Queue communicating filenames
