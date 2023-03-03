@@ -869,12 +869,14 @@ class TestSequenceFetching(SequenceTests):
             )
 
     @patch.dict(os.environ, {"KEY_FILEPATH": "path/to/key.ngc"})
+    @patch('os.path.isfile')
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
     @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_restricted_access(
-        self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+        self, mock_tmpdir, mock_announce, mock_pool, mock_proc,
+        mock_isfile
     ):
         acc_id = 'SRR123456'
         ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
@@ -882,6 +884,7 @@ class TestSequenceFetching(SequenceTests):
 
         test_temp_md = self.prepare_metadata(acc_id)
         mock_announce.return_value = {}, [ls_file_names[0]], []
+        mock_isfile.return_value = True
 
         _, _, _ = get_sequences(
             test_temp_md, email='some@where.com', retries=0,
@@ -894,6 +897,33 @@ class TestSequenceFetching(SequenceTests):
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
         ])
+
+    @patch.dict(os.environ, {"KEY_FILEPATH": "path/to/key.ngc"})
+    @patch('os.path.isfile')
+    @patch('q2_fondue.sequences.Process')
+    @patch('q2_fondue.sequences.Pool')
+    @patch('q2_fondue.sequences._announce_completion')
+    @patch('tempfile.TemporaryDirectory')
+    def test_get_sequences_restricted_access_no_keyfile(
+        self, mock_tmpdir, mock_announce, mock_pool, mock_proc,
+        mock_isfile
+    ):
+        acc_id = 'SRR123456'
+        ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
+        mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
+
+        test_temp_md = self.prepare_metadata(acc_id)
+        mock_announce.return_value = {}, [ls_file_names[0]], []
+        mock_isfile.return_value = False
+
+        with self.assertRaisesRegex(
+                ValueError,
+                'The provided dbGAP repository key filepath does not exist.'
+        ):
+            _, _, _ = get_sequences(
+                test_temp_md, email='some@where.com', retries=0,
+                restricted_access=True
+            )
 
 
 class TestSequenceCombining(SequenceTests):

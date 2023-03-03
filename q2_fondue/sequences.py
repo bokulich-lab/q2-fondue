@@ -371,6 +371,12 @@ def get_sequences(
         if restricted_access:
             dotenv.load_dotenv()
             key_file = os.getenv('KEY_FILEPATH')
+            if not os.path.isfile(key_file):
+                raise ValueError(
+                    'The provided dbGAP repository key filepath does not '
+                    'exist. Please check your environment variable '
+                    'KEY_FILEPATH.'
+                )
         else:
             key_file = ''
         # run fasterq-dump for all accessions
