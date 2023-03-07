@@ -869,6 +869,7 @@ class TestSequenceFetching(SequenceTests):
             )
 
     @patch.dict(os.environ, {"KEY_FILEPATH": "path/to/key.ngc"})
+    @patch('dotenv.load_dotenv')
     @patch('os.path.isfile')
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
@@ -876,7 +877,7 @@ class TestSequenceFetching(SequenceTests):
     @patch('tempfile.TemporaryDirectory')
     def test_get_sequences_restricted_access(
         self, mock_tmpdir, mock_announce, mock_pool, mock_proc,
-        mock_isfile
+        mock_isfile, mock_load_dotenv
     ):
         acc_id = 'SRR123456'
         ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
