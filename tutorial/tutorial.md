@@ -187,6 +187,8 @@ qiime fondue get-sequences \
 
 > *Note:* We can also add the `--p-n-jobs` and `--p-retries`  parameters in this command (see [`get-metadata`](#fetching-only-metadata) and [`get-all`](#fetching-sequences-and-corresponding-metadata-together) for more explanations).
 
+> *Note:* To fetch restricted access sequencing data with a dbGAP repository key, see the instructions in the `README.md` [here](../README.md####special-case:-fetching-restriced-access-sequences-with-a-dbGAP-repository-key).
+
 #### Scraping IDs from a Zotero web library collection
 
 For now we have assumed that a file exists with the accession IDs, for which we want to fetch the sequences and corresponding metadata, namely `metadata_file.qza`. If you want to scrape the run, study, BioProject, experiment and samples IDs with associated DOI names from an existing Zotero web library collection, you can use the `scrape-collection` method. Before running it, you have to set three environment variables linked to your Zotero account:

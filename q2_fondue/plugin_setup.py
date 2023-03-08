@@ -13,7 +13,7 @@ from q2_types.per_sample_sequences import (
 from q2_types.sample_data import SampleData
 from qiime2.core.type import TypeMatch
 from qiime2.plugin import (
-    Plugin, Citations, Choices, Str, Int, List, Range
+    Plugin, Citations, Choices, Str, Int, List, Range, Bool
 )
 
 from q2_fondue import __version__
@@ -49,7 +49,7 @@ common_params = {
 
 common_param_descr = {
     'email': 'Your e-mail address (required by NCBI).',
-    'n_jobs': 'Number of concurrent download jobs (default: 1).',
+    'n_jobs': 'Number of concurrent download jobs.',
     'log_level': 'Logging level.'
 }
 
@@ -120,7 +120,8 @@ plugin.methods.register_function(
     inputs={**common_inputs},
     parameters={
         **common_params,
-        'retries': Int % Range(0, None)
+        'retries': Int % Range(0, None),
+        'restricted_access': Bool
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -130,7 +131,9 @@ plugin.methods.register_function(
     input_descriptions={**common_input_descriptions},
     parameter_descriptions={
         **common_param_descr,
-        'retries': 'Number of retries to fetch sequences (default: 2).',
+        'retries': 'Number of retries to fetch sequences.',
+        'restricted_access': 'If sequence fetch requires dbGaP repository '
+        'key.'
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -162,7 +165,7 @@ plugin.pipelines.register_function(
     },
     parameter_descriptions={
         **common_param_descr,
-        'retries': 'Number of retries to fetch sequences (default: 2).'
+        'retries': 'Number of retries to fetch sequences.'
     },
     output_descriptions={
         'metadata': output_descriptions['metadata'],
