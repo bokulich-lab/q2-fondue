@@ -12,7 +12,7 @@
 </p><br>
 
 ## Installation
-You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
+You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. Alternatively, a minimal Docker image is available to run q2-fondue methods.
 
 For both options 1 and 2 make sure to start by installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
 ```shell
@@ -60,6 +60,14 @@ vdb-config -i
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
+
+### Option 3: Use fondue via a public Docker image
+* Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
+* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.2/images/sha256-e835d7afedc7f2b3a5d7f861b22f97f59aa3618ac5f6a0ca7f82d5b0827f4cb7?context=repo):
+```shell
+docker pull linathekim/q2-fondue:2023.2
+```
+* Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. 
 
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.
