@@ -62,19 +62,22 @@ vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
 
 ### Option 3: Use fondue via a public Docker image
+Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. [Read more about Docker here.](https://www.docker.com/get-started/)
+ 
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
 * Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.2/images/sha256-e835d7afedc7f2b3a5d7f861b22f97f59aa3618ac5f6a0ca7f82d5b0827f4cb7?context=repo):
 ```shell
 docker pull linathekim/q2-fondue:2023.2
 ```
-
-* Refresh the QIIME 2 CLI cache to see that everything worked:
+* Within the container, refresh the QIIME 2 CLI cache to see that everything worked:
 ```shell
 qiime dev refresh-cache
 qiime fondue --help
 ```
-
-* Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. 
+* If you need to configure a proxy server, run the following command:
+```shell
+vdb-config --proxy <your proxy URL> --proxy-disable no
+```
 
 ## Space requirements
 Running q2-fondue requires space in the temporary (`TMPDIR`) and output directory. The space requirements for the output directory can be estimated by inserting the run or project IDs in the [SRA Run Selector](https://www.ncbi.nlm.nih.gov/Traces/study/). To estimate the space requirements for the temporary directory, multiply the output directory space requirement by a factor of 10. The current implementation of q2-fondue requires you to have a minimum of 2 GB of available space in your temporary directory.

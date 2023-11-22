@@ -14,5 +14,4 @@ RUN mkdir $HOME/.ncbi
 RUN printf '/LIBS/GUID = "%s"\n' `uuidgen` > $HOME/.ncbi/usert-settings.mkfg
 
 USER ${uname}
-#RUN vdb-config --restore-defaults
 CMD [ "/bin/bash" ]
