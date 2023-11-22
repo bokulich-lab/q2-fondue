@@ -67,6 +67,13 @@ vdb-config --proxy <your proxy URL> --proxy-disable no
 ```shell
 docker pull linathekim/q2-fondue:2023.2
 ```
+
+* Refresh the QIIME 2 CLI cache to see that everything worked:
+```shell
+qiime dev refresh-cache
+qiime fondue --help
+```
+
 * Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. 
 
 ## Space requirements
