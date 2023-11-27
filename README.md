@@ -18,12 +18,13 @@ For both options 1 and 2 make sure to start by installing [mamba](https://mamba.
 ```shell
 conda install mamba -n base -c conda-forge
 ```
+Also, don't forget to run the mandatory configuration step [at the end]((#mandatory-configuration-for-both-options-1-and-2))!
 
 ### Option 1: Minimal fondue environment:
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
-   -c https://packages.qiime2.org/qiime2/2023.2/tested/ \
+   -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
    -c conda-forge -c bioconda -c defaults \
    q2cli q2-fondue
 
@@ -71,15 +72,15 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 ### Available actions
 q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run, study, BioProject, experiment and sample IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
 
-| Action               | Description                                                              |
-|----------------------|--------------------------------------------------------------------------|
-| `get-sequences`      | Fetch sequences by IDs[*] from the SRA repository.        |
-| `get-metadata`       | Fetch metadata by IDs[*] from the SRA repository.         |
-| `get-all`            | Fetch sequences and metadata by IDs[*] from the SRA repo. |
-| `get-ids-from-query` | Find SRA run accession IDs based on a search query. |
-| `merge-metadata`     | Merge several metadata files into a single metadata object.              |
-| `combine-seqs`       | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`  | Scrape Zotero collection for IDs[*] and associated DOI names.|
+| Action               | Description                                                       |
+|----------------------|-------------------------------------------------------------------|
+| `get-sequences`      | Fetch sequences by IDs[*] from the SRA repository.                |
+| `get-metadata`       | Fetch metadata by IDs[*] from the SRA repository.                 |
+| `get-all`            | Fetch sequences and metadata by IDs[*] from the SRA repo.         |
+| `get-ids-from-query` | Find SRA run accession IDs based on a search query.               |
+| `merge-metadata`     | Merge several metadata files into a single metadata object.       |
+| `combine-seqs`       | Combine sequences from multiple artifacts into a single artifact. |
+| `scrape-collection`  | Scrape Zotero collection for IDs[*] and associated DOI names.     |
 
 [*]: Supported IDs include run, study, BioProject, experiment and study IDs.
 

@@ -6,14 +6,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import qiime2 as q2
-
-import pandas as pd
 import threading
 
-from q2_fondue.utils import handle_threaded_exception
+import pandas as pd
+import qiime2 as q2
 from qiime2 import Artifact
 
+from q2_fondue.utils import handle_threaded_exception
 
 threading.excepthook = handle_threaded_exception
 
@@ -40,8 +39,8 @@ def get_all(
     seq_single, seq_paired, failed_ids, = get_sequences(
         run_ids, email, retries, n_jobs, log_level
     )
-
-    failed_ids_df = failed_ids_df.append(failed_ids.view(pd.DataFrame))
+    failed_ids_df = pd.concat(
+        [failed_ids_df, failed_ids.view(pd.DataFrame)])
     if failed_ids_df.shape[0] > 0:
         failed_ids = Artifact.import_data('SRAFailedIDs', failed_ids_df)
 
