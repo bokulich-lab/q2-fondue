@@ -24,7 +24,7 @@ Also, don't forget to run the mandatory configuration step [at the end]((#mandat
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
-   -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
+   -c https://packages.qiime2.org/qiime2/2023.5/tested/ \
    -c conda-forge -c bioconda -c defaults \
    q2cli q2-fondue
 

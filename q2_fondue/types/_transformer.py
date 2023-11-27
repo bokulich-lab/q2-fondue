@@ -23,7 +23,7 @@ def _meta_fmt_to_metadata(ff):
 
 def _meta_fmt_to_series(ff):
     with ff.open() as fh:
-        s = pd.read_csv(fh, header=0, dtype='str', squeeze=True)
+        s = pd.read_csv(fh, header=0, dtype='str').squeeze()
         return s
 
 

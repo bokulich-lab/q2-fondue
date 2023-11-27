@@ -28,7 +28,7 @@ class TestQuery(SequenceTests):
         obs_ids, = fondue.actions.get_ids_from_query(
             query, 'fake@email.com', 1, 'DEBUG'
         )
-        exp_ids = pd.DataFrame(index=pd.Index(['SRR123', 'SRR234'], name='ID'))
+        exp_ids = pd.DataFrame(index=pd.Index(['SRR123', 'SRR234'], name='ID'), columns=[], )
 
         mock_ids.assert_called_once_with(
             'fake@email.com', 1, None, query, 'biosample', 'DEBUG'
