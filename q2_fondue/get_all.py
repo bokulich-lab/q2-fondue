@@ -6,16 +6,16 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-import threading
+import qiime2 as q2
 
 import pandas as pd
-import qiime2 as q2
-from qiime2 import Artifact
+import threading
 
 from q2_fondue.utils import handle_threaded_exception
+from qiime2 import Artifact
+
 
 threading.excepthook = handle_threaded_exception
-
 
 def get_all(
         ctx, accession_ids, email, n_jobs=1, retries=2, log_level='INFO',
