@@ -17,6 +17,7 @@ from qiime2 import Artifact
 
 threading.excepthook = handle_threaded_exception
 
+
 def get_all(
         ctx, accession_ids, email, n_jobs=1, retries=2, log_level='INFO',
         linked_doi=None):
