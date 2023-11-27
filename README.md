@@ -18,7 +18,6 @@ For both options 1 and 2 make sure to start by installing [mamba](https://mamba.
 ```shell
 conda install mamba -n base -c conda-forge
 ```
-Also, don't forget to run the mandatory configuration step [at the end]((#mandatory-configuration-for-both-options-1-and-2))!
 
 ### Option 1: Minimal fondue environment:
 * Create and activate a conda environment with the required dependencies:
@@ -30,6 +29,7 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
+Now, don't forget to run [the mandatory configuration step](#mandatory-configuration-for-both-options-1-and-2)!
 
 ### Option 2: Install fondue within existing QIIME 2 environment
 * Install QIIME 2 within a conda environment as described in [the official user documentation](https://docs.qiime2.org/). 
@@ -41,6 +41,7 @@ mamba install -y \
    -c conda-forge -c bioconda -c defaults \
    q2-fondue
 ```
+Now, don't forget to run [the mandatory configuration step](#mandatory-configuration-for-both-options-1-and-2)!
 
 ### Mandatory configuration for both options 1 and 2
 * Refresh the QIIME 2 CLI cache and see that everything worked:
