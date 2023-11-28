@@ -12,7 +12,7 @@
 </p><br>
 
 ## Installation
-You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher.
+You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. Alternatively, a minimal Docker image is available to run q2-fondue methods (option 3 below).
 
 For both options 1 and 2 make sure to start by installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
 ```shell
@@ -57,6 +57,24 @@ vdb-config -i
 ```
 * In case you need to configure a proxy server, run the following command 
 (this can also be done using the graphical interface described above):
+```shell
+vdb-config --proxy <your proxy URL> --proxy-disable no
+```
+
+### Option 3: Use fondue via a public Docker image
+Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. [Read more about Docker here.](https://www.docker.com/get-started/)
+ 
+* Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
+* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.2/images/sha256-214d0575eb4eaf435c5c4a7d29edf0fc082e47999b884b52a173f2ec469975f2?context=repo):
+```shell
+docker pull linathekim/q2-fondue:2023.2
+```
+* Within the container, refresh the QIIME 2 CLI cache to see that everything worked:
+```shell
+qiime dev refresh-cache
+qiime fondue --help
+```
+* If you need to configure a proxy server, run the following command:
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
