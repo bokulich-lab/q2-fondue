@@ -1,0 +1,31 @@
+name: CI
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  ci:
+    uses: qiime2/distributions/.github/workflows/lib-ci-dev.yaml@dev
+    with:
+      distro: shotgun
+      additional-reports-path: ./coverage.xml
+      additional-reports-name: coverage
+
+  coverage:
+    needs: [ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v3
+        name: 'Fetch coverage from builds'
+        with:
+          name: ${{ needs.ci.outputs.additional-reports-name }}
+          path: ${{ needs.ci.outputs.additional-reports-path }}
+
+      - uses: codecov/codecov-action@v3
+        name: 'Upload coverage'
+        with:
+          fail_ci_if_error: true

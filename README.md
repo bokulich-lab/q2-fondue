@@ -1,5 +1,5 @@
 # q2-fondue
-![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/bokulich-lab/q2-fondue/actions/workflows/ci-dev.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/bokulich-lab/q2-fondue/branch/main/graph/badge.svg?token=UTM4W4B1KW)](https://codecov.io/gh/bokulich-lab/q2-fondue)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.6388476.svg)](https://doi.org/10.5281/zenodo.6388476)
 [![DOI](http://img.shields.io/badge/DOI-10.1093/bioinformatics/btac639-B31B1B.svg)](https://doi.org/10.1093/bioinformatics/btac639)
