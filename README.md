@@ -67,7 +67,7 @@ vdb-config --proxy <your proxy URL> --proxy-disable no
 Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. [Read more about Docker here.](https://www.docker.com/get-started/)
  
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
-* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.7/images/<UPDATEDLINKHERE>):
+* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.7/images/sha256-f5d26959ac035811a8f34e2a46f6cc381f9a4ce21b3604a196c1ee176ba708e7?context=repo):
 ```shell
 docker pull linathekim/q2-fondue:2023.7
 ```
