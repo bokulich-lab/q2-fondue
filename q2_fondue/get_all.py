@@ -40,8 +40,8 @@ def get_all(
     seq_single, seq_paired, failed_ids, = get_sequences(
         run_ids, email, retries, n_jobs, log_level
     )
-
-    failed_ids_df = failed_ids_df.append(failed_ids.view(pd.DataFrame))
+    failed_ids_df = pd.concat(
+        [failed_ids_df, failed_ids.view(pd.DataFrame)])
     if failed_ids_df.shape[0] > 0:
         failed_ids = Artifact.import_data('SRAFailedIDs', failed_ids_df)
 

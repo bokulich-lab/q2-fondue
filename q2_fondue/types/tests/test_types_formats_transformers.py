@@ -178,7 +178,7 @@ class TestTransformers(TestPluginBase):
         ncbi_ids_path = self.get_data_path('ncbi-ids-runs.tsv')
         self.ncbi_ids = NCBIAccessionIDsFormat(ncbi_ids_path, mode='r')
         self.ncbi_ids_ser = pd.read_csv(
-            ncbi_ids_path, header=0, dtype='str', squeeze=True)
+            ncbi_ids_path, header=0, dtype='str').squeeze()
         self.ncbi_ids_df = pd.read_csv(
             ncbi_ids_path, sep='\t', header=0, index_col=0, dtype='str')
 
@@ -234,8 +234,7 @@ class TestTransformers(TestPluginBase):
         self.assertIsInstance(obs, NCBIAccessionIDsFormat)
 
         obs = pd.read_csv(
-            str(obs), header=0, dtype='str', squeeze=True
-        )
+            str(obs), header=0, dtype='str').squeeze()
         pd.testing.assert_series_equal(obs, self.ncbi_ids_ser)
 
     def test_dataframe_to_ncbi_accession_ids(self):

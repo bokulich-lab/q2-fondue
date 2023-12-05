@@ -23,12 +23,13 @@ conda install mamba -n base -c conda-forge
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
-   -c https://packages.qiime2.org/qiime2/2023.2/tested/ \
+   -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
    -c conda-forge -c bioconda -c defaults \
    q2cli q2-fondue
 
 conda activate fondue
 ```
+Now, don't forget to run [the mandatory configuration step](#mandatory-configuration-for-both-options-1-and-2)!
 
 ### Option 2: Install fondue within existing QIIME 2 environment
 * Install QIIME 2 within a conda environment as described in [the official user documentation](https://docs.qiime2.org/). 
@@ -40,6 +41,7 @@ mamba install -y \
    -c conda-forge -c bioconda -c defaults \
    q2-fondue
 ```
+Now, don't forget to run [the mandatory configuration step](#mandatory-configuration-for-both-options-1-and-2)!
 
 ### Mandatory configuration for both options 1 and 2
 * Refresh the QIIME 2 CLI cache and see that everything worked:
@@ -65,9 +67,9 @@ vdb-config --proxy <your proxy URL> --proxy-disable no
 Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. [Read more about Docker here.](https://www.docker.com/get-started/)
  
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
-* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.2/images/sha256-214d0575eb4eaf435c5c4a7d29edf0fc082e47999b884b52a173f2ec469975f2?context=repo):
+* Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.7/images/sha256-f5d26959ac035811a8f34e2a46f6cc381f9a4ce21b3604a196c1ee176ba708e7?context=repo):
 ```shell
-docker pull linathekim/q2-fondue:2023.2
+docker pull linathekim/q2-fondue:2023.7
 ```
 * Within the container, refresh the QIIME 2 CLI cache to see that everything worked:
 ```shell
@@ -89,15 +91,15 @@ To find out which temporary directory is used by Qiime 2, you can run `echo $TMP
 ### Available actions
 q2-fondue provides a couple of actions to fetch and manipulate nucleotide sequencing data and related metadata from SRA as well as an action to scrape run, study, BioProject, experiment and sample IDs from a Zotero web library. Below you will find a list of available actions and their short descriptions.
 
-| Action               | Description                                                              |
-|----------------------|--------------------------------------------------------------------------|
-| `get-sequences`      | Fetch sequences by IDs[*] from the SRA repository.        |
-| `get-metadata`       | Fetch metadata by IDs[*] from the SRA repository.         |
-| `get-all`            | Fetch sequences and metadata by IDs[*] from the SRA repo. |
-| `get-ids-from-query` | Find SRA run accession IDs based on a search query. |
-| `merge-metadata`     | Merge several metadata files into a single metadata object.              |
-| `combine-seqs`       | Combine sequences from multiple artifacts into a single artifact.        |
-| `scrape-collection`  | Scrape Zotero collection for IDs[*] and associated DOI names.|
+| Action               | Description                                                       |
+|----------------------|-------------------------------------------------------------------|
+| `get-sequences`      | Fetch sequences by IDs[*] from the SRA repository.                |
+| `get-metadata`       | Fetch metadata by IDs[*] from the SRA repository.                 |
+| `get-all`            | Fetch sequences and metadata by IDs[*] from the SRA repo.         |
+| `get-ids-from-query` | Find SRA run accession IDs based on a search query.               |
+| `merge-metadata`     | Merge several metadata files into a single metadata object.       |
+| `combine-seqs`       | Combine sequences from multiple artifacts into a single artifact. |
+| `scrape-collection`  | Scrape Zotero collection for IDs[*] and associated DOI names.     |
 
 [*]: Supported IDs include run, study, BioProject, experiment and study IDs.
 

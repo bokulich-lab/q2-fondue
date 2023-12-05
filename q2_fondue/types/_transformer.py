@@ -21,12 +21,6 @@ def _meta_fmt_to_metadata(ff):
         return qiime2.Metadata(df)
 
 
-def _meta_fmt_to_series(ff):
-    with ff.open() as fh:
-        s = pd.read_csv(fh, header=0, dtype='str', squeeze=True)
-        return s
-
-
 def _series_to_meta_fmt(data: pd.Series, meta_fmt):
     with meta_fmt.open() as fh:
         data.to_csv(fh, sep='\t', header=True, index=False)
