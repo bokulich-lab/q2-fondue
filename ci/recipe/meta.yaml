@@ -42,7 +42,7 @@ test:
     - coverage
     - pytest-cov
   commands:
-    - pytest --cov q2_fondue --pyargs q2_fondue
+    - pytest --cov q2_fondue --cov-report xml:coverage.xml --pyargs q2_fondue
 
 about:
   home: https://github.com/bokulich-lab/q2-fondue
