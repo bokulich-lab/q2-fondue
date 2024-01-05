@@ -37,7 +37,7 @@ jobs:
       - name: Prepare tags
         id: prep
         run: |
-          DOCKER_IMAGE=${{ secrets.DOCKER_REPO }}
+          DOCKER_IMAGE="${{ secrets.DOCKER_REPO }}"
           TAGS="${DOCKER_IMAGE}:${GITHUB_SHA::8}"
           echo ::set-output name=tags::${TAGS}
           echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
