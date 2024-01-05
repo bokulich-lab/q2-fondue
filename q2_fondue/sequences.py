@@ -20,7 +20,6 @@ import tempfile
 import threading
 import time
 
-from fastq_writer import rewrite_fastq
 from qiime2 import Metadata
 from warnings import warn
 
@@ -238,6 +237,21 @@ def _write_empty_casava(read_type, casava_out_path):
             pass
 
 
+def _rewrite_fastq(file_in: str, file_out: str):
+    with open(file_in, 'r') as fin, open(file_out, 'w') as fout:
+        for line in fin.readlines():
+            fout.write(line.strip() + '\n')
+
+    try:
+        subprocess.run(['gzip', file_out], check=True)
+    except subprocess.CalledProcessError:
+        LOGGER.error(
+            'Failed to compress file %s. Please check your '
+            'installation of gzip.', file_out
+        )
+        raise
+
+
 def _copy_to_casava(
         filenames: list, tmp_dir: str, casava_result_path: str
 ):
@@ -247,14 +261,14 @@ def _copy_to_casava(
     copied from tmp_dir to casava_result_path.
     """
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
-    fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
-    rewrite_fastq(fwd_path_in, fwd_path_out)
+    fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}')
+    _rewrite_fastq(fwd_path_in, fwd_path_out)
     os.remove(fwd_path_in)
 
     if len(filenames) > 1:
         rev_path_in = os.path.join(tmp_dir, filenames[1])
-        rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
-        rewrite_fastq(rev_path_in, rev_path_out)
+        rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}')
+        _rewrite_fastq(rev_path_in, rev_path_out)
         os.remove(rev_path_in)
 
 
