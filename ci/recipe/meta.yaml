@@ -26,7 +26,6 @@ requirements:
     - pyzotero
     - q2-types {{ qiime2_epoch }}.*
     - qiime2 {{ qiime2_epoch }}.*
-    - sra-tools ==3.0.0
     - tqdm >=4.62.3
 
 test:

@@ -246,8 +246,7 @@ def _rewrite_fastq(file_in: str, file_out: str):
         subprocess.run(['gzip', file_out], check=True)
     except subprocess.CalledProcessError:
         LOGGER.error(
-            'Failed to compress file %s. Please check your '
-            'installation of gzip.', file_out
+            'Failed to compress file %s.', file_out
         )
         raise
 
