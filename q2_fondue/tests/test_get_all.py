@@ -5,193 +5,106 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-import os
+import unittest
+from unittest.mock import (ANY, Mock)
 
 import pandas as pd
-import unittest
-from pandas.testing import assert_frame_equal
-from q2_types.per_sample_sequences import \
-    CasavaOneEightSingleLanePerSampleDirFmt
 from qiime2 import Artifact
-from qiime2.plugins import fondue
-from unittest.mock import (patch, ANY, call)
 
-from q2_fondue.sequences import (_run_fasterq_dump_for_all,
-                                 _process_downloaded_sequences,
-                                 _write2casava_dir, _copy_to_casava)
+from q2_fondue.get_all import get_all
 from q2_fondue.tests.test_sequences import SequenceTests
+
+
+class FakeCtx(Mock):
+    def __init__(self, ids_path, meta_path, failed_ids=None):
+        super().__init__()
+        self.ids = Artifact.import_data('NCBIAccessionIDs', ids_path)
+        self.meta = Artifact.import_data('SRAMetadata', meta_path)
+        self.failed_empty = Artifact.import_data(
+            'SRAFailedIDs', pd.DataFrame()
+        )
+        if failed_ids:
+            self.failed = Artifact.import_data(
+                'SRAFailedIDs',
+                pd.DataFrame(
+                    data={'Error message': ['Some error message'
+                                            for _ in failed_ids]},
+                    index=pd.Index(failed_ids, name='ID')
+                )
+            )
+        else:
+            self.failed = self.failed_empty
+
+        self.get_metadata = Mock(return_value=(self.meta, self.failed_empty))
+        self.get_sequences = Mock(return_value=(Mock(), Mock(), self.failed))
+
+    def get_action(self, plugin, action):
+        if action == 'get_metadata':
+            return self.get_metadata
+        elif action == 'get_sequences':
+            return self.get_sequences
 
 
 class TestGetAll(SequenceTests):
     package = 'q2_fondue.tests'
 
-    @patch('os.remove')
-    @patch('q2_fondue.metadata._validate_run_ids')
-    @patch('q2_fondue.metadata.ef.Efetcher')
-    @patch('q2_fondue.metadata._efetcher_inquire')
-    @patch('time.sleep')
-    @patch('q2_fondue.sequences.Process')
-    @patch('q2_fondue.sequences.Pool')
-    @patch('q2_fondue.sequences._announce_completion')
-    @patch('q2_fondue.sequences.CasavaOneEightSingleLanePerSampleDirFmt')
-    @patch('tempfile.TemporaryDirectory')
-    def test_get_all_single(
-            self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
-            mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation, mock_remove
-    ):
+    def test_get_all_single(self):
         """
         Test verifying that pipeline get_all calls all expected actions,
         individual actions are tested in details in respective test classes
         """
-        acc_id = 'SRR123456'
-        test_md = Artifact.import_data(
-            'NCBIAccessionIDs', self.get_data_path(f'{acc_id}_md.tsv')
+        mock_ctx = FakeCtx(
+            ids_path=self.get_data_path('SRR123456_md.tsv'),
+            meta_path=self.get_data_path('sra-metadata-mock.tsv')
+        )
+        obs_meta, _, _, obs_failed = get_all(
+            mock_ctx, mock_ctx.ids, 'fake@email.com', retries=1
         )
 
-        # define mocked return values for get_metadata mocks
-        mock_validation.return_value = {}
-
-        path2df = self.get_data_path('sra-metadata-mock.tsv')
-        mock_inquire.return_value = (
-            pd.read_csv(path2df, sep='\t', index_col=0), {}
+        mock_ctx.get_metadata.assert_called_once_with(
+            mock_ctx.ids, 'fake@email.com', 1, 'INFO', None
+        )
+        mock_ctx.get_sequences.assert_called_once_with(
+            ANY, 'fake@email.com', 1, 1, 'INFO'
         )
 
-        # define mocked return values for get_sequences mocks
-        mock_tmpdir.return_value = self.move_files_2_tmp_dir(
-            [f'{acc_id}.fastq', f'{acc_id}.sra'])
-        mock_announce.return_value = {}, [f'{acc_id}.fastq'], []
-        casavas = [CasavaOneEightSingleLanePerSampleDirFmt(),
-                   CasavaOneEightSingleLanePerSampleDirFmt()]
-        mock_casava.side_effect = casavas
-        _copy_to_casava(
-            [f'{acc_id}.fastq'], mock_tmpdir.return_value.name,
-            str(casavas[0].path)
-        )
-        os.rename(
-            os.path.join(str(casavas[0].path),
-                         f'{acc_id}.fastq.gz'),
-            os.path.join(str(casavas[0].path),
-                         f'{acc_id}_00_L001_R1_001.fastq.gz'),
-        )
+        run_ids = mock_ctx.get_sequences.call_args_list[0][0][0]
+        run_ids = run_ids.view(pd.DataFrame).index.to_list()
+        self.assertListEqual(run_ids, ['SRR123456'])
 
-        # run pipeline
-        fondue.actions.get_all(test_md, 'fake@email.com', retries=1)
+        self.assertEqual(obs_meta, mock_ctx.meta)
+        self.assertEqual(obs_failed, mock_ctx.failed)
 
-        # function call assertions for get_metadata within
-        mock_validation.assert_called_once_with(
-            'fake@email.com', 1, [acc_id], 'INFO')
-        mock_efetcher.assert_called_once_with(
-            'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
-            threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, [acc_id], 'INFO')
-
-        # function call assertions for get_sequences within
-        mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
-                [acc_id], mock_tmpdir.return_value.name, 1, '', 1,
-                ANY, ANY), daemon=True),
-            call(target=_process_downloaded_sequences, args=(
-                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
-        ])
-        mock_pool.assert_called_once_with(
-            1, _write2casava_dir,
-            (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
-        )
-        mock_remove.assert_has_calls([
-            call(os.path.join(
-                mock_tmpdir.return_value.name, f"{acc_id}.fastq"
-            ))
-        ])
-
-    @patch('os.remove')
-    @patch('q2_fondue.metadata.BATCH_SIZE', 1)
-    @patch('q2_fondue.metadata._validate_run_ids')
-    @patch('q2_fondue.metadata.ef.Efetcher')
-    @patch('q2_fondue.metadata._efetcher_inquire')
-    @patch('time.sleep')
-    @patch('q2_fondue.sequences.Process')
-    @patch('q2_fondue.sequences.Pool')
-    @patch('q2_fondue.sequences._announce_completion')
-    @patch('q2_fondue.sequences.CasavaOneEightSingleLanePerSampleDirFmt')
-    @patch('tempfile.TemporaryDirectory')
-    def test_get_all_multi_with_missing_ids(
-            self, mock_tmpdir, mock_casava, mock_announce, mock_pool,
-            mock_proc, mock_sleep, mock_inquire, mock_efetcher,
-            mock_validation, mock_remove
-    ):
+    def test_get_all_multi_with_missing_ids(self):
         """
         Test verifying that pipeline get_all calls all expected actions,
         individual actions are tested in details in respective test classes
         """
-        acc_ids = ['SRR123456', 'SRR123457']
-        test_md = Artifact.import_data(
-            'NCBIAccessionIDs', self.get_data_path('SRR1234567_md.tsv')
+        mock_ctx = FakeCtx(
+            ids_path=self.get_data_path('SRR1234567_md.tsv'),
+            meta_path=self.get_data_path('sra-metadata-mock.tsv'),
+            failed_ids=['SRR123457']
+        )
+        obs_meta, _, _, obs_failed = get_all(
+            mock_ctx, mock_ctx.ids, 'fake@email.com', retries=1
         )
 
-        # define mocked return values for get_metadata mocks
-        mock_validation.return_value = {}
-
-        path2df = self.get_data_path('sra-metadata-mock.tsv')
-        missing_ids_dic = {'SRR123457': 'Some error message'}
-        mock_inquire.return_value = \
-            (pd.read_csv(path2df, sep='\t', index_col=0), missing_ids_dic)
-
-        # define mocked return values for get_sequences mocks
-        mock_tmpdir.return_value = self.move_files_2_tmp_dir(
-            [f'{acc_ids[0]}.fastq', f'{acc_ids[0]}.sra']
+        mock_ctx.get_metadata.assert_called_once_with(
+            mock_ctx.ids, 'fake@email.com', 1, 'INFO', None
         )
-        mock_announce.return_value = {}, [f'{acc_ids[0]}.fastq'], []
-        casavas = [CasavaOneEightSingleLanePerSampleDirFmt(),
-                   CasavaOneEightSingleLanePerSampleDirFmt()]
-        mock_casava.side_effect = casavas
-        _copy_to_casava(
-            [f'{acc_ids[0]}.fastq'], mock_tmpdir.return_value.name,
-            str(casavas[0].path)
-        )
-        os.rename(
-            os.path.join(str(casavas[0].path),
-                         f'{acc_ids[0]}.fastq.gz'),
-            os.path.join(str(casavas[0].path),
-                         f'{acc_ids[0]}_00_L001_R1_001.fastq.gz'),
+        mock_ctx.get_sequences.assert_called_once_with(
+            ANY, 'fake@email.com', 1, 1, 'INFO'
         )
 
-        # run pipeline
-        _, _, _, missing_ids_obs = fondue.actions.get_all(
-            test_md, 'fake@email.com', retries=0)
+        run_ids = mock_ctx.get_sequences.call_args_list[0][0][0]
+        run_ids = run_ids.view(pd.DataFrame).index.to_list()
+        self.assertListEqual(run_ids, ['SRR123456'])
 
-        # assert missing ids output
-        missing_ids_exp = pd.DataFrame(
-            data={'Error message': missing_ids_dic.values()},
-            index=pd.Index(missing_ids_dic.keys(), name='ID'))
-        assert_frame_equal(
-            missing_ids_obs.view(pd.DataFrame),
-            missing_ids_exp)
-
-        # function call assertions for get_metadata within
-        mock_validation.assert_called_once_with(
-            'fake@email.com', 1, acc_ids, 'INFO')
-        mock_efetcher.assert_called_once_with(
-            'efetcher', 'fake@email.com', apikey=None, apikey_var=None,
-            threads=1, qid=None)
-        mock_inquire.assert_called_once_with(ANY, acc_ids, 'INFO')
-        # function call assertions for get_sequences within
-        mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
-                [acc_ids[0]], mock_tmpdir.return_value.name, 1, '', 0,
-                ANY, ANY), daemon=True),
-            call(target=_process_downloaded_sequences, args=(
-                mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
-        ])
-        mock_pool.assert_called_once_with(
-            1, _write2casava_dir,
-            (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
+        self.assertEqual(obs_meta, mock_ctx.meta)
+        self.assertListEqual(
+            obs_failed.view(pd.DataFrame).index.to_list(),
+            ['SRR123457']
         )
-        mock_remove.assert_has_calls([
-            call(os.path.join(
-                mock_tmpdir.return_value.name, f"{acc_ids[0]}.fastq"
-            ))
-        ])
 
 
 if __name__ == "__main__":
