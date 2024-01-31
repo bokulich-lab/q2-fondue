@@ -1,0 +1,48 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args:
+          - --profile
+          - black
+        files: ^(.+)(?<!\_version)\.py$
+  - repo: https://github.com/psf/black
+    rev: 22.3.0
+    hooks:
+      - id: black
+        args:
+          - --safe
+          - --quiet
+        files: ^(.+)(?<!\_version)\.py$
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - pycodestyle==2.8.0
+          - pyflakes==2.4.0
+          - pydocstyle==6.1.1
+          - flake8-comprehensions==3.8.0
+          - flake8-noqa==1.2.1
+          - mccabe==0.6.1
+        files: ^(.+)(?<!\_version)\.py$
+#  - repo: local
+#    hooks:
+#      - id: pytest
+#        name: pytest
+#        language: python
+#        types:
+#          - python
+#        pass_filenames: false
+#        entry: make test-cov
+#        additional_dependencies:
+#          - coverage
+#          - pytest
+#        stages: [ push ]

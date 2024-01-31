@@ -1,0 +1,8 @@
+- python ==3.8
+- xmltodict
+- pyzotero
+- python-dotenv
+- tqdm >=4.62.3
+- entrezpy >=2.1.2
+- q2-types ==2023.2.*
+- qiime2 ==2023.2.*
