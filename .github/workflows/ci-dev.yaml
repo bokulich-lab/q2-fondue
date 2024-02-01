@@ -33,10 +33,10 @@ jobs:
   build-docker-image:
 #    needs: [coverage]
     runs-on: ubuntu-latest
+    secrets: inherit
     steps:
       - name: Prepare tags
         id: prep
-        secrets: inherit
         env:
           DOCKER_REPO: "quay.io/bokulichlab/q2-fondue"
         run: |
