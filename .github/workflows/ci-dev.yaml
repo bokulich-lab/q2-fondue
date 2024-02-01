@@ -36,6 +36,7 @@ jobs:
     steps:
       - name: Prepare tags
         id: prep
+        secrets: inherit
         env:
           DOCKER_REPO: "quay.io/bokulichlab/q2-fondue"
         run: |
