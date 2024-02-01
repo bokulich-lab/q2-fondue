@@ -40,10 +40,9 @@ jobs:
           DOCKER_REPO: "quay.io/bokulichlab/q2-fondue"
         run: |
           echo $DOCKER_REPO
-          echo ${DOCKER_REPO}
-          echo ${ secrets.DOCKER_USERNAME }
-          echo ${{ secrets.DOCKER_REPO }}
+          echo ${{ secrets.MY_LITTLE_SECRET }}
           TAGS="${DOCKER_REPO}:${GITHUB_SHA::8}"
+          echo $TAGS
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT
           echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
