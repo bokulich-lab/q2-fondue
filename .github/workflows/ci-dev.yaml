@@ -39,7 +39,9 @@ jobs:
         env:
           DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
         run: |
-          TAGS="$DOCKER_REPO:${GITHUB_SHA::8}"
+          echo $DOCKER_REPO
+          echo ${DOCKER_REPO}
+          TAGS="${DOCKER_REPO}:${GITHUB_SHA::8}"
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT
           echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
