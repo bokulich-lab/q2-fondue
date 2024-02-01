@@ -33,7 +33,6 @@ jobs:
   build-docker-image:
 #    needs: [coverage]
     runs-on: ubuntu-latest
-    secrets: inherit
     steps:
       - name: Prepare tags
         id: prep
@@ -68,5 +67,6 @@ jobs:
       - name: Build and push Docker images
         uses: docker/build-push-action@v2
         with:
-          push: ${{ github.event.pull_request.merged }}
+          #push: ${{ github.event.pull_request.merged }}
+          push: true
           tags: ${{ steps.prep.outputs.tags }}
