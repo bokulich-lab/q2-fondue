@@ -37,7 +37,7 @@ jobs:
       - name: Prepare tags
         id: prep
         env:
-          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+          DOCKER_REPO: "quay.io/bokulichlab/q2-fondue"
         run: |
           echo $DOCKER_REPO
           echo ${DOCKER_REPO}
