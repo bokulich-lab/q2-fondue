@@ -36,14 +36,15 @@ jobs:
     steps:
       - name: Prepare tags
         id: prep
+        env:
+          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
         run: |
-          DOCKER_IMAGE="${{ secrets.DOCKER_REPO }}"
-          TAGS="${DOCKER_IMAGE}:${GITHUB_SHA::8}"
-          echo ::set-output name=tags::${TAGS}
-          echo ::set-output name=created::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          TAGS="$DOCKER_REPO:${GITHUB_SHA::8}"
+          echo "{tags}={${TAGS}}" >> $GITHUB_OUTPUT
+          echo "{created}={$(date -u +'%Y-%m-%dT%H:%M:%SZ')}" >> $GITHUB_OUTPUT
 
       - name: Print the latest tag
-        run: echo ${{ github.ref_name }}
+        run: echo ${{ steps.prep.outputs.tags }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
