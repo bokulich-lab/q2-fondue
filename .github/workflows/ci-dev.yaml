@@ -41,6 +41,8 @@ jobs:
         run: |
           echo $DOCKER_REPO
           echo ${DOCKER_REPO}
+          echo ${{ secrets.DOCKER_USERNAME }}
+          echo ${{ secrets.DOCKER_REPO }}
           TAGS="${DOCKER_REPO}:${GITHUB_SHA::8}"
           echo "tags=${TAGS}" >> $GITHUB_OUTPUT
           echo "created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
@@ -66,8 +68,6 @@ jobs:
       - name: Build and push Docker images
         uses: docker/build-push-action@v2
         with:
-          context: .
-          file: ./Dockerfile
           platforms: linux/amd64,linux/arm/v6
           push: ${{ github.event.pull_request.merged }}
           tags: ${{ steps.prep.outputs.tags }}
