@@ -66,5 +66,4 @@ jobs:
         with:
           #push: ${{ github.event.pull_request.merged }}
           push: true
-          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.prep.outputs.tags }}
