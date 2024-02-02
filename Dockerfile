@@ -3,7 +3,7 @@ FROM mambaorg/micromamba
 ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
 USER root
-RUN apt-get update && apt-get install uuid-runtime
+RUN apt-get update && apt-get install uuid-runtime build-essential
 USER mambauser
 
 RUN micromamba install -y -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
