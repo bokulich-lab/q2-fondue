@@ -12,7 +12,7 @@
 </p><br>
 
 ## Installation
-You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. Alternatively, a minimal Docker image is available to run q2-fondue methods (option 3 below).
+You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. To install q2-fondue with a version <= 2023.7 see section ["Installing q2-fondue with version <= 2023.7"](#legacy).Alternatively, a minimal Docker image is available to run q2-fondue methods (option 3 below).
 
 For both options 1 and 2 make sure to start by installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
 ```shell
@@ -23,7 +23,7 @@ conda install mamba -n base -c conda-forge
 * Create and activate a conda environment with the required dependencies:
 ```shell
 mamba create -y -n fondue \
-   -c https://packages.qiime2.org/qiime2/2023.7/tested/ \
+   -c https://packages.qiime2.org/qiime2/2024.5/metagenome/released/ \
    -c conda-forge -c bioconda -c defaults \
    q2cli q2-fondue
 
@@ -33,11 +33,11 @@ Now, don't forget to run [the mandatory configuration step](#mandatory-configura
 
 ### Option 2: Install fondue within existing QIIME 2 environment
 * Install QIIME 2 within a conda environment as described in [the official user documentation](https://docs.qiime2.org/). 
-* Activate the QIIME 2 environment (v2022.8 or higher) and install fondue within while making sure that the used conda channel matches the version of the QIIME 2 environment (replace below `{ENV_VERSION}` with the version number of your QIIME 2 environment):
+* Activate the QIIME 2 environment (v2024.5 or higher) and install fondue within while making sure that the used conda channel matches the version of the QIIME 2 environment (replace below `{ENV_VERSION}` with the version number of your QIIME 2 environment):
 ```
 conda activate qiime2-{ENV_VERSION}
 mamba install -y \
-   -c https://packages.qiime2.org/qiime2/{ENV_VERSION}/tested/ \
+   -c https://packages.qiime2.org/qiime2/{ENV_VERSION}/metagenome/released/ \
    -c conda-forge -c bioconda -c defaults \
    q2-fondue
 ```
@@ -62,6 +62,9 @@ vdb-config -i
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
+
+### [Installing q2-fondue with version <= 2023.7](#legacy)
+To install fondue with a version <= 2023.7 in either a minimal environment (option 1) or within an existing QIIME2 environment (option 2), you have to edit the channel to: `https://packages.qiime2.org/qiime2/{ENV_VERSION}/tested/` (inserting the respective version number `{ENV_VERSION}`).
 
 ### Option 3: Use fondue via a public Docker image
 Use containerization to integrate q2-fondue into your pipelines, or simply run reproducibly without the need for heavyweight package managers. [Read more about Docker here.](https://www.docker.com/get-started/)
