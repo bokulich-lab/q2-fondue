@@ -20,7 +20,6 @@ import tempfile
 import threading
 import time
 
-from fastq_writer import rewrite_fastq
 from qiime2 import Metadata
 from warnings import warn
 
@@ -33,7 +32,7 @@ from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.utils import (
     _determine_id_type, handle_threaded_exception, DownloadError,
-    _has_enough_space, _find_next_id
+    _has_enough_space, _find_next_id, _rewrite_fastq
 )
 
 threading.excepthook = handle_threaded_exception
@@ -248,14 +247,12 @@ def _copy_to_casava(
     """
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
     fwd_path_out = os.path.join(casava_result_path, f'{filenames[0]}.gz')
-    rewrite_fastq(fwd_path_in, fwd_path_out)
-    os.remove(fwd_path_in)
+    _rewrite_fastq(fwd_path_in, fwd_path_out)
 
     if len(filenames) > 1:
         rev_path_in = os.path.join(tmp_dir, filenames[1])
         rev_path_out = os.path.join(casava_result_path, f'{filenames[1]}.gz')
-        rewrite_fastq(rev_path_in, rev_path_out)
-        os.remove(rev_path_in)
+        _rewrite_fastq(rev_path_in, rev_path_out)
 
 
 def _write2casava_dir(

@@ -5,8 +5,9 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-
+import gzip
 import os
+import shutil
 import signal
 import subprocess
 from typing import List
@@ -142,3 +143,8 @@ def _find_next_id(acc_id: str, progress_bar: tqdm):
         return None
     else:
         return pbar_content[index_next_acc]
+
+
+def _rewrite_fastq(file_in: str, file_out: str):
+    with open(file_in, 'rb') as f_in, gzip.open(file_out, 'wb') as f_out:
+        shutil.copyfileobj(f_in, f_out)

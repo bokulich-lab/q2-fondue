@@ -5,7 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-
+import gzip
 import os
 import signal
 import threading
@@ -17,7 +17,7 @@ from qiime2.plugin.testing import TestPluginBase
 from tqdm import tqdm
 
 from q2_fondue.utils import (handle_threaded_exception, _has_enough_space,
-                             _find_next_id, _chunker)
+                             _find_next_id, _chunker, _rewrite_fastq)
 
 
 class TestExceptHooks(unittest.TestCase):
@@ -130,6 +130,19 @@ class TestSRAUtils(TestPluginBase):
         obs_out = _chunker(['A', 'B', 'C'], 4)
         exp_out = ['A', 'B', 'C']
         self.assertEqual(next(obs_out), exp_out)
+
+    def test_rewrite_fastq(self):
+        file_in = self.get_data_path('SRR123456.fastq')
+        file_out = self.get_data_path('SRR123456.fastq.gz')
+
+        _rewrite_fastq(file_in, file_out)
+
+        with open(file_in, 'rb') as fin, gzip.open(file_out, 'r') as fout:
+            for lin, lout in zip(fin.readlines(), fout.readlines()):
+                self.assertEqual(lin, lout)
+
+        # clean up
+        os.remove(file_out)
 
 
 if __name__ == "__main__":

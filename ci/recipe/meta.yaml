@@ -14,35 +14,30 @@ build:
     make install
 
 requirements:
-  build:
-    - maturin ==0.10.3
-    - rust ==1.58.1
-
   host:
     - python {{ python }}
     - setuptools
 
   run:
-    - python {{ python }}
-    - xmltodict
-    - pyzotero
-    - python-dotenv
-    - tqdm >=4.62.3
     - entrezpy >=2.1.2
+    - xmltodict
+    - python {{ python }}
+    - python-dotenv
+    - pyzotero
     - q2-types {{ qiime2_epoch }}.*
     - qiime2 {{ qiime2_epoch }}.*
+    - tqdm >=4.62.3
 
 test:
   imports:
     - q2_fondue
     - qiime2.plugins.fondue
-    - fastq_writer
   requires:
     - parameterized
     - coverage
     - pytest-cov
   commands:
-    - pytest --cov q2_fondue --pyargs q2_fondue
+    - pytest --cov q2_fondue --cov-report xml:coverage.xml --pyargs q2_fondue
 
 about:
   home: https://github.com/bokulich-lab/q2-fondue
