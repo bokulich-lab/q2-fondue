@@ -12,7 +12,7 @@
 </p><br>
 
 ## Installation
-You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. To install q2-fondue with a version <= 2023.7 see section ["Installing q2-fondue with version <= 2023.7"](#legacy).Alternatively, a minimal Docker image is available to run q2-fondue methods (option 3 below).
+You can install q2-fondue using mamba in a conda environment of its own (option 1) or in an existing QIIME 2 environment (option 2) by following the steps described below. The current q2-fondue version supports QIIME 2 **v2021.4** or higher. To install q2-fondue with a version <= 2023.7 see section ["Installing q2-fondue with version <= 2023.7"](#legacy). Alternatively, a minimal Docker image is available to run q2-fondue v2023.7 (option 3 below - note other Docker image q2-fondue versions are work in progress).
 
 For both options 1 and 2 make sure to start by installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
 ```shell
