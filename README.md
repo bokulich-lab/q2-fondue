@@ -20,11 +20,11 @@ There are multiple options to install q2-fondue - each targeted towards differen
 To install q2-fondue with a version <= 2023.7 see [this](#installing-q2-fondue-with-older-versions) section.
 
 ### Option 1: Install q2-fondue with QIIME 2 metagenome distribution
-* Install q2-fondue together with the QIIME 2 metagenome distribution as outlined [here](https://docs.qiime2.org/2024.5/install/native/#qiime-2-metagenome-distribution).
-* Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
+q2-fondue is a part of the QIIME 2 metagenome distribution and you can install it as outlined in the [QIIME 2 installation instructions](https://docs.qiime2.org/). 
+After that, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 ### Option 2: Install q2-fondue within a QIIME 2 amplicon conda environment
-* Install the QIIME 2 amplicon distribution within a conda environment as described in [the official user documentation](https://docs.qiime2.org/2024.5/install/native/#qiime-2-amplicon-distribution). 
+* Install the QIIME 2 amplicon distribution within a conda environment as described in [the official QIIME 2 documentation](https://docs.qiime2.org/). 
 * Activate the QIIME 2 environment (v2024.5 or higher) and install q2-fondue within while making sure that the used conda channel matches the version of the QIIME 2 environment (replace below `{ENV_VERSION}` with the version number of your QIIME 2 environment):
 ```
 conda activate qiime2-amplicon-{ENV_VERSION}
