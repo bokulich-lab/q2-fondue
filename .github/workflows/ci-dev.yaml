@@ -25,7 +25,7 @@ jobs:
           name: ${{ needs.ci.outputs.additional-reports-name }}
           path: ${{ needs.ci.outputs.additional-reports-path }}
 
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v4
         name: 'Upload coverage'
         with:
           fail_ci_if_error: true
