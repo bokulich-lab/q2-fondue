@@ -12,12 +12,9 @@
 </p><br>
 
 ## Installation
-There are multiple options to install q2-fondue - each targeted towards different needs. You can install q2-fondue (**v2024.5** or higher):
-* as part of the QIIME 2 metagenome distribution if you want to use it in the QIIME 2 metagenome universe (see [option 1](#option-1-install-q2-fondue-with-qiime-2-metagenome-distribution)).
-* within a QIIME 2 amplicon environment if you want to use it in the QIIME 2 amplicon universe (see [option 2](#option-2-install-q2-fondue-within-a-qiime-2-amplicon-conda-environment)).
-* in a conda environment of its own if you want to use it independent of other QIIME 2 tools (see [option 3](#option-3-minimal-fondue-environment)).
+There are multiple options to install q2-fondue (**v2024.5** or higher) - each targeted towards different needs:
 
-To install q2-fondue with a version <= 2023.7 see [this](#installing-q2-fondue-with-older-versions) section.
+(To install q2-fondue with a version <= 2023.7 see [this](#installing-q2-fondue-with-older-versions) section.)
 
 ### Option 1: Install q2-fondue with QIIME 2 metagenome distribution
 q2-fondue is a part of the QIIME 2 metagenome distribution and you can install it as outlined in the [QIIME 2 installation instructions](https://docs.qiime2.org/). 
@@ -83,6 +80,7 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
+Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!               
 
 Alternatively, a minimal Docker image is available to run q2-fondue==v2023.7: 
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
