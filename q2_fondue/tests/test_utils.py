@@ -138,10 +138,10 @@ class TestSRAUtils(TestPluginBase):
 
         _rewrite_fastq(file_in, file_out.name)
 
-        with (open(file_in, 'rb') as fin,
-              gzip.open(file_out.name, 'r') as fout):
-            for lin, lout in zip(fin.readlines(), fout.readlines()):
-                self.assertEqual(lin, lout)
+        with open(file_in, 'rb') as fin:
+            with gzip.open(file_out.name, 'r') as fout:
+                for lin, lout in zip(fin.readlines(), fout.readlines()):
+                    self.assertEqual(lin, lout)
 
         # clean up
         file_out.close()
