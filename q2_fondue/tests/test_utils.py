@@ -8,6 +8,7 @@
 import gzip
 import os
 import signal
+import tempfile
 import threading
 import unittest
 from threading import Thread
@@ -133,16 +134,17 @@ class TestSRAUtils(TestPluginBase):
 
     def test_rewrite_fastq(self):
         file_in = self.get_data_path('SRR123456.fastq')
-        file_out = self.get_data_path('SRR123456.fastq.gz')
+        file_out = tempfile.NamedTemporaryFile()
 
-        _rewrite_fastq(file_in, file_out)
+        _rewrite_fastq(file_in, file_out.name)
 
-        with open(file_in, 'rb') as fin, gzip.open(file_out, 'r') as fout:
+        with (open(file_in, 'rb') as fin,
+              gzip.open(file_out.name, 'r') as fout):
             for lin, lout in zip(fin.readlines(), fout.readlines()):
                 self.assertEqual(lin, lout)
 
         # clean up
-        os.remove(file_out)
+        file_out.close()
 
 
 if __name__ == "__main__":
