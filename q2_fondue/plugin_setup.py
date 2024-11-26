@@ -20,7 +20,7 @@ from q2_fondue import __version__
 from q2_fondue.get_all import get_all
 from q2_fondue.query import get_ids_from_query
 from q2_fondue.metadata import get_metadata, merge_metadata
-from q2_fondue.sequences import get_sequences, combine_seqs
+from q2_fondue.sequences import _get_sequences, get_sequences, combine_seqs
 from q2_fondue.scraper import scrape_collection
 from q2_fondue.types._format import (
     SRAMetadataFormat, SRAMetadataDirFmt,
@@ -116,6 +116,36 @@ plugin.methods.register_function(
 )
 
 plugin.methods.register_function(
+    function=_get_sequences,
+    inputs={**common_inputs},
+    parameters={
+        **{k: v for k, v in common_params.items() if k != 'email'},
+        'retries': Int % Range(0, None),
+        'restricted_access': Bool
+    },
+    outputs=[
+        ('single_reads', SampleData[SequencesWithQuality]),
+        ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
+        ('failed_runs', SRAFailedIDs)
+    ],
+    input_descriptions={**common_input_descriptions},
+    parameter_descriptions={
+        **{k: v for k, v in common_param_descr.items() if k != 'email'},
+        'retries': 'Number of retries to fetch sequences.',
+        'restricted_access': 'If sequence fetch requires dbGaP repository '
+        'key.'
+    },
+    output_descriptions={
+        'single_reads': output_descriptions['single_reads'],
+        'paired_reads': output_descriptions['paired_reads'],
+        'failed_runs': output_descriptions['failed_runs'].format('sequences')
+    },
+    name='Fetch sequences based on run ID.',
+    description='Fetch sequence data of all run IDs.',
+    citations=[citations['SraToolkit']]
+)
+
+plugin.pipelines.register_function(
     function=get_sequences,
     inputs={**common_inputs},
     parameters={
