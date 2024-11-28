@@ -276,6 +276,34 @@ def _is_empty(artifact):
     return all(sample == 'xxx' for sample in samples)
 
 
+def _remove_empty(*artifact_lists):
+    processed_artifacts = []
+    for artifacts in artifact_lists:
+        processed_artifacts.append(
+            [artifact for artifact in artifacts if not _is_empty(artifact)]
+        )
+    return tuple(processed_artifacts)
+
+
+def process_lists(process_func, *lists):
+    """
+    Process multiple lists using a specified function.
+
+    Parameters:
+    - process_func: A function that will be applied to each element of the lists.
+    - *lists: Any number of lists to be processed.
+
+    Returns:
+    A tuple of lists with processed elements.
+    """
+    processed_lists = []
+
+    for current_list in lists:
+        processed_list = [process_func(element) for element in current_list]
+        processed_lists.append(processed_list)
+
+    return tuple(processed_lists)
+
 def _make_empty_artifact(ctx, paired):
     if paired:
         filenames = [
@@ -424,17 +452,11 @@ def get_sequences(
             ids, retries, n_jobs, log_level, restricted_access
         )
 
-        # test
         single.append(_single)
         paired.append(_paired)
         failed.append(_failed)
-        # end of test
 
-        # if not _is_empty(_single):
-        #     single.append(_single)
-        # if not _is_empty(_paired):
-        #     paired.append(_paired)
-        # failed.append(_failed)
+    single, paired = _remove_empty(single, paired)
 
     if single:
         single, = _combine(single)
