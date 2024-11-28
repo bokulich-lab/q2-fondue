@@ -424,11 +424,17 @@ def get_sequences(
             ids, retries, n_jobs, log_level, restricted_access
         )
 
-        if not _is_empty(_single):
-            single.append(_single)
-        if not _is_empty(_paired):
-            paired.append(_paired)
+        # test
+        single.append(_single)
+        paired.append(_paired)
         failed.append(_failed)
+        # end of test
+
+        # if not _is_empty(_single):
+        #     single.append(_single)
+        # if not _is_empty(_paired):
+        #     paired.append(_paired)
+        # failed.append(_failed)
 
     if single:
         single, = _combine(single)
