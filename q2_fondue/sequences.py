@@ -457,6 +457,8 @@ def get_sequences(
         failed.append(_failed)
 
     single, paired = _remove_empty(single, paired)
+    print("Single-end reads:", single)
+    print("Paired-end reads:", paired)
 
     if single:
         single, = _combine(single)
