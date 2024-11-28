@@ -273,15 +273,19 @@ def _is_empty(artifact):
     samples = artifact.view(
         CasavaOneEightSingleLanePerSampleDirFmt
     ).manifest.index
+    print(samples)
     return all(sample == 'xxx' for sample in samples)
 
 
 def _remove_empty(*artifact_lists):
     processed_artifacts = []
     for artifacts in artifact_lists:
+        print(artifacts)
         processed_artifacts.append(
             [artifact for artifact in artifacts if not _is_empty(artifact)]
         )
+        print(len(processed_artifacts))
+        print(processed_artifacts)
     return tuple(processed_artifacts)
 
 
