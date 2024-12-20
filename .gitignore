@@ -79,3 +79,7 @@ sratoolkit**/**
 # ignore dbGAP permission keys
 **.krt
 **.ngc
+
+# Version file from versioningit
+_version.py
+

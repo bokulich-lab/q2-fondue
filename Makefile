@@ -16,7 +16,7 @@ test-cov: all
 
 install: all
 	bash install-sra-tools.sh
-	$(PYTHON) setup.py install
+	$(PYTHON) -m pip install -v .
 
 dev: all
 	bash install-sra-tools.sh
