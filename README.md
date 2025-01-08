@@ -16,12 +16,12 @@ There are multiple options to install q2-fondue (**v2024.5** or higher) - each t
 
 (To install q2-fondue with a version <= 2023.7 see [this](#installing-q2-fondue-with-older-versions) section.)
 
-### Option 1: Install q2-fondue with QIIME 2 metagenome distribution
-q2-fondue is a part of the QIIME 2 metagenome distribution and you can install it as outlined in the [QIIME 2 installation instructions](https://docs.qiime2.org/). 
+### Option 1: Install q2-fondue with QIIME 2 moshpit distribution
+q2-fondue is a part of the QIIME 2 moshpit distribution and you can install it as outlined in the [QIIME 2 installation instructions](https://docs.qiime2.org/).
 After that, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 ### Option 2: Install q2-fondue within a QIIME 2 amplicon conda environment
-* Install the QIIME 2 amplicon distribution within a conda environment as described in [the official QIIME 2 documentation](https://docs.qiime2.org/). 
+* Install the QIIME 2 amplicon distribution within a conda environment as described in [the official QIIME 2 documentation](https://docs.qiime2.org/).
 * Activate the QIIME 2 environment (v2024.5 or higher) and install q2-fondue within while making sure that the used conda channel matches the version of the QIIME 2 environment (replace below `{ENV_VERSION}` with the version number of your QIIME 2 environment):
 ```
 conda activate qiime2-amplicon-{ENV_VERSION}
@@ -46,9 +46,9 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
-* Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!               
+* Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
-Note: You can replace the version number `2024.5` with later releases if they are already available. 
+Note: You can replace the version number `2024.5` with later releases if they are already available.
 
 ### Mandatory configuration for all three options
 * Refresh the QIIME 2 CLI cache and see that everything worked:
@@ -57,14 +57,14 @@ qiime dev refresh-cache
 qiime fondue --help
 ```
 * Run the `vdb-config` tool to make sure the wrapped SRA Toolkit is configured on your system.
-The command below will open the configuration interface - everything should be already configured, so you 
-can directly exit by pressing **x** (this step is still required to ensure everything is working as expected). 
-Feel free to adjust the configuration, if you need to change e.g. the cache location. 
+The command below will open the configuration interface - everything should be already configured, so you
+can directly exit by pressing **x** (this step is still required to ensure everything is working as expected).
+Feel free to adjust the configuration, if you need to change e.g. the cache location.
 For more information see [here](https://github.com/ncbi/sra-tools/wiki/05.-Toolkit-Configuration).
 ```shell
 vdb-config -i
 ```
-* In case you need to configure a proxy server, run the following command 
+* In case you need to configure a proxy server, run the following command
 (this can also be done using the graphical interface described above):
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
@@ -80,9 +80,9 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
-Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!               
+Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
-Alternatively, a minimal Docker image is available to run q2-fondue==v2023.7: 
+Alternatively, a minimal Docker image is available to run q2-fondue==v2023.7:
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
 * Pull the [q2-fondue Docker image](https://hub.docker.com/layers/linathekim/q2-fondue/2023.7/images/sha256-f5d26959ac035811a8f34e2a46f6cc381f9a4ce21b3604a196c1ee176ba708e7?context=repo):
 ```shell
@@ -145,7 +145,7 @@ __Note:__ the input TSV file needs to consist of a single column named "ID".
 * `ZOTERO_USERID` is a valid Zotero user ID. If `ZOTERO_TYPE` is 'user' it can be retrieved from section 'your user_id for use in API calls' in https://www.zotero.org/settings/keys. If `ZOTERO_TYPE` is 'group' it can be obtained by hovering over group name in https://www.zotero.org/groups/.
 * `ZOTERO_APIKEY` is a valid Zotero API user key created at https://www.zotero.org/settings/keys/new (checking "Allow library access" and for 'group' library "Read/Write" permissions).
 
-To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`). 
+To set these environment variables run the following commands in your terminal for each of the three required variables: `export ZOTERO_TYPE=<your library type>` or create a `.env` file with the environment variable assignment. For the latter option, make sure to ignore this file in version control (add to `.gitignore`).
 
 __Note:__ To retrieve all required entries from Zotero, you must be logged in. Also, to allow for the `scrape-collection` action to work, make sure you enable file syncing on your Zotero account (see section "File Syncing" [here](https://www.zotero.org/support/sync)) and only attempt to use the action once all attachments were synchronized with your Web Library.
 
@@ -228,9 +228,9 @@ if none of the requested sequences failed to download, the corresponding artifac
 If some run IDs failed to download they are returned in the `--o-failed-runs` artifact, which can be directly inputted as `--i-accession-ids` to a subsequent `get-sequence` command.
 
 #### Special case: Fetching restricted access sequences with a dbGAP repository key
-To get access to the respective dbGaP repository key users must first apply for approval and then retrieve the key from dbGAP (see prerequisites described [here](https://www.ncbi.nlm.nih.gov/sra/docs/sra-dbgap-download/)).    
+To get access to the respective dbGaP repository key users must first apply for approval and then retrieve the key from dbGAP (see prerequisites described [here](https://www.ncbi.nlm.nih.gov/sra/docs/sra-dbgap-download/)).
 
-To retrieve sequencing data using the acquired dbGAP repository key, without revealing the sensitive key, set the filepath to the stored key as an environment variable. You can either do this by running the following command in your terminal `export KEY_FILEPATH=<path to key>` or by adding the variable assignment to your `.env` file. For the latter option, make sure to ignore this file in version control (add to `.gitignore`).        
+To retrieve sequencing data using the acquired dbGAP repository key, without revealing the sensitive key, set the filepath to the stored key as an environment variable. You can either do this by running the following command in your terminal `export KEY_FILEPATH=<path to key>` or by adding the variable assignment to your `.env` file. For the latter option, make sure to ignore this file in version control (add to `.gitignore`).
 Having set the filepath of the key as an environment variable you can fetch the sequencing data by running `get-sequences` with the parameter `--p-restricted-access`:
 ```shell
 qiime fondue get-sequences \
@@ -256,12 +256,12 @@ where:
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
 
 ## Downstream analysis in QIIME 2
-For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.     
+For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.
 
 ## Exporting data for downstream analyses outside of QIIME 2
 Some downstream analyses may need to rely on tools outside of QIIME 2. Since q2-fondue outputs can be transformed directly into FASTQ and other interoperable formats, there are no restrictions for users when using these tools. Note that the exported files will no longer contain integrated provenance information (which is unique to QIIME 2 Artifacts), but this metadata can be exported also and the original artifacts will retain the provenance data for traceability purposes.
 
-To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section [Prepare downstream analysis outside of QIIME 2](./tutorial/tutorial.md#prepare-downstream-analysis-outside-of-qiime-2). 
+To learn more on how to prepare q2-fondue outputs for further analysis outside of QIIME 2 see tutorial section [Prepare downstream analysis outside of QIIME 2](./tutorial/tutorial.md#prepare-downstream-analysis-outside-of-qiime-2).
 
 ## Getting Help
 Problem? Suggestion? Technical errors and user support requests can be filed on the [QIIME 2 Forum](https://forum.qiime2.org/).

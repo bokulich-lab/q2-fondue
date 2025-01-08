@@ -37,7 +37,7 @@ dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 distance-dirty = "{base_version}+{distance}.{vcs}{rev}.dirty"
 
 [tool.versioningit.write]
-file = "q2-fondue/_version.py"
+file = "q2_fondue/_version.py"
 
 [tool.setuptools]
 include-package-data = true
