@@ -25,6 +25,7 @@ requirements:
   - qiime2 {{ qiime2_epoch }}.*
   - tqdm >=4.62.3
   build:
+  - python {{ python }}
   - setuptools
   - versioningit
 test:
