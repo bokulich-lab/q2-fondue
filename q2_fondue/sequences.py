@@ -436,6 +436,7 @@ def _get_sequences(
 def get_sequences(
         ctx, accession_ids, email, retries=2,
         n_jobs=1, log_level='INFO', restricted_access=False,
+        num_partitions=1
 ):
     _get_seqs = ctx.get_action('fondue', '_get_sequences')
     _combine = ctx.get_action('fondue', 'combine_seqs')
@@ -448,9 +449,10 @@ def get_sequences(
         )
 
     single, paired, failed = [], [], []
-    for accession_id in _accession_ids:
+    partitions = [_accession_ids[i::num_partitions] for i in range(num_partitions)]
+    for partition in partitions:
         ids = ctx.make_artifact(
-            'NCBIAccessionIDs', pd.Series([accession_id], name='id')
+            'NCBIAccessionIDs', pd.Series(partition, name='id')
         )
         _single, _paired, _failed = _get_seqs(
             ids, retries, n_jobs, log_level, restricted_access

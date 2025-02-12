@@ -151,7 +151,8 @@ plugin.pipelines.register_function(
     parameters={
         **common_params,
         'retries': Int % Range(0, None),
-        'restricted_access': Bool
+        'restricted_access': Bool,
+        'num_partitions': Int % Range(1, None)
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -163,7 +164,8 @@ plugin.pipelines.register_function(
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences.',
         'restricted_access': 'If sequence fetch requires dbGaP repository '
-        'key.'
+        'key.',
+        'num_partitions': 'Number of partitions to split the download jobs.'
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -181,7 +183,8 @@ plugin.pipelines.register_function(
             'linked_doi': NCBIAccessionIDs},
     parameters={
         **common_params,
-        'retries': Int % Range(0, None)
+        'retries': Int % Range(0, None),
+        'num_partitions': Int % Range(1, None)
     },
     outputs=[
         ('metadata', SRAMetadata),
@@ -195,7 +198,8 @@ plugin.pipelines.register_function(
     },
     parameter_descriptions={
         **common_param_descr,
-        'retries': 'Number of retries to fetch sequences.'
+        'retries': 'Number of retries to fetch sequences.',
+        'num_partitions': 'Number of partitions to split the download jobs.'
     },
     output_descriptions={
         'metadata': output_descriptions['metadata'],
