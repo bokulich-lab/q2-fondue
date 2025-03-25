@@ -21,8 +21,8 @@ requirements:
   - python {{ python }}
   - python-dotenv
   - pyzotero
-  - q2-types {{ qiime2_epoch }}.*
-  - qiime2 {{ qiime2_epoch }}.*
+  - q2-types >={{ q2_types }}
+  - qiime2 >={{ qiime2 }}
   - tqdm >=4.62.3
   build:
   - python {{ python }}
