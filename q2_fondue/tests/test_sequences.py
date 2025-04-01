@@ -26,7 +26,7 @@ from parameterized import parameterized
 
 from q2_fondue.sequences import (
     get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
-    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion
+    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion, _get_sequences
 )
 from q2_fondue.utils import DownloadError
 
@@ -854,7 +854,7 @@ class TestSequenceFetching(SequenceTests):
                 DownloadError,
                 'Neither single- nor paired-end sequences could be downloaded'
         ):
-            get_sequences(test_temp_md, email='some@where.com', retries=0)
+            _get_sequences(test_temp_md, retries=0)
             mock_proc.assert_has_calls([
                 call(target=_run_fasterq_dump_for_all, args=(
                     ['SRR123456'], mock_tmpdir.return_value.name,
@@ -887,9 +887,8 @@ class TestSequenceFetching(SequenceTests):
         mock_announce.return_value = {}, [ls_file_names[0]], []
         mock_isfile.return_value = True
 
-        _, _, _ = get_sequences(
-            test_temp_md, email='some@where.com', retries=0,
-            restricted_access=True
+        _, _, _ = _get_sequences(
+            test_temp_md, retries=0, restricted_access=True
         )
         mock_proc.assert_has_calls([
             call(target=_run_fasterq_dump_for_all, args=(
@@ -921,10 +920,7 @@ class TestSequenceFetching(SequenceTests):
                 ValueError,
                 'The provided dbGAP repository key filepath does not exist.'
         ):
-            _, _, _ = get_sequences(
-                test_temp_md, email='some@where.com', retries=0,
-                restricted_access=True
-            )
+            _get_sequences(test_temp_md, retries=0, restricted_access=True)
 
 
 class TestSequenceCombining(SequenceTests):

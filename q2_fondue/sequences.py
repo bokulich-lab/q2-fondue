@@ -472,7 +472,7 @@ def _get_sequences(
 
 def get_sequences(
         ctx, accession_ids, email, retries=2,
-        n_download_jobs= 1, n_jobs=1, log_level='INFO',
+        n_download_jobs=1, n_jobs=1, log_level='INFO',
         restricted_access=False, num_partitions=None
 ):
     _get_seqs = ctx.get_action('fondue', '_get_sequences')
@@ -488,7 +488,7 @@ def get_sequences(
     single, paired, failed = [], [], []
 
     if num_partitions is None:
-        num_partitions = len(accession_ids)
+        num_partitions = len(_accession_ids)
 
     partitions = [_accession_ids[i::num_partitions] for i in range(num_partitions)]
     for partition in partitions:
