@@ -396,6 +396,8 @@ def _get_sequences(
     renamed_q = manager.Queue()
     processed_q = manager.Queue()
 
+    print("Starting data fetch for accession IDs:", accession_ids)
+
     with tempfile.TemporaryDirectory() as tmp_dir:
         # get dbGAP key for restricted access sequences
         if restricted_access:
@@ -482,6 +484,8 @@ def get_sequences(
 
     _accession_ids = list(accession_ids.view(Metadata).get_ids())
     id_type = _determine_id_type(_accession_ids)
+    print("ID type:", id_type)
+
     if id_type != 'run':
         _accession_ids = _get_run_ids(
             email, n_jobs, _accession_ids, None, id_type, log_level
@@ -489,13 +493,17 @@ def get_sequences(
 
     single, paired, failed = [], [], []
 
+    print("Number of partitions:", num_partitions)
     if num_partitions is None:
         num_partitions = len(_accession_ids)
+        print("Number of partitions set to:", num_partitions)
 
     partitions = [
         _accession_ids[i::num_partitions] for i in range(num_partitions)
     ]
+    print("Partitions:", len(partitions))
     for partition in partitions:
+        print("Submitting job for partition:", partition)
         ids = ctx.make_artifact(
             'NCBIAccessionIDs', pd.Series(partition, name='id')
         )
