@@ -26,7 +26,8 @@ from parameterized import parameterized
 
 from q2_fondue.sequences import (
     get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
-    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion, _get_sequences
+    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion,
+    _get_sequences
 )
 from q2_fondue.utils import DownloadError
 

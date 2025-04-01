@@ -331,6 +331,7 @@ def _announce_completion(queue: SyncManager.Queue):
     paired_files = [x for x in results if len(x) == 2]
     return failed_ids, single_files, paired_files
 
+
 def _make_empty_artifact(ctx, paired):
     if paired:
         filenames = [
@@ -412,7 +413,8 @@ def _get_sequences(
         fetcher_process = Process(
             target=_run_fasterq_dump_for_all,
             args=(
-                sorted(accession_ids), tmp_dir, n_download_jobs, key_file, retries,
+                sorted(accession_ids), tmp_dir,
+                n_download_jobs, key_file, retries,
                 fetched_q, processed_q
             ),
             daemon=True
@@ -490,7 +492,9 @@ def get_sequences(
     if num_partitions is None:
         num_partitions = len(_accession_ids)
 
-    partitions = [_accession_ids[i::num_partitions] for i in range(num_partitions)]
+    partitions = [
+        _accession_ids[i::num_partitions] for i in range(num_partitions)
+    ]
     for partition in partitions:
         ids = ctx.make_artifact(
             'NCBIAccessionIDs', pd.Series(partition, name='id')
