@@ -479,6 +479,7 @@ def get_sequences(
         n_download_jobs=1, n_jobs=1, log_level='INFO',
         restricted_access=False, num_partitions=None
 ):
+    print("Starting get_sequences function")
     _get_seqs = ctx.get_action('fondue', '_get_sequences')
     _combine = ctx.get_action('fondue', 'combine_seqs')
 
