@@ -5,10 +5,7 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-from multiprocessing.managers import SyncManager
-
 import glob
-from multiprocessing import Pool, Queue, Process, Manager, cpu_count
 
 import gzip
 import os
@@ -26,13 +23,12 @@ from warnings import warn
 import pandas as pd
 from q2_types.per_sample_sequences import \
     (CasavaOneEightSingleLanePerSampleDirFmt)
-from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 from q2_fondue.entrezpy_clients._utils import set_up_logger
 from q2_fondue.utils import (
     _determine_id_type, handle_threaded_exception, DownloadError,
-    _has_enough_space, _find_next_id, _rewrite_fastq
+    _has_enough_space, _rewrite_fastq
 )
 
 threading.excepthook = handle_threaded_exception
@@ -73,99 +69,63 @@ def _run_cmd_fasterq(
     return result
 
 
-def _get_remaining_ids_with_storage_error(acc_id: str, progress_bar: tqdm):
-    """Finds remaining ids and appends storage exhaustion error message."""
-    index_next_acc = list(progress_bar).index(acc_id) + 1
-    remaining_ids = list(progress_bar)[index_next_acc:]
-    remaining_ids = dict(zip(
-        remaining_ids, len(remaining_ids) * ['Storage exhausted.']
-    ))
-    return remaining_ids
-
-
-def _run_fasterq_dump_for_all(
-        accession_ids, tmpdirname, threads, key_file, retries,
-        fetched_queue, done_queue
+def _run_fasterq_dump(
+        accession_id: str, tmp_dir: str, threads: int, key_file: str, retries: int
 ):
-    """Runs prefetch & fasterq-dump for all ids in accession_ids.
+    """Runs prefetch & fasterq-dump for the given accession_id.
 
     Args:
-        accession_ids (list): List of all run IDs to be fetched.
-        tmpdirname (str): Name of temporary directory to store the data.
+        accession_id (str): Run ID to be fetched.
+        tmp_dir (str): Name of temporary directory to store the data.
         threads (int): Number of threads to be used in parallel.
         key_file (str): Filepath to dbGaP repository key.
         retries (int): Number of retries to fetch sequences.
-        fetched_queue (multiprocessing.Queue): Queue communicating IDs
-            that were successfully fetched.
-        done_queue (SyncManager.Queue): Queue communicating filenames
-            that were completely processed.
 
     Returns:
-        failed_ids (dict): Failed run IDs with corresponding errors.
+        success (bool): True if all sequences were fetched successfully.
+        error_msg (str): Error message returned by fasterq-dump or prefetch.
     """
-    LOGGER.info(
-        f'Downloading sequences for {len(accession_ids)} accession IDs...'
-    )
-    accession_ids_init = accession_ids.copy()
+    LOGGER.info('Downloading sequences for %s', accession_id)
     init_retries = retries
-    _, _, init_free_space = shutil.disk_usage(tmpdirname)
+    _, _, init_free_space = shutil.disk_usage(tmp_dir)
 
-    while (retries >= 0) and (len(accession_ids) > 0):
-        failed_ids = {}
-        pbar = tqdm(sorted(accession_ids))
-        for acc in pbar:
-            pbar.set_description(
-                f'Downloading sequences for run {acc} '
-                f'(attempt {-retries + init_retries + 1})'
-            )
-            result = _run_cmd_fasterq(
-                acc, tmpdirname, threads, key_file)
-            if result.returncode != 0:
-                failed_ids[acc] = result.stderr
-            else:
-                fetched_queue.put(acc)
-            pbar.postfix = f'{len(failed_ids)} failed'
+    error_msg, success = None, False
+    while retries >= 0:
+        result = _run_cmd_fasterq(accession_id, tmp_dir, threads, key_file)
+        if result.returncode != 0:
+            error_msg = result.stderr
+            LOGGER.error("Fetching failed for ID=%s. Error: %s", accession_id, error_msg)
 
             # check space availability
-            _, _, free_space = shutil.disk_usage(tmpdirname)
+            _, _, free_space = shutil.disk_usage(tmp_dir)
             used_seq_space = init_free_space - free_space
             # current space threshold: 35% of fetched seq space as evaluated
             # from 6 random run and ProjectIDs
-            if free_space < (0.35 * used_seq_space) and not \
-                    _has_enough_space(_find_next_id(acc, pbar), tmpdirname):
-                failed_ids.update(
-                    _get_remaining_ids_with_storage_error(acc, pbar))
+            if free_space < (0.35 * used_seq_space) and not _has_enough_space(accession_id, tmp_dir):
                 LOGGER.warning(
-                    'Available storage was exhausted - there will be no '
-                    'more retries.'
+                    'Available storage was exhausted - there will be no more retries.'
                 )
                 retries = -1
-                break
+                continue
 
-        if len(failed_ids.keys()) > 0 and retries > 0:
-            # log & add time buffer if we retry
+            # log & add time buffer
             sleep_lag = (1 / (retries + 1)) * 180
-            ls_failed_ids = list(failed_ids.keys())
             LOGGER.info(
-                f'Retrying to download the following failed accession IDs in '
-                f'{round(sleep_lag / 60, 1)} min: {ls_failed_ids}'
+                'Retrying to download the %s ID in %2.f min.',
+                accession_id, round(sleep_lag / 60, 1)
             )
             time.sleep(sleep_lag)
+            retries -= 1
+        else:
+            success = True
+            break
 
-        accession_ids = failed_ids.copy()
-        retries -= 1
+    if success:
+        LOGGER.info('Successfully downloaded sequences for %s', accession_id)
+    else:
+        LOGGER.error('Failed to download sequences for %s', accession_id)
 
-    msg = 'Download finished.'
-    fetched_queue.put(None)
-    if failed_ids:
-        errors = '\n'.join(
-            [f'ID={x}, Error={y}' for x, y in list(failed_ids.items())[:5]]
-        )
-        msg += f' {len(failed_ids.keys())} out of {len(accession_ids_init)} ' \
-               f'runs failed to fetch. Below are the error messages of the ' \
-               f"first 5 failed runs:\n{errors}"
-    LOGGER.info(msg)
-    done_queue.put({'failed_ids': failed_ids})
+    return success, error_msg
 
 
 def _process_one_sequence(filename, output_dir):
@@ -192,36 +152,30 @@ def _process_one_sequence(filename, output_dir):
 
 
 def _process_downloaded_sequences(
-        output_dir, fetched_queue, renaming_queue, n_workers
-):
+        accession_id: str, output_dir: str
+) -> (list, list):
     """Processes downloaded sequences.
 
-    Picks up filenames of fetched sequences from the fetched_queue, renames
-    them and inserts processed filenames into the renaming_queue when finished.
+    Renames the files downloaded for the given accession ID.
     """
-    for _id in iter(fetched_queue.get, None):
-        filenames = glob.glob(os.path.join(output_dir, f'{_id}*.fastq'))
-        filenames = [
-            _process_one_sequence(f, output_dir) for f in filenames
-        ]
-        single = [x for x in filenames if not x[1]]
-        paired = sorted([x for x in filenames if x[1]])
+    filenames = glob.glob(os.path.join(output_dir, f'{accession_id}*.fastq'))
+    filenames = [
+        _process_one_sequence(f, output_dir) for f in filenames
+    ]
+    single = [x for x in filenames if not x[1]]
+    paired = sorted([x for x in filenames if x[1]])
 
-        renaming_queue.put(single) if single else False
-        renaming_queue.put(paired) if paired else False
-
-    # tell all the workers we are done
-    [renaming_queue.put(None) for i in range(n_workers)]
+    return single, paired
 
 
-def _write_empty_casava(read_type, casava_out_path):
+def _write_empty_casava(read_type: str, casava_out: str):
     """Writes empty casava file to output directory.
 
     Warns about `read_type` sequences that are not available
     and saves empty casava file.
     """
     LOGGER.warning(
-        'No %s-end sequences available for these accession IDs.', read_type
+        'No %s-end sequences available for given accession ID.', read_type
     )
 
     if read_type == 'single':
@@ -232,7 +186,7 @@ def _write_empty_casava(read_type, casava_out_path):
     # create empty CasavaDirFmt due to Q2 not supporting optional
     # output types
     for new_empty_name in ls_file_names:
-        path_out = str(casava_out_path.path / new_empty_name)
+        path_out = os.path.join(casava_out, new_empty_name)
         with gzip.open(str(path_out), mode='w'):
             pass
 
@@ -255,9 +209,8 @@ def _copy_to_casava(
         _rewrite_fastq(rev_path_in, rev_path_out)
 
 
-def _write2casava_dir(
-        tmp_dir, casava_out_single, casava_out_paired,
-        renaming_queue, done_queue
+def _write_to_casava(
+        filenames: list, tmp_dir: str, casava_out: str
 ):
     """Writes single- or paired-end files to casava directory.
 
@@ -267,19 +220,18 @@ def _write2casava_dir(
     while [('fileB_1', True), ('fileB_2', True)] as paired-end.
     When done, it inserts filenames into the done_queue to announce completion.
     """
-    for filenames in iter(renaming_queue.get, None):
-        if len(filenames) == 1:
-            filename = os.path.split(filenames[0][0])[-1]
-            _copy_to_casava([filename], tmp_dir, casava_out_single)
-            done_queue.put([filename])
-        elif len(filenames) == 2:
-            filenames = [
-                os.path.split(x[0])[-1] for x in sorted(filenames)
-            ]
-            _copy_to_casava(filenames, tmp_dir, casava_out_paired)
-            done_queue.put(filenames)
-        renaming_queue.task_done()
-    return True
+    if len(filenames) == 1:
+        filename = os.path.split(filenames[0][0])[-1]
+        _copy_to_casava([filename], tmp_dir, casava_out)
+    elif len(filenames) == 2:
+        filenames = [
+            os.path.split(x[0])[-1] for x in sorted(filenames)
+        ]
+        _copy_to_casava(filenames, tmp_dir, casava_out)
+    else:
+        LOGGER.error(
+            'More than two files were found for the same ID while writing outputs to Casava directory. '
+        )
 
 
 def _is_empty(artifact):
@@ -293,43 +245,10 @@ def _is_empty(artifact):
 def _remove_empty(*artifact_lists):
     processed_artifacts = []
     for artifacts in artifact_lists:
-        print(artifacts)
         processed_artifacts.append(
             [artifact for artifact in artifacts if not _is_empty(artifact)]
         )
-        print(len(processed_artifacts))
-        print(processed_artifacts)
     return tuple(processed_artifacts)
-
-
-def _announce_completion(queue: SyncManager.Queue):
-    """Announces that processing is finished by inserting a None value into
-        a queue and retrieve its all elements.
-
-    List of filenames will be retrieved and assigned to either a single- or
-    paired-end list of outputs. The single dictionary containing failed IDs
-    will also be retrieved and returned.
-
-    Args:
-        queue (SyncManager.Queue): an instance of a queue which should
-            be processed
-
-    Returns:
-        failed_ids (list): List of all failed IDs.
-        single_files (list): Filename list for all single-end reads.
-        paired_files (list): Filename list for all paired-end reads.
-    """
-    queue.put(None)
-    results = []
-    failed_ids = {}
-    for i in iter(queue.get, None):
-        if isinstance(i, list):
-            results.append(i)
-        elif isinstance(i, dict):
-            failed_ids = i['failed_ids']
-    single_files = [x for x in results if len(x) == 1]
-    paired_files = [x for x in results if len(x) == 2]
-    return failed_ids, single_files, paired_files
 
 
 def _make_empty_artifact(ctx, paired):
@@ -351,8 +270,7 @@ def _make_empty_artifact(ctx, paired):
 
 
 def _get_sequences(
-        accession_ids: Metadata, retries: int = 2,
-        n_download_jobs: int = 1, n_jobs: int = 1,
+        accession_id: str, retries: int = 2, n_download_jobs: int = 1,
         log_level: str = 'INFO', restricted_access: bool = False
 ) -> (CasavaOneEightSingleLanePerSampleDirFmt,
       CasavaOneEightSingleLanePerSampleDirFmt,
@@ -367,13 +285,12 @@ def _get_sequences(
     an artifact with a list of failed IDs.
 
     Args:
-        accession_ids (Metadata): List of all run/project IDs to be fetched.
+        accession_id (str): Run ID to be fetched.
         email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
         restricted_access (bool, default=False): If sequence fetch requires
         dbGaP repository key.
         n_download_jobs (int, default=1): Number of download jobs to be used.
-        n_jobs (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
@@ -389,15 +306,6 @@ def _get_sequences(
     casava_out_single = CasavaOneEightSingleLanePerSampleDirFmt()
     casava_out_paired = CasavaOneEightSingleLanePerSampleDirFmt()
 
-    accession_ids = list(accession_ids.get_ids())
-
-    fetched_q = Queue()
-    manager = Manager()
-    renamed_q = manager.Queue()
-    processed_q = manager.Queue()
-
-    print("Starting data fetch for accession IDs:", accession_ids)
-
     with tempfile.TemporaryDirectory() as tmp_dir:
         # get dbGAP key for restricted access sequences
         if restricted_access:
@@ -411,65 +319,46 @@ def _get_sequences(
                 )
         else:
             key_file = ''
-        # run fasterq-dump for all accessions
-        fetcher_process = Process(
-            target=_run_fasterq_dump_for_all,
-            args=(
-                sorted(accession_ids), tmp_dir,
-                n_download_jobs, key_file, retries,
-                fetched_q, processed_q
-            ),
-            daemon=True
-        )
-        # processing downloaded files
-        worker_count = int(min(max(n_jobs - 1, 1), cpu_count() - 1))
-        LOGGER.debug(f'Using {worker_count} workers.')
-        renamer_process = Process(
-            target=_process_downloaded_sequences,
-            args=(tmp_dir, fetched_q, renamed_q, worker_count),
-            daemon=True
-        )
-        # writing to Casava directory
-        worker_pool = Pool(
-            worker_count, _write2casava_dir,
-            (tmp_dir, str(casava_out_single.path),
-             str(casava_out_paired.path), renamed_q, processed_q)
+
+        success, error_msg = _run_fasterq_dump(
+            accession_id, tmp_dir, n_download_jobs, key_file, retries
         )
 
-        # start all processes
-        fetcher_process.start()
-        renamer_process.start()
-        worker_pool.close()
+        if not success:
+            msg = f'Failed to download sequences for {accession_id}. Error: {error_msg}'
+            LOGGER.error(msg)
+            raise DownloadError(msg)
 
-        # wait for all the results
-        fetcher_process.join()
-        renamer_process.join()
-        worker_pool.join()
-
-        # announce processing is done
-        failed_ids, single_files, paired_files = \
-            _announce_completion(processed_q)
+        single, paired = _process_downloaded_sequences(accession_id, tmp_dir)
 
         # make sure either of the sequences were downloaded
-        if len(single_files) == 0 and len(paired_files) == 0:
+        if len(single) == 0 and len(paired) == 0:
             raise DownloadError(
                 'Neither single- nor paired-end sequences could '
                 'be downloaded. Please check your accession IDs.'
             )
 
         # write downloaded single-read seqs from tmp to casava dir
-        if len(single_files) == 0:
-            _write_empty_casava('single', casava_out_single)
+        if len(single) == 0:
+            _write_empty_casava('single', str(casava_out_single))
+        else:
+            _write_to_casava(
+                single, tmp_dir, str(casava_out_single)
+            )
 
         # write downloaded paired-end seqs from tmp to casava dir
-        if len(paired_files) == 0:
-            _write_empty_casava('paired', casava_out_paired)
+        if len(paired) == 0:
+            _write_empty_casava('paired', str(casava_out_paired))
+        else:
+            _write_to_casava(
+                paired, tmp_dir, str(casava_out_paired)
+            )
 
     LOGGER.info('Processing finished.')
 
     failed_ids = pd.DataFrame(
-        data={'Error message': failed_ids.values()},
-        index=pd.Index(failed_ids.keys(), name='ID')
+        data={'Error message': [error_msg]},
+        index=pd.Index([accession_id], name='ID')
     )
     return casava_out_single, casava_out_paired, failed_ids
 
@@ -477,15 +366,13 @@ def _get_sequences(
 def get_sequences(
         ctx, accession_ids, email, retries=2,
         n_download_jobs=1, n_jobs=1, log_level='INFO',
-        restricted_access=False, num_partitions=None
+        restricted_access=False
 ):
-    print("Starting get_sequences function")
     _get_seqs = ctx.get_action('fondue', '_get_sequences')
     _combine = ctx.get_action('fondue', 'combine_seqs')
 
     _accession_ids = list(accession_ids.view(Metadata).get_ids())
     id_type = _determine_id_type(_accession_ids)
-    print("ID type:", id_type)
 
     if id_type != 'run':
         _accession_ids = _get_run_ids(
@@ -493,23 +380,9 @@ def get_sequences(
         )
 
     single, paired, failed = [], [], []
-
-    print("Number of partitions:", num_partitions)
-    if num_partitions is None:
-        num_partitions = len(_accession_ids)
-        print("Number of partitions set to:", num_partitions)
-
-    partitions = [
-        _accession_ids[i::num_partitions] for i in range(num_partitions)
-    ]
-    print("Partitions:", len(partitions))
-    for partition in partitions:
-        print("Submitting job for partition:", partition)
-        ids = ctx.make_artifact(
-            'NCBIAccessionIDs', pd.Series(partition, name='id')
-        )
+    for _id in _accession_ids:
         _single, _paired, _failed = _get_seqs(
-            ids, retries, n_download_jobs, n_jobs, log_level, restricted_access
+            _id, retries, n_download_jobs, log_level, restricted_access
         )
 
         single.append(_single)
@@ -517,8 +390,6 @@ def get_sequences(
         failed.append(_failed)
 
     single, paired = _remove_empty(single, paired)
-    print("Single-end reads:", single)
-    print("Paired-end reads:", paired)
 
     if single:
         single, = _combine(single)

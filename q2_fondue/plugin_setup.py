@@ -117,9 +117,10 @@ plugin.methods.register_function(
 
 plugin.methods.register_function(
     function=_get_sequences,
-    inputs={**common_inputs},
+    inputs={},
     parameters={
-        **{k: v for k, v in common_params.items() if k != 'email'},
+        'accession_id': Str,
+        'log_level': common_params['log_level'],
         'retries': Int % Range(0, None),
         'restricted_access': Bool,
         'n_download_jobs': Int % Range(1, None)
@@ -129,9 +130,10 @@ plugin.methods.register_function(
         ('paired_reads', SampleData[PairedEndSequencesWithQuality]),
         ('failed_runs', SRAFailedIDs)
     ],
-    input_descriptions={**common_input_descriptions},
+    input_descriptions={},
     parameter_descriptions={
-        **{k: v for k, v in common_param_descr.items() if k != 'email'},
+        'accession_id': 'Run ID to fetch sequences for.',
+        'log_level': common_param_descr['log_level'],
         'retries': 'Number of retries to fetch sequences.',
         'restricted_access': 'If sequence fetch requires dbGaP repository '
         'key.',
@@ -154,7 +156,6 @@ plugin.pipelines.register_function(
         **common_params,
         'retries': Int % Range(0, None),
         'restricted_access': Bool,
-        'num_partitions': Int % Range(1, None),
         'n_download_jobs': Int % Range(1, None)
     },
     outputs=[
@@ -168,7 +169,6 @@ plugin.pipelines.register_function(
         'retries': 'Number of retries to fetch sequences.',
         'restricted_access': 'If sequence fetch requires dbGaP repository '
         'key.',
-        'num_partitions': 'Number of partitions to split the download jobs.',
         'n_download_jobs': 'Number of threads to be used by prefetch.'
     },
     output_descriptions={

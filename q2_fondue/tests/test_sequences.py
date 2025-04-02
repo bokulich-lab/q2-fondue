@@ -25,8 +25,8 @@ from unittest.mock import patch, call, MagicMock, ANY
 from parameterized import parameterized
 
 from q2_fondue.sequences import (
-    get_sequences, _run_fasterq_dump_for_all, _process_downloaded_sequences,
-    _write_empty_casava, combine_seqs, _write2casava_dir, _announce_completion,
+    get_sequences, _run_fasterq_dump, _process_downloaded_sequences,
+    _write_empty_casava, combine_seqs, _write_to_casava, _announce_completion,
     _get_sequences
 )
 from q2_fondue.utils import DownloadError
@@ -98,6 +98,15 @@ class SequenceTests(TestPluginBase):
         self.assertTrue(nb_samples_paired == 2)
         self.assertTrue(ls_seq_length_paired == ls_exp_lengths_paired)
 
+    def prepare_metadata(self, acc_id, to_artifact=False):
+        acc_id_tsv = f'{acc_id}_md.tsv'
+        self.move_files_2_tmp_dir([acc_id_tsv])
+        fp = self.get_data_path(acc_id_tsv)
+        if to_artifact:
+            return Artifact.import_data('NCBIAccessionIDs', fp)
+        else:
+            return Metadata.load(fp)
+
 
 class TestUtils4SequenceFetching(SequenceTests):
 
@@ -119,7 +128,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             ls_acc_ids[0]
         ]
 
-        _run_fasterq_dump_for_all(
+        _run_fasterq_dump(
             ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
             retries=0, fetched_queue=self.fetched_q,
             done_queue=self.processed_q
@@ -153,7 +162,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             ls_acc_ids[0]
         ]
 
-        _run_fasterq_dump_for_all(
+        _run_fasterq_dump(
             ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
             retries=0, fetched_queue=self.fetched_q,
             done_queue=self.processed_q
@@ -189,7 +198,7 @@ class TestUtils4SequenceFetching(SequenceTests):
             '--ngc', key, ls_acc_ids[0]
         ]
 
-        _run_fasterq_dump_for_all(
+        _run_fasterq_dump(
             ls_acc_ids, test_temp_dir.name, threads=6, key_file=key,
             retries=0, fetched_queue=self.fetched_q,
             done_queue=self.processed_q
@@ -223,7 +232,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=0, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -255,7 +264,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['test_accERROR']
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -291,7 +300,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -326,7 +335,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['testaccA', 'testaccERROR']
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -365,7 +374,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ls_acc_ids = ['testaccA']
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=2, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -407,7 +416,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ]
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
-            _run_fasterq_dump_for_all(
+            _run_fasterq_dump(
                 ls_acc_ids, test_temp_dir.name, threads=6, key_file='',
                 retries=1, fetched_queue=self.fetched_q,
                 done_queue=self.processed_q
@@ -531,7 +540,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         )
         self.renamed_q.put(None)
 
-        _write2casava_dir(
+        _write_to_casava(
             test_temp_dir.name, str(casava_out_single.path),
             str(casava_out_paired.path), self.renamed_q, self.processed_q
         )
@@ -559,7 +568,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         ])
         self.renamed_q.put(None)
 
-        _write2casava_dir(
+        _write_to_casava(
             test_temp_dir.name, str(casava_out_single.path),
             str(casava_out_paired.path), self.renamed_q, self.processed_q
         )
@@ -631,28 +640,36 @@ class TestUtils4SequenceFetching(SequenceTests):
 
 class TestSequenceFetching(SequenceTests):
 
-    def prepare_metadata(self, acc_id):
-        acc_id_tsv = acc_id + '_md.tsv'
-        _ = self.move_files_2_tmp_dir([acc_id_tsv])
-        return Metadata.load(self.get_data_path(acc_id_tsv))
-
     @patch('q2_fondue.sequences.Process')
     @patch('q2_fondue.sequences.Pool')
     @patch('q2_fondue.sequences._announce_completion')
     @patch('tempfile.TemporaryDirectory')
-    def test_get_sequences_single_only(
-            self, mock_tmpdir, mock_announce, mock_pool, mock_proc
+    @patch('q2_fondue.sequences._remove_empty', return_value=["s1", "p1"])
+    @patch('q2_fondue.sequences._make_empty_artifact')
+    def test_get_sequences(
+            self, mock_empty, mock_remove, mock_tmpdir,
+            mock_announce, mock_pool, mock_proc
     ):
         acc_id = 'SRR123456'
         ls_file_names = [f'{acc_id}.fastq', f'{acc_id}.sra']
         mock_tmpdir.return_value = self.move_files_2_tmp_dir(ls_file_names)
 
-        test_temp_md = self.prepare_metadata(acc_id)
+        test_temp_md = self.prepare_metadata(acc_id, to_artifact=True)
         mock_announce.return_value = {}, [ls_file_names[0]], []
+
+        ctx = MagicMock()
+        df = pd.DataFrame([], index=pd.Index([], name="id"))
+        artifact = Artifact.import_data('SRAFailedIDs', df)
+        ctx.get_action.side_effect = lambda plugin, action: {
+            ("fondue", "_get_sequences"): MagicMock(return_value=(CasavaOneEightSingleLanePerSampleDirFmt(), CasavaOneEightSingleLanePerSampleDirFmt(), artifact)),
+            ("fondue", "combine_seqs"): MagicMock(return_value=(CasavaOneEightSingleLanePerSampleDirFmt(),)),
+        }[(plugin, action)]
+        ctx.make_artifact.return_value = "failed_artifact"
 
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             casava_single, casava_paired, failed_ids = get_sequences(
-                test_temp_md, email='some@where.com', retries=0)
+                ctx, test_temp_md, email='some@where.com', retries=0
+            )
             self.assertIsInstance(casava_single,
                                   CasavaOneEightSingleLanePerSampleDirFmt)
             self.assertIsInstance(casava_paired,
@@ -664,14 +681,14 @@ class TestSequenceFetching(SequenceTests):
                 ), check_dtype=False
             )
             mock_proc.assert_has_calls([
-                call(target=_run_fasterq_dump_for_all, args=(
+                call(target=_run_fasterq_dump, args=(
                     [acc_id], mock_tmpdir.return_value.name, 1, '', 0,
                     ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True)
             ])
             mock_pool.assert_called_once_with(
-                1, _write2casava_dir,
+                1, _write_to_casava,
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
             self.assertIn(
@@ -709,14 +726,14 @@ class TestSequenceFetching(SequenceTests):
                 ), check_dtype=False
             )
             mock_proc.assert_has_calls([
-                call(target=_run_fasterq_dump_for_all, args=(
+                call(target=_run_fasterq_dump, args=(
                     [acc_id], mock_tmpdir.return_value.name, 1, '', 0,
                     ANY, ANY), daemon=True),
                 call(target=_process_downloaded_sequences, args=(
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
             ])
             mock_pool.assert_called_once_with(
-                1, _write2casava_dir,
+                1, _write_to_casava,
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
             self.assertIn(
@@ -752,14 +769,14 @@ class TestSequenceFetching(SequenceTests):
             ), check_dtype=False
         )
         mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
+            call(target=_run_fasterq_dump, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
                 '', 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
         mock_pool.assert_called_once_with(
-            1, _write2casava_dir,
+            1, _write_to_casava,
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
 
@@ -786,20 +803,22 @@ class TestSequenceFetching(SequenceTests):
         mock_announce.return_value = {}, [ls_file_names[0]], []
 
         _, _, _ = get_sequences(
-            test_temp_md, email='some@where.com', retries=0)
+            ctx=MagicMock(), accession_ids=test_temp_md,
+            email='some@where.com', retries=0
+        )
 
         mock_get.assert_called_with(
             'some@where.com', 1, [acc_id], None, id_type, 'INFO'
         )
         mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
+            call(target=_run_fasterq_dump, args=(
                 [run_id], mock_tmpdir.return_value.name, 1, '',
                 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
         mock_pool.assert_called_once_with(
-            1, _write2casava_dir,
+            1, _write_to_casava,
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
 
@@ -829,14 +848,14 @@ class TestSequenceFetching(SequenceTests):
             )
         )
         mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
+            call(target=_run_fasterq_dump, args=(
                 ['SRR123456', 'SRR123457'], mock_tmpdir.return_value.name, 1,
                 '', 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
                 mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
         ])
         mock_pool.assert_called_once_with(
-            1, _write2casava_dir,
+            1, _write_to_casava,
             (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
         )
 
@@ -857,7 +876,7 @@ class TestSequenceFetching(SequenceTests):
         ):
             _get_sequences(test_temp_md, retries=0)
             mock_proc.assert_has_calls([
-                call(target=_run_fasterq_dump_for_all, args=(
+                call(target=_run_fasterq_dump, args=(
                     ['SRR123456'], mock_tmpdir.return_value.name,
                     1,
                     0, ANY, ANY), daemon=True),
@@ -865,7 +884,7 @@ class TestSequenceFetching(SequenceTests):
                     mock_tmpdir.return_value.name, ANY, ANY, 1), daemon=True),
             ])
             mock_pool.assert_called_once_with(
-                1, _write2casava_dir,
+                1, _write_to_casava,
                 (mock_tmpdir.return_value.name, ANY, ANY, ANY, ANY)
             )
 
@@ -892,7 +911,7 @@ class TestSequenceFetching(SequenceTests):
             test_temp_md, retries=0, restricted_access=True
         )
         mock_proc.assert_has_calls([
-            call(target=_run_fasterq_dump_for_all, args=(
+            call(target=_run_fasterq_dump, args=(
                 [acc_id], mock_tmpdir.return_value.name, 1,
                 'path/to/key.ngc', 0, ANY, ANY), daemon=True),
             call(target=_process_downloaded_sequences, args=(
