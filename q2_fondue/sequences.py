@@ -244,7 +244,6 @@ def _is_empty(artifact):
     samples = artifact.view(
         CasavaOneEightSingleLanePerSampleDirFmt
     ).manifest.index
-    print(samples)
     return all(sample == 'xxx' for sample in samples)
 
 
@@ -330,46 +329,54 @@ def _get_sequences(
             accession_id, tmp_dir, n_download_jobs, key_file, retries
         )
 
-        if not success:
-            msg = f'Failed to download sequences. Error: {error_msg}'
-            LOGGER.error(msg, extra={'accession_id': accession_id})
-            raise DownloadError(msg)
+        if success:
+            single, paired = _process_downloaded_sequences(accession_id, tmp_dir)
 
-        single, paired = _process_downloaded_sequences(accession_id, tmp_dir)
+            # make sure either of the sequences were downloaded
+            if len(single) == 0 and len(paired) == 0:
+                raise DownloadError(
+                    'Neither single- nor paired-end sequences could '
+                    'be downloaded. Please check your accession IDs.'
+                )
 
-        # make sure either of the sequences were downloaded
-        if len(single) == 0 and len(paired) == 0:
-            raise DownloadError(
-                'Neither single- nor paired-end sequences could '
-                'be downloaded. Please check your accession IDs.'
+            # write downloaded single-read seqs from tmp to casava dir
+            if len(single) == 0:
+                _write_empty_casava(
+                    'single', str(casava_out_single), accession_id
+                )
+            else:
+                _write_to_casava(
+                    single, tmp_dir, str(casava_out_single), accession_id
+                )
+
+            # write downloaded paired-end seqs from tmp to casava dir
+            if len(paired) == 0:
+                _write_empty_casava(
+                    'paired', str(casava_out_paired), accession_id
+                )
+            else:
+                _write_to_casava(
+                    paired, tmp_dir, str(casava_out_paired), accession_id
+                )
+
+            failed_ids = pd.DataFrame(data={}, index=pd.Index([], name='ID'))
+        else:
+            LOGGER.error(
+                f'Failed to download sequences. Error: {error_msg}',
+                extra={'accession_id': accession_id}
             )
-
-        # write downloaded single-read seqs from tmp to casava dir
-        if len(single) == 0:
             _write_empty_casava(
                 'single', str(casava_out_single), accession_id
             )
-        else:
-            _write_to_casava(
-                single, tmp_dir, str(casava_out_single), accession_id
-            )
-
-        # write downloaded paired-end seqs from tmp to casava dir
-        if len(paired) == 0:
             _write_empty_casava(
                 'paired', str(casava_out_paired), accession_id
             )
-        else:
-            _write_to_casava(
-                paired, tmp_dir, str(casava_out_paired), accession_id
+            failed_ids = pd.DataFrame(
+                data={'Error message': [error_msg]},
+                index=pd.Index([accession_id], name='ID')
             )
 
     LOGGER.info('Processing finished', extra={'accession_id': accession_id})
-
-    failed_ids = pd.DataFrame(
-        data={'Error message': [error_msg]},
-        index=pd.Index([accession_id], name='ID')
-    )
     return casava_out_single, casava_out_paired, failed_ids
 
 
