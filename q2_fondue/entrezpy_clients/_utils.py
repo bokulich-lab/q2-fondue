@@ -101,6 +101,6 @@ def set_up_logging_handler():
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
         '%(asctime)s [%(threadName)s] [%(levelname)s] '
-        '[%(name)s]: %(message)s')
+        '[%(name)s] [%(accession_id)s]: %(message)s')
     handler.setFormatter(formatter)
     return handler

@@ -64,7 +64,7 @@ def _run_cmd_fasterq(
                 os.remove(f'{sra_path}.sra')
         elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
             LOGGER.error(
-                'Not enough space for fasterq-dump to process ID=%s.', acc
+                'Not enough space for fasterq-dump', extra={'accession_id': acc}
             )
     return result
 
@@ -85,7 +85,7 @@ def _run_fasterq_dump(
         success (bool): True if all sequences were fetched successfully.
         error_msg (str): Error message returned by fasterq-dump or prefetch.
     """
-    LOGGER.info('Downloading sequences for %s', accession_id)
+    LOGGER.info('Downloading sequences', extra={'accession_id': accession_id})
     init_retries = retries
     _, _, init_free_space = shutil.disk_usage(tmp_dir)
 
@@ -94,7 +94,8 @@ def _run_fasterq_dump(
         result = _run_cmd_fasterq(accession_id, tmp_dir, threads, key_file)
         if result.returncode != 0:
             error_msg = result.stderr
-            LOGGER.error("Fetching failed for ID=%s. Error: %s", accession_id, error_msg)
+            LOGGER.error(
+                f"Fetching failed. Error: {error_msg}", extra={'accession_id': accession_id})
 
             # check space availability
             _, _, free_space = shutil.disk_usage(tmp_dir)
@@ -103,7 +104,8 @@ def _run_fasterq_dump(
             # from 6 random run and ProjectIDs
             if free_space < (0.35 * used_seq_space) and not _has_enough_space(accession_id, tmp_dir):
                 LOGGER.warning(
-                    'Available storage was exhausted - there will be no more retries.'
+                    'Available storage was exhausted - there will be no more retries.',
+                    extra={'accession_id': accession_id}
                 )
                 retries = -1
                 continue
@@ -111,8 +113,8 @@ def _run_fasterq_dump(
             # log & add time buffer
             sleep_lag = (1 / (retries + 1)) * 180
             LOGGER.info(
-                'Retrying to download the %s ID in %2.f min.',
-                accession_id, round(sleep_lag / 60, 1)
+                f'Retrying to download in {round(sleep_lag / 60, 1)} min.',
+                extra={'accession_id': accession_id}
             )
             time.sleep(sleep_lag)
             retries -= 1
@@ -121,9 +123,9 @@ def _run_fasterq_dump(
             break
 
     if success:
-        LOGGER.info('Successfully downloaded sequences for %s', accession_id)
+        LOGGER.info('Successfully downloaded sequences', extra={'accession_id': accession_id})
     else:
-        LOGGER.error('Failed to download sequences for %s', accession_id)
+        LOGGER.error('Failed to download sequences', extra={'accession_id': accession_id})
 
     return success, error_msg
 
@@ -158,6 +160,7 @@ def _process_downloaded_sequences(
 
     Renames the files downloaded for the given accession ID.
     """
+    LOGGER.info('Processing downloaded sequences', extra={'accession_id': accession_id})
     filenames = glob.glob(os.path.join(output_dir, f'{accession_id}*.fastq'))
     filenames = [
         _process_one_sequence(f, output_dir) for f in filenames
@@ -168,14 +171,15 @@ def _process_downloaded_sequences(
     return single, paired
 
 
-def _write_empty_casava(read_type: str, casava_out: str):
+def _write_empty_casava(read_type: str, casava_out: str, accession_id: str):
     """Writes empty casava file to output directory.
 
     Warns about `read_type` sequences that are not available
     and saves empty casava file.
     """
     LOGGER.warning(
-        'No %s-end sequences available for given accession ID.', read_type
+        f'No {read_type}-end sequences available',
+        extra={'accession_id': accession_id}
     )
 
     if read_type == 'single':
@@ -210,7 +214,7 @@ def _copy_to_casava(
 
 
 def _write_to_casava(
-        filenames: list, tmp_dir: str, casava_out: str
+        filenames: list, tmp_dir: str, casava_out: str, accession_id: str
 ):
     """Writes single- or paired-end files to casava directory.
 
@@ -220,6 +224,7 @@ def _write_to_casava(
     while [('fileB_1', True), ('fileB_2', True)] as paired-end.
     When done, it inserts filenames into the done_queue to announce completion.
     """
+    LOGGER.info('Writing sequences to Casava directory', extra={'accession_id': accession_id})
     if len(filenames) == 1:
         filename = os.path.split(filenames[0][0])[-1]
         _copy_to_casava([filename], tmp_dir, casava_out)
@@ -230,7 +235,8 @@ def _write_to_casava(
         _copy_to_casava(filenames, tmp_dir, casava_out)
     else:
         LOGGER.error(
-            'More than two files were found for the same ID while writing outputs to Casava directory. '
+            'More than two files were found for the same ID while writing outputs to Casava directory',
+            extra={'accession_id': accession_id}
         )
 
 
@@ -325,8 +331,8 @@ def _get_sequences(
         )
 
         if not success:
-            msg = f'Failed to download sequences for {accession_id}. Error: {error_msg}'
-            LOGGER.error(msg)
+            msg = f'Failed to download sequences. Error: {error_msg}'
+            LOGGER.error(msg, extra={'accession_id': accession_id})
             raise DownloadError(msg)
 
         single, paired = _process_downloaded_sequences(accession_id, tmp_dir)
@@ -340,21 +346,25 @@ def _get_sequences(
 
         # write downloaded single-read seqs from tmp to casava dir
         if len(single) == 0:
-            _write_empty_casava('single', str(casava_out_single))
+            _write_empty_casava(
+                'single', str(casava_out_single), accession_id
+            )
         else:
             _write_to_casava(
-                single, tmp_dir, str(casava_out_single)
+                single, tmp_dir, str(casava_out_single), accession_id
             )
 
         # write downloaded paired-end seqs from tmp to casava dir
         if len(paired) == 0:
-            _write_empty_casava('paired', str(casava_out_paired))
+            _write_empty_casava(
+                'paired', str(casava_out_paired), accession_id
+            )
         else:
             _write_to_casava(
-                paired, tmp_dir, str(casava_out_paired)
+                paired, tmp_dir, str(casava_out_paired), accession_id
             )
 
-    LOGGER.info('Processing finished.')
+    LOGGER.info('Processing finished', extra={'accession_id': accession_id})
 
     failed_ids = pd.DataFrame(
         data={'Error message': [error_msg]},
