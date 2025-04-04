@@ -384,7 +384,7 @@ def scrape_collection(
             str_text = zot.fulltext_item(attach_key)['content']
             # remove the soft hyphen, see https://stackoverflow.com/a/51976543
             str_text = str_text.replace('\xad', '')
-        except zotero_errors.ResourceNotFound:
+        except zotero_errors.ResourceNotFoundError:
             str_text = ''
             logger.warning(f'Item {attach_key} doesn\'t contain any '
                            f'full-text content or this item was not '

@@ -466,7 +466,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # define patched outputs
         patch_items.return_value = self._open_json_file(
             'scraper_items_journalarticle.json')
-        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFoundError,
                                      {
                                          "content":
                                          "This is full-text with PRJEB4519.",
@@ -497,7 +497,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # define patched outputs
         patch_items.return_value = self._open_json_file(
             'scraper_items_no_doi.json')
-        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFoundError,
                                      {
                                          "content":
                                          "This is full-text with PRJEB4519.",
@@ -521,7 +521,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # define patched outputs
         patch_items.return_value = self._open_json_file(
             'scraper_items_no_doi.json')
-        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFound,
+        patch_zot_txt.side_effect = [zotero_errors.ResourceNotFoundError,
                                      {
                                          "content":
                                          "This is full-text with PRJEB4519.",
