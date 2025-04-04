@@ -139,7 +139,7 @@ def _find_doi_mapping_and_type(
 
 def get_metadata(
         accession_ids: Metadata, email: str,
-        n_jobs: int = 1, log_level: str = 'INFO',
+        threads: int = 1, log_level: str = 'INFO',
         linked_doi: Metadata = None
 ) -> (pd.DataFrame, pd.DataFrame):
     """Fetches metadata using the provided run/bioproject/study/sample or
@@ -163,7 +163,7 @@ def get_metadata(
             successfully. Ignored if `accession_ids` already contains DOI
             names.
         email (str): A valid e-mail address (required by NCBI).
-        n_jobs (int, default=1): Number of threads to be used in parallel.
+        threads (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
@@ -190,11 +190,11 @@ def get_metadata(
     # get actual metadata
     if id_type == 'run':
         meta, missing_ids = _get_run_meta(
-            email, n_jobs, accession_ids, False, log_level, logger
+            email, threads, accession_ids, False, log_level, logger
         )
     else:
         meta, missing_ids = _get_other_meta(
-            email, n_jobs, accession_ids, id_type, log_level, logger
+            email, threads, accession_ids, id_type, log_level, logger
         )
 
     # match DOI names to metadata if present

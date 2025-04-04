@@ -35,7 +35,7 @@ from q2_fondue.utils import (
 
 threading.excepthook = handle_threaded_exception
 
-LOGGER = set_up_logger("INFO", logger_name=__name__)
+LOGGER = set_up_logger("INFO", logger_name=__name__, log_id=True)
 
 
 def _run_cmd_fasterq(acc: str, output_dir: str, threads: int, key_file: str):
@@ -258,7 +258,7 @@ def _write_to_casava(filenames: list, tmp_dir: str, casava_out: str, accession_i
 def _get_sequences(
     accession_id: str,
     retries: int = 2,
-    n_download_jobs: int = 1,
+    threads: int = 1,
     log_level: str = "INFO",
     restricted_access: bool = False,
 ) -> (
@@ -272,13 +272,13 @@ def _get_sequences(
 
     Uses SRA-toolkit fasterq-dump to get single-read and paired-end
     sequences of an accession ID. It supports multiple tries (`retries`)
-    and can use multiple `download_jobs`. If download fails, function
+    and can use multiple `threads`. If download fails, function
     will create an artifact with the failed ID and the error message.
 
     Args:
         accession_id (str): Run ID to be fetched.
         retries (int, default=2): Number of retries to fetch sequences.
-        n_download_jobs (int, default=1): Number of download jobs to be used.
+        threads (int, default=1): Number of download threads to be used.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
@@ -309,7 +309,7 @@ def _get_sequences(
             key_file = ""
 
         success, error_msg = _run_fasterq_dump(
-            accession_id, tmp_dir, n_download_jobs, key_file, retries
+            accession_id, tmp_dir, threads, key_file, retries
         )
 
         if success:
@@ -358,8 +358,7 @@ def get_sequences(
     accession_ids,
     email,
     retries=2,
-    n_download_jobs=1,
-    n_jobs=1,
+    threads=1,
     log_level="INFO",
     restricted_access=False,
 ):
@@ -371,13 +370,13 @@ def get_sequences(
 
     if id_type != "run":
         _accession_ids = _get_run_ids(
-            email, n_jobs, _accession_ids, None, id_type, log_level
+            email, threads, _accession_ids, None, id_type, log_level
         )
 
     single, paired, failed = [], [], []
     for _id in _accession_ids:
         _single, _paired, _failed = _get_seqs(
-            _id, retries, n_download_jobs, log_level, restricted_access
+            _id, retries, threads, log_level, restricted_access
         )
 
         single.append(_single)

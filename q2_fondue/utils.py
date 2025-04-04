@@ -167,7 +167,7 @@ def _is_empty(artifact: Artifact) -> bool:
     return all(sample == "xxx" for sample in samples)
 
 
-def _remove_empty(*artifact_lists: tuple) -> tuple:
+def _remove_empty(*artifact_lists) -> tuple:
     """Removes empty artifacts from lists of sequence artifacts.
 
     Takes one or more lists of sequence artifacts and filters out any empty

@@ -43,13 +43,13 @@ common_input_descriptions = {
 
 common_params = {
     'email': Str,
-    'n_jobs': Int % Range(1, None),
+    'threads': Int % Range(1, None),
     'log_level': Str % Choices(['DEBUG', 'INFO', 'WARNING', 'ERROR']),
 }
 
 common_param_descr = {
     'email': 'Your e-mail address (required by NCBI).',
-    'n_jobs': 'Number of concurrent download jobs.',
+    'threads': 'Number of concurrent download jobs.',
     'log_level': 'Logging level.'
 }
 
@@ -119,11 +119,11 @@ plugin.methods.register_function(
     function=_get_sequences,
     inputs={},
     parameters={
-        'accession_id': Str,
+        'threads': common_params['threads'],
         'log_level': common_params['log_level'],
+        'accession_id': Str,
         'retries': Int % Range(0, None),
         'restricted_access': Bool,
-        'n_download_jobs': Int % Range(1, None)
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -133,11 +133,11 @@ plugin.methods.register_function(
     input_descriptions={},
     parameter_descriptions={
         'accession_id': 'Run ID to fetch sequences for.',
+        'threads': common_param_descr['threads'],
         'log_level': common_param_descr['log_level'],
         'retries': 'Number of retries to fetch sequences.',
         'restricted_access': 'If sequence fetch requires dbGaP repository '
         'key.',
-        'n_download_jobs': 'Number of threads to be used by prefetch.'
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -156,7 +156,6 @@ plugin.pipelines.register_function(
         **common_params,
         'retries': Int % Range(0, None),
         'restricted_access': Bool,
-        'n_download_jobs': Int % Range(1, None)
     },
     outputs=[
         ('single_reads', SampleData[SequencesWithQuality]),
@@ -169,7 +168,6 @@ plugin.pipelines.register_function(
         'retries': 'Number of retries to fetch sequences.',
         'restricted_access': 'If sequence fetch requires dbGaP repository '
         'key.',
-        'n_download_jobs': 'Number of threads to be used by prefetch.'
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -188,8 +186,6 @@ plugin.pipelines.register_function(
     parameters={
         **common_params,
         'retries': Int % Range(0, None),
-        # 'num_partitions': Int % Range(1, None),
-        # 'n_download_jobs': Int % Range(1, None),
     },
     outputs=[
         ('metadata', SRAMetadata),
@@ -204,8 +200,6 @@ plugin.pipelines.register_function(
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences.',
-        # 'num_partitions': 'Number of partitions to split the download jobs.',
-        # 'n_download_jobs': 'Number of threads to be used by prefetch.'
     },
     output_descriptions={
         'metadata': output_descriptions['metadata'],

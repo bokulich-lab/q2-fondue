@@ -514,7 +514,7 @@ class TestSequenceFetching(SequenceTests):
         ctx.make_artifact.return_value = failed_artifact
 
         casava_single, casava_paired, failed_ids = get_sequences(
-            ctx, ids, email="some@where.com", retries=0, n_download_jobs=6
+            ctx, ids, email="some@where.com", retries=0, threads=6
         )
 
         self.assertIsInstance(casava_single, CasavaOneEightSingleLanePerSampleDirFmt)
@@ -574,7 +574,7 @@ class TestSequenceFetching(SequenceTests):
         ctx.make_artifact.return_value = failed_artifact2
 
         casava_single, casava_paired, failed_ids = get_sequences(
-            ctx, ids, email="some@where.com", retries=0, n_download_jobs=6
+            ctx, ids, email="some@where.com", retries=0, threads=6
         )
 
         self.assertIsInstance(casava_single, CasavaOneEightSingleLanePerSampleDirFmt)
@@ -633,10 +633,10 @@ class TestSequenceFetching(SequenceTests):
         }[(plugin, action)]
         ctx.make_artifact.return_value = failed_artifact
 
-        get_sequences(ctx, ids, email="some@where.com", retries=0, n_download_jobs=6)
+        get_sequences(ctx, ids, email="some@where.com", retries=0, threads=6)
 
         mock_get.assert_called_with(
-            "some@where.com", 1, [acc_id], None, id_type, "INFO"
+            "some@where.com", 6, [acc_id], None, id_type, "INFO"
         )
 
     @patch("q2_fondue.sequences._run_fasterq_dump", return_value=(True, None))

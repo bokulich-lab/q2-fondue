@@ -17,7 +17,7 @@ threading.excepthook = handle_threaded_exception
 
 def get_ids_from_query(
         query: str, email: str,
-        n_jobs: int = 1, log_level: str = 'INFO'
+        threads: int = 1, log_level: str = 'INFO'
 ) -> pd.Series:
     """Retrieves SRA run IDs based on a search query performed
         on the BioSample database.
@@ -26,14 +26,14 @@ def get_ids_from_query(
         query (str): Search query to be executed on
             the BioSample database.
         email (str): A valid e-mail address (required by NCBI).
-        n_jobs (int, default=1): Number of threads to be used in parallel.
+        threads (int, default=1): Number of threads to be used in parallel.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
         ids (pd.Series): Retrieved SRA run IDs.
     """
     run_ids = _get_run_ids(
-        email, n_jobs, None, query, 'biosample', log_level
+        email, threads, None, query, 'biosample', log_level
     )
 
     return pd.Series(run_ids, name='ID')
