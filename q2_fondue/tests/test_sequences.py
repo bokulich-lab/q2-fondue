@@ -651,17 +651,17 @@ class TestSequenceFetching(SequenceTests):
         self.assertIsInstance(paired, CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(failed, pd.DataFrame)
 
-        obs_single_files = glob.glob(f"{str(single)}/*.fastq.gz")
-        obs_paired_files = glob.glob(f"{str(paired)}/*.fastq.gz")
-        exp_single_files = [
+        obs_single_files = set(glob.glob(f"{str(single)}/*.fastq.gz"))
+        obs_paired_files = set(glob.glob(f"{str(paired)}/*.fastq.gz"))
+        exp_single_files = {
             os.path.join(str(single), "testaccA_01_L001_R1_001.fastq.gz")
-        ]
-        exp_paired_files = [
+        }
+        exp_paired_files = {
             os.path.join(str(paired), "xxx_00_L001_R1_001.fastq.gz"),
             os.path.join(str(paired), "xxx_00_L001_R2_001.fastq.gz"),
-        ]
-        self.assertListEqual(obs_single_files, exp_single_files)
-        self.assertListEqual(obs_paired_files, exp_paired_files)
+        }
+        self.assertSetEqual(obs_single_files, exp_single_files)
+        self.assertSetEqual(obs_paired_files, exp_paired_files)
         pd.testing.assert_frame_equal(
             failed,
             pd.DataFrame(columns=["Error message"], index=pd.Index([], name="ID")),
@@ -680,15 +680,15 @@ class TestSequenceFetching(SequenceTests):
         self.assertIsInstance(paired, CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(failed, pd.DataFrame)
 
-        obs_single_files = glob.glob(f"{str(single)}/*.fastq.gz")
-        obs_paired_files = glob.glob(f"{str(paired)}/*.fastq.gz")
-        exp_single_files = [os.path.join(str(single), "xxx_01_L001_R1_001.fastq.gz")]
-        exp_paired_files = [
+        obs_single_files = set(glob.glob(f"{str(single)}/*.fastq.gz"))
+        obs_paired_files = set(glob.glob(f"{str(paired)}/*.fastq.gz"))
+        exp_single_files = {os.path.join(str(single), "xxx_01_L001_R1_001.fastq.gz")}
+        exp_paired_files = {
             os.path.join(str(paired), "testacc_00_L001_R1_001.fastq.gz"),
             os.path.join(str(paired), "testacc_00_L001_R2_001.fastq.gz"),
-        ]
-        self.assertListEqual(obs_single_files, exp_single_files)
-        self.assertListEqual(obs_paired_files, exp_paired_files)
+        }
+        self.assertSetEqual(obs_single_files, exp_single_files)
+        self.assertSetEqual(obs_paired_files, exp_paired_files)
         pd.testing.assert_frame_equal(
             failed,
             pd.DataFrame(columns=["Error message"], index=pd.Index([], name="ID")),
@@ -703,15 +703,13 @@ class TestSequenceFetching(SequenceTests):
         self.assertIsInstance(paired, CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(failed, pd.DataFrame)
 
-        obs_single_files = glob.glob(f"{str(single)}/*.fastq.gz")
-        obs_paired_files = glob.glob(f"{str(paired)}/*.fastq.gz")
-        exp_single_files = [os.path.join(str(single), "xxx_01_L001_R1_001.fastq.gz")]
-        exp_paired_files = [
-            os.path.join(str(paired), "xxx_00_L001_R1_001.fastq.gz"),
-            os.path.join(str(paired), "xxx_00_L001_R2_001.fastq.gz"),
-        ]
-        self.assertListEqual(obs_single_files, exp_single_files)
-        self.assertListEqual(obs_paired_files, exp_paired_files)
+        obs_single_files = set(glob.glob(f"{str(single)}/*.fastq.gz"))
+        obs_paired_files = set(glob.glob(f"{str(paired)}/*.fastq.gz"))
+        exp_single_files = {os.path.join(str(single), "xxx_01_L001_R1_001.fastq.gz")}
+        exp_paired_files = {os.path.join(str(paired), "xxx_00_L001_R1_001.fastq.gz"),
+                            os.path.join(str(paired), "xxx_00_L001_R2_001.fastq.gz")}
+        self.assertSetEqual(obs_single_files, exp_single_files)
+        self.assertSetEqual(obs_paired_files, exp_paired_files)
         pd.testing.assert_frame_equal(
             failed,
             pd.DataFrame(
