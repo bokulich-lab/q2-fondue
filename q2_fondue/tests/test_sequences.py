@@ -5,25 +5,24 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
+import filecmp
 import glob
-from multiprocessing import Queue, Manager
-
 import gzip
 import itertools
 import logging
-import filecmp
 import os
-import pandas as pd
 import shutil
 import tempfile
+from unittest.mock import patch, call, MagicMock
+
+import pandas as pd
+from parameterized import parameterized
 from q2_types.per_sample_sequences import (
     FastqGzFormat, CasavaOneEightSingleLanePerSampleDirFmt
 )
 from qiime2 import Artifact
 from qiime2.metadata import Metadata
 from qiime2.plugin.testing import TestPluginBase
-from unittest.mock import patch, call, MagicMock, ANY
-from parameterized import parameterized
 
 from q2_fondue.sequences import (
     get_sequences, _run_fasterq_dump, _process_downloaded_sequences,
@@ -35,6 +34,7 @@ from q2_fondue.utils import DownloadError
 
 class MockTempDir(tempfile.TemporaryDirectory):
     pass
+
 
 class SequenceTests(TestPluginBase):
     # class is inspired by class SubsampleTest in
@@ -239,7 +239,8 @@ class TestUtils4SequenceFetching(SequenceTests):
                 'INFO:q2_fondue.sequences:Downloading sequences', cm.output
             )
             self.assertIn(
-                'INFO:q2_fondue.sequences:Successfully downloaded sequences', cm.output
+                'INFO:q2_fondue.sequences:Successfully downloaded sequences',
+                cm.output
             )
 
     @patch('time.sleep')
@@ -252,7 +253,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = MockTempDir()
         with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
             success, error_msg = _run_fasterq_dump(
-                'test_accERROR', test_temp_dir.name, threads=6, key_file='',
+                'testaccERROR', test_temp_dir.name, threads=6, key_file='',
                 retries=1
             )
             self.assertFalse(success)
@@ -280,7 +281,7 @@ class TestUtils4SequenceFetching(SequenceTests):
         test_temp_dir = MockTempDir()
         os.makedirs(f'{test_temp_dir.name}/testaccA')
 
-        with self.assertLogs('q2_fondue.sequences', level='INFO') as cm:
+        with self.assertLogs('q2_fondue.sequences', level='INFO'):
             success, error_msg = _run_fasterq_dump(
                 'testaccERROR', test_temp_dir.name, threads=6, key_file='',
                 retries=2,
@@ -326,7 +327,6 @@ class TestUtils4SequenceFetching(SequenceTests):
                 ), True)
             ]
         )
-
 
     def test_process_downloaded_sequences_paired_n_single_content(self):
         ids = ['testaccHYB', 'testaccHYB_1', 'testaccHYB_2']
@@ -486,7 +486,9 @@ class TestSequenceFetching(SequenceTests):
                 columns=['Error message']
             ), check_dtype=False
         )
-        mock_remove.assert_called_once_with([obs_single, obs_single], [obs_paired, obs_paired])
+        mock_remove.assert_called_once_with(
+            [obs_single, obs_single], [obs_paired, obs_paired]
+        )
         action_get.assert_has_calls([
             call('SRR123456', 0, 6, 'INFO', False),
             call('SRR123457', 0, 6, 'INFO', False)
@@ -534,7 +536,9 @@ class TestSequenceFetching(SequenceTests):
 
         self.assertIsInstance(casava_single, CasavaOneEightSingleLanePerSampleDirFmt)
         self.assertIsInstance(casava_paired, CasavaOneEightSingleLanePerSampleDirFmt)
-        mock_remove.assert_called_once_with([obs_single, obs_single], [obs_paired, obs_paired])
+        mock_remove.assert_called_once_with(
+            [obs_single, obs_single], [obs_paired, obs_paired]
+        )
         action_get.assert_has_calls([
             call('SRR123456', 0, 6, 'INFO', False),
             call('SRR123457', 0, 6, 'INFO', False)
@@ -545,7 +549,9 @@ class TestSequenceFetching(SequenceTests):
             data={"Error message": ["Some error 1", "Some error 2"]},
             index=pd.Index(["SRR123456", "SRR123457"], name="ID")
         )
-        pd.testing.assert_frame_equal(ctx.make_artifact.call_args.args[1], failed_df_combined)
+        pd.testing.assert_frame_equal(
+            ctx.make_artifact.call_args.args[1], failed_df_combined
+        )
 
     @parameterized.expand([
         ("study", "SRP123456"),
@@ -557,7 +563,7 @@ class TestSequenceFetching(SequenceTests):
     @patch('q2_fondue.sequences._remove_empty', return_value=["s1", "p1"])
     @patch('q2_fondue.sequences._make_empty_artifact')
     @patch('q2_fondue.sequences._get_run_ids', return_value=['SRR123456'])
-    def test_get_sequences_pipeline(
+    def test_get_sequences_pipeline_various_ids(
             self, id_type, acc_id, mock_get, mock_empty, mock_remove, mock_tmpdir
     ):
         # metadata contains two run IDs
@@ -587,8 +593,9 @@ class TestSequenceFetching(SequenceTests):
             'some@where.com', 1, [acc_id], None, id_type, 'INFO'
         )
 
-
-    @patch('q2_fondue.sequences._run_fasterq_dump', return_value=(True, None))
+    @patch(
+        'q2_fondue.sequences._run_fasterq_dump', return_value=(True, None)
+    )
     def test_get_sequences_single(
             self, mock_fasterq
     ):
@@ -606,7 +613,9 @@ class TestSequenceFetching(SequenceTests):
 
         obs_single_files = glob.glob(f"{str(single)}/*.fastq.gz")
         obs_paired_files = glob.glob(f"{str(paired)}/*.fastq.gz")
-        exp_single_files = [os.path.join(str(single), 'testaccA_01_L001_R1_001.fastq.gz')]
+        exp_single_files = [
+            os.path.join(str(single), 'testaccA_01_L001_R1_001.fastq.gz')
+        ]
         exp_paired_files = [
             os.path.join(str(paired), 'xxx_00_L001_R1_001.fastq.gz'),
             os.path.join(str(paired), 'xxx_00_L001_R2_001.fastq.gz')

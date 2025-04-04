@@ -13,6 +13,7 @@ import subprocess
 from typing import List
 
 from entrezpy.esearch import esearcher as es
+from q2_types.per_sample_sequences import CasavaOneEightSingleLanePerSampleDirFmt
 from tqdm import tqdm
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
@@ -148,3 +149,33 @@ def _find_next_id(acc_id: str, progress_bar: tqdm):
 def _rewrite_fastq(file_in: str, file_out: str):
     with open(file_in, 'rb') as f_in, gzip.open(file_out, 'wb') as f_out:
         shutil.copyfileobj(f_in, f_out)
+
+
+def _is_empty(artifact):
+    samples = artifact.view(CasavaOneEightSingleLanePerSampleDirFmt).manifest.index
+    return all(sample == "xxx" for sample in samples)
+
+
+def _remove_empty(*artifact_lists):
+    processed_artifacts = []
+    for artifacts in artifact_lists:
+        processed_artifacts.append(
+            [artifact for artifact in artifacts if not _is_empty(artifact)]
+        )
+    return tuple(processed_artifacts)
+
+
+def _make_empty_artifact(ctx, paired):
+    if paired:
+        filenames = ["xxx_00_L001_R1_001.fastq.gz", "xxx_00_L001_R2_001.fastq.gz"]
+        _type = "SampleData[PairedEndSequencesWithQuality]"
+    else:
+        filenames = ["xxx_01_L001_R1_001.fastq.gz"]
+        _type = "SampleData[SequencesWithQuality]"
+
+    casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
+    for filename in filenames:
+        with gzip.open(str(casava_out.path / filename), mode="w"):
+            pass
+
+    return ctx.make_artifact(_type, casava_out)

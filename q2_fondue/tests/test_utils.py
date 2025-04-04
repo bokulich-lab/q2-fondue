@@ -14,11 +14,15 @@ import unittest
 from threading import Thread
 from unittest.mock import patch, MagicMock
 
+from q2_types.per_sample_sequences import CasavaOneEightSingleLanePerSampleDirFmt
+from qiime2 import Artifact
 from qiime2.plugin.testing import TestPluginBase
 from tqdm import tqdm
 
-from q2_fondue.utils import (handle_threaded_exception, _has_enough_space,
-                             _find_next_id, _chunker, _rewrite_fastq)
+from q2_fondue.utils import (
+    handle_threaded_exception, _has_enough_space, _find_next_id, _chunker,
+    _rewrite_fastq, _is_empty, _remove_empty, _make_empty_artifact
+)
 
 
 class TestExceptHooks(unittest.TestCase):
@@ -145,6 +149,112 @@ class TestSRAUtils(TestPluginBase):
 
         # clean up
         file_out.close()
+
+
+class TestSequenceUtils(TestPluginBase):
+    package = 'q2_fondue.tests'
+
+    def test_is_empty_with_empty_artifact(self):
+        casava_out = CasavaOneEightSingleLanePerSampleDirFmt()
+        filenames = ['xxx_01_L001_R1_001.fastq.gz']
+        for filename in filenames:
+            with gzip.open(str(casava_out.path / filename), mode="w"):
+                pass
+
+        artifact = Artifact.import_data(
+            'SampleData[SequencesWithQuality]',
+            casava_out
+        )
+
+        self.assertTrue(_is_empty(artifact))
+
+    def test_is_empty_with_nonempty_artifact(self):
+        artifact = Artifact.import_data(
+            'SampleData[SequencesWithQuality]',
+            self.get_data_path('single1'),
+            CasavaOneEightSingleLanePerSampleDirFmt
+        )
+
+        self.assertFalse(_is_empty(artifact))
+
+    def test_remove_empty(self):
+        empty_casava = CasavaOneEightSingleLanePerSampleDirFmt()
+        with gzip.open(
+                str(empty_casava.path / 'xxx_01_L001_R1_001.fastq.gz'), mode="w"
+        ):
+            pass
+        empty_artifact_single = Artifact.import_data(
+            'SampleData[SequencesWithQuality]',
+            empty_casava
+        )
+        with gzip.open(
+                str(empty_casava.path / 'xxx_01_L001_R2_001.fastq.gz'), mode="w"
+        ):
+            pass
+        empty_artifact_paired = Artifact.import_data(
+            'SampleData[PairedEndSequencesWithQuality]',
+            empty_casava
+        )
+
+        non_empty_artifact_single = Artifact.import_data(
+            'SampleData[SequencesWithQuality]',
+            self.get_data_path('single1'),
+            CasavaOneEightSingleLanePerSampleDirFmt
+        )
+        non_empty_artifact_paired = Artifact.import_data(
+            'SampleData[PairedEndSequencesWithQuality]',
+            self.get_data_path('paired1'),
+            CasavaOneEightSingleLanePerSampleDirFmt
+        )
+
+        singles = [empty_artifact_single, non_empty_artifact_single]
+        paired = [empty_artifact_paired, non_empty_artifact_paired]
+
+        filtered_singles, filtered_paired = _remove_empty(singles, paired)
+
+        self.assertEqual(len(filtered_singles), 1)
+        self.assertEqual(len(filtered_paired), 1)
+        self.assertIs(filtered_singles[0], non_empty_artifact_single)
+        self.assertIs(filtered_paired[0], non_empty_artifact_paired)
+
+    def test_make_empty_artifact_single(self):
+        ctx = MagicMock()
+        ctx.make_artifact.return_value = "single_artifact"
+
+        result = _make_empty_artifact(ctx, False)
+
+        self.assertEqual(result, "single_artifact")
+        ctx.make_artifact.assert_called_once()
+
+        args, kwargs = ctx.make_artifact.call_args
+
+        self.assertEqual(args[0], "SampleData[SequencesWithQuality]")
+
+        casava_output = args[1]
+        self.assertTrue(
+            os.path.exists(casava_output.path / 'xxx_01_L001_R1_001.fastq.gz')
+        )
+
+    def test_make_empty_artifact_paired(self):
+        ctx = MagicMock()
+        ctx.make_artifact.return_value = "paired_artifact"
+
+        result = _make_empty_artifact(ctx, True)
+
+        self.assertEqual(result, "paired_artifact")
+        ctx.make_artifact.assert_called_once()
+
+        args, kwargs = ctx.make_artifact.call_args
+
+        self.assertEqual(args[0], "SampleData[PairedEndSequencesWithQuality]")
+
+        casava_output = args[1]
+        self.assertTrue(
+            os.path.exists(casava_output.path / 'xxx_00_L001_R1_001.fastq.gz')
+        )
+        self.assertTrue(
+            os.path.exists(casava_output.path / 'xxx_00_L001_R2_001.fastq.gz')
+        )
 
 
 if __name__ == "__main__":
