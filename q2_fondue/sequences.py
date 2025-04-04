@@ -86,29 +86,29 @@ def _run_fasterq_dump(
         error_msg (str): Error message returned by fasterq-dump or prefetch.
     """
     LOGGER.info('Downloading sequences', extra={'accession_id': accession_id})
-    init_retries = retries
     _, _, init_free_space = shutil.disk_usage(tmp_dir)
 
     error_msg, success = None, False
     while retries >= 0:
+        # check space availability
+        _, _, free_space = shutil.disk_usage(tmp_dir)
+        used_seq_space = init_free_space - free_space
+        # current space threshold: 35% of fetched seq space as evaluated
+        # from 6 random run and ProjectIDs
+        if free_space < (0.35 * used_seq_space) and not _has_enough_space(accession_id, tmp_dir):
+            LOGGER.warning(
+                'Available storage was exhausted - there will be no more retries.',
+                extra={'accession_id': accession_id}
+            )
+            error_msg = 'Not enough space for fasterq-dump'
+            break
+
         result = _run_cmd_fasterq(accession_id, tmp_dir, threads, key_file)
         if result.returncode != 0:
             error_msg = result.stderr
             LOGGER.error(
-                f"Fetching failed. Error: {error_msg}", extra={'accession_id': accession_id})
-
-            # check space availability
-            _, _, free_space = shutil.disk_usage(tmp_dir)
-            used_seq_space = init_free_space - free_space
-            # current space threshold: 35% of fetched seq space as evaluated
-            # from 6 random run and ProjectIDs
-            if free_space < (0.35 * used_seq_space) and not _has_enough_space(accession_id, tmp_dir):
-                LOGGER.warning(
-                    'Available storage was exhausted - there will be no more retries.',
-                    extra={'accession_id': accession_id}
-                )
-                retries = -1
-                continue
+                f"Fetching failed. Error: {error_msg}", extra={'accession_id': accession_id}
+            )
 
             # log & add time buffer
             sleep_lag = (1 / (retries + 1)) * 180
@@ -120,6 +120,7 @@ def _run_fasterq_dump(
             retries -= 1
         else:
             success = True
+            error_msg = None
             break
 
     if success:
@@ -224,11 +225,12 @@ def _write_to_casava(
     while [('fileB_1', True), ('fileB_2', True)] as paired-end.
     When done, it inserts filenames into the done_queue to announce completion.
     """
-    LOGGER.info('Writing sequences to Casava directory', extra={'accession_id': accession_id})
     if len(filenames) == 1:
+        LOGGER.info('Writing single-end sequences to Casava directory', extra={'accession_id': accession_id})
         filename = os.path.split(filenames[0][0])[-1]
         _copy_to_casava([filename], tmp_dir, casava_out)
     elif len(filenames) == 2:
+        LOGGER.info('Writing paired-end sequences to Casava directory', extra={'accession_id': accession_id})
         filenames = [
             os.path.split(x[0])[-1] for x in sorted(filenames)
         ]
@@ -359,7 +361,9 @@ def _get_sequences(
                     paired, tmp_dir, str(casava_out_paired), accession_id
                 )
 
-            failed_ids = pd.DataFrame(data={}, index=pd.Index([], name='ID'))
+            failed_ids = pd.DataFrame(
+                data={'Error message': []}, index=pd.Index([], name='ID')
+            )
         else:
             LOGGER.error(
                 f'Failed to download sequences. Error: {error_msg}',
