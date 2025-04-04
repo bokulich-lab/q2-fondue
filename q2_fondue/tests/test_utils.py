@@ -17,10 +17,9 @@ from unittest.mock import patch, MagicMock
 from q2_types.per_sample_sequences import CasavaOneEightSingleLanePerSampleDirFmt
 from qiime2 import Artifact
 from qiime2.plugin.testing import TestPluginBase
-from tqdm import tqdm
 
 from q2_fondue.utils import (
-    handle_threaded_exception, _has_enough_space, _find_next_id, _chunker,
+    handle_threaded_exception, _has_enough_space, _chunker,
     _rewrite_fastq, _is_empty, _remove_empty, _make_empty_artifact
 )
 
@@ -113,16 +112,6 @@ class TestSRAUtils(TestPluginBase):
             ['fasterq-dump', '--size-check', 'only', '-x', acc],
             text=True, capture_output=True, cwd=test_dir
         )
-
-    def test_find_next_id(self):
-        pbar = tqdm(['A', 'B', 'C'])
-        obs = _find_next_id('B', pbar)
-        self.assertEqual(obs, 'C')
-
-    def test_find_next_id_last(self):
-        pbar = tqdm(['A', 'B', 'C'])
-        obs = _find_next_id('C', pbar)
-        self.assertIsNone(obs)
 
     def test_chunker(self):
         obs_out = _chunker(['A', 'B', 'C'], 2)

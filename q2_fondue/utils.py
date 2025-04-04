@@ -14,7 +14,7 @@ from typing import List
 
 from entrezpy.esearch import esearcher as es
 from q2_types.per_sample_sequences import CasavaOneEightSingleLanePerSampleDirFmt
-from tqdm import tqdm
+from qiime2 import Artifact
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import (
@@ -137,26 +137,51 @@ def _has_enough_space(acc_id: str, output_dir: str) -> bool:
         return True
 
 
-def _find_next_id(acc_id: str, progress_bar: tqdm):
-    pbar_content = list(progress_bar)
-    index_next_acc = pbar_content.index(acc_id) + 1
-    if index_next_acc >= len(pbar_content):
-        return None
-    else:
-        return pbar_content[index_next_acc]
+def _rewrite_fastq(file_in: str, file_out: str) -> None:
+    """Rewrites a FASTQ file with gzip compression.
 
+    Takes an uncompressed FASTQ file and writes it to a new location with
+    gzip compression.
 
-def _rewrite_fastq(file_in: str, file_out: str):
+    Args:
+        file_in (str): Path to input uncompressed FASTQ file
+        file_out (str): Path where compressed FASTQ file should be written
+    """
     with open(file_in, 'rb') as f_in, gzip.open(file_out, 'wb') as f_out:
         shutil.copyfileobj(f_in, f_out)
 
 
-def _is_empty(artifact):
+def _is_empty(artifact: Artifact) -> bool:
+    """Checks if a sequence artifact is empty.
+
+    Determines if a sequence artifact is empty by checking if all sample IDs
+    are "xxx", which indicates an empty placeholder artifact.
+
+    Args:
+        artifact: A QIIME 2 sequence artifact
+
+    Returns:
+        bool: True if the artifact is empty, False otherwise
+    """
     samples = artifact.view(CasavaOneEightSingleLanePerSampleDirFmt).manifest.index
     return all(sample == "xxx" for sample in samples)
 
 
-def _remove_empty(*artifact_lists):
+def _remove_empty(*artifact_lists: tuple) -> tuple:
+    """Removes empty artifacts from lists of sequence artifacts.
+
+    Takes one or more lists of sequence artifacts and filters out any empty
+    artifacts (those containing only placeholder 'xxx' samples). Returns
+    tuple of filtered lists maintaining the same order as input.
+
+    Args:
+        *artifact_lists: Variable number of lists containing sequence artifacts
+            to filter
+
+    Returns:
+        tuple: Tuple of filtered lists with empty artifacts removed, in same
+            order as input lists
+    """
     processed_artifacts = []
     for artifacts in artifact_lists:
         processed_artifacts.append(
@@ -165,7 +190,22 @@ def _remove_empty(*artifact_lists):
     return tuple(processed_artifacts)
 
 
-def _make_empty_artifact(ctx, paired):
+def _make_empty_artifact(ctx, paired: bool) -> Artifact:
+    """Creates an empty sequence artifact.
+
+    Creates an empty QIIME 2 sequence artifact containing placeholder files.
+    For paired-end sequences, creates two empty fastq files (R1 and R2).
+    For single-end sequences, creates one empty fastq file (R1).
+
+    Args:
+        ctx: QIIME 2 plugin context
+        paired (bool): Whether to create paired-end (True) or
+            single-end (False) artifact
+
+    Returns:
+        QIIME 2 artifact: Empty sequence artifact of appropriate type
+            (paired or single-end)
+    """
     if paired:
         filenames = ["xxx_00_L001_R1_001.fastq.gz", "xxx_00_L001_R2_001.fastq.gz"]
         _type = "SampleData[PairedEndSequencesWithQuality]"

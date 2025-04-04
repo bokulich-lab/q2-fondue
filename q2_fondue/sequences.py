@@ -150,7 +150,6 @@ def _run_fasterq_dump(
 
 def _process_one_sequence(filename, output_dir):
     """Renames sequence files to follow the required naming convention."""
-    # Renaming
     new_name, is_paired = None, False
     if filename.endswith("_1.fastq"):
         # paired-end _1: barcode 00
@@ -198,38 +197,41 @@ def _write_empty_casava(read_type: str, casava_out: str, accession_id: str):
         ls_file_names = ["xxx_01_L001_R1_001.fastq.gz"]
     else:
         ls_file_names = ["xxx_00_L001_R1_001.fastq.gz", "xxx_00_L001_R2_001.fastq.gz"]
-    # create empty CasavaDirFmt due to Q2 not supporting optional
-    # output types
+    # create empty CasavaDirFmt due to Q2 not supporting optional output types
     for new_empty_name in ls_file_names:
         path_out = os.path.join(casava_out, new_empty_name)
         with gzip.open(str(path_out), mode="w"):
             pass
 
 
-def _copy_to_casava(filenames: list, tmp_dir: str, casava_result_path: str):
+def _copy_to_casava(filenames: list, tmp_dir: str, casava_result: str):
     """Copies single/paired-end sequences to Casava directory.
 
     Downloaded sequence files (single- or paired-end) will be
-    copied from tmp_dir to casava_result_path.
+    copied from tmp_dir to casava_result.
     """
     fwd_path_in = os.path.join(tmp_dir, filenames[0])
-    fwd_path_out = os.path.join(casava_result_path, f"{filenames[0]}.gz")
+    fwd_path_out = os.path.join(casava_result, f"{filenames[0]}.gz")
     _rewrite_fastq(fwd_path_in, fwd_path_out)
 
     if len(filenames) > 1:
         rev_path_in = os.path.join(tmp_dir, filenames[1])
-        rev_path_out = os.path.join(casava_result_path, f"{filenames[1]}.gz")
+        rev_path_out = os.path.join(casava_result, f"{filenames[1]}.gz")
         _rewrite_fastq(rev_path_in, rev_path_out)
 
 
 def _write_to_casava(filenames: list, tmp_dir: str, casava_out: str, accession_id: str):
     """Writes single- or paired-end files to casava directory.
 
-    Picks up jobs (filenames) from the renaming_queue and decides whether they
-    should be processed as single- or paired-end files.
-    For example, [('fileA', False)] would be processed as single-end,
-    while [('fileB_1', True), ('fileB_2', True)] as paired-end.
-    When done, it inserts filenames into the done_queue to announce completion.
+    Takes a list of filenames and copies them to the casava output directory.
+    For single-end files, expects a list with one filename. For paired-end files,
+    expects a list with two filenames (forward and reverse reads).
+
+    Args:
+        filenames (list): List of tuples containing filenames and paired-end flags
+        tmp_dir (str): Path to temporary directory containing downloaded files
+        casava_out (str): Path to casava output directory
+        accession_id (str): Accession ID being processed (required for logging)
     """
     if len(filenames) == 1:
         LOGGER.info(
@@ -268,27 +270,24 @@ def _get_sequences(
     Fetches single-read and paired-end sequences based on provided
     accession IDs.
 
-    Function uses SRA-toolkit fasterq-dump to get single-read and paired-end
-    sequences of accession IDs. It supports multiple tries (`retries`)
-    and can use multiple `threads`. If download fails, function will create
-    an artifact with a list of failed IDs.
+    Uses SRA-toolkit fasterq-dump to get single-read and paired-end
+    sequences of an accession ID. It supports multiple tries (`retries`)
+    and can use multiple `download_jobs`. If download fails, function
+    will create an artifact with the failed ID and the error message.
 
     Args:
         accession_id (str): Run ID to be fetched.
-        email (str): A valid e-mail address (required by NCBI).
         retries (int, default=2): Number of retries to fetch sequences.
-        restricted_access (bool, default=False): If sequence fetch requires
-        dbGaP repository key.
         n_download_jobs (int, default=1): Number of download jobs to be used.
         log_level (str, default='INFO'): Logging level.
 
     Returns:
         Two directories with fetched single-read and paired-end sequences
-        respectively for provided accession IDs. If the provided accession IDs
-        only contain one type of sequences (single-read or paired-end) the
+        respectively for provided accession IDs. If the provided ID
+        only contains one type of sequences (single-read or paired-end) the
         other directory is empty (with artificial ID starting with xxx_)
 
-        failed_ids (pd.DataFrame): Run IDs that failed to download with errors.
+        failed_ids (pd.DataFrame): Run ID that failed to download with error.
     """
     LOGGER.setLevel(log_level.upper())
 
