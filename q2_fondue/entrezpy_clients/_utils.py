@@ -57,14 +57,15 @@ def rename_columns(df: pd.DataFrame):
     return df
 
 
-def set_up_entrezpy_logging(entrezpy_obj, log_level):
+def set_up_entrezpy_logging(entrezpy_obj, log_level, log_id=False):
     """Sets up logging for the given Entrezpy object.
 
     Args:
         entrezpy_obj (object): An Entrezpy object that has a logger attribute.
         log_level (str): The log level to set.
+        log_id (bool): If True, accession ID will be added to the log.
     """
-    handler = set_up_logging_handler()
+    handler = set_up_logging_handler(log_id=log_id)
 
     entrezpy_obj.logger.addHandler(handler)
     entrezpy_obj.logger.setLevel(log_level)
@@ -74,12 +75,16 @@ def set_up_entrezpy_logging(entrezpy_obj, log_level):
         entrezpy_obj.request_pool.logger.setLevel(log_level)
 
 
-def set_up_logger(log_level, cls_obj=None, logger_name=None) -> logging.Logger:
+def set_up_logger(
+        log_level, cls_obj=None, logger_name=None, log_id=False
+) -> logging.Logger:
     """Sets up the module/class logger.
 
     Args:
         log_level (str): The log level to set.
         cls_obj: Class instance for which the logger should be created.
+        logger_name (str): The name of the logger.
+        log_id (bool): If True, accession ID will be added to the log.
 
     Returns:
         logging.Logger: The module logger.
@@ -91,16 +96,21 @@ def set_up_logger(log_level, cls_obj=None, logger_name=None) -> logging.Logger:
     else:
         logger = logging.getLogger(logger_name)
     logger.setLevel(log_level)
-    handler = set_up_logging_handler()
+    handler = set_up_logging_handler(log_id=log_id)
     logger.addHandler(handler)
     return logger
 
 
-def set_up_logging_handler():
+def set_up_logging_handler(log_id: bool = False) -> logging.StreamHandler:
     """Sets up logging handler."""
     handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        '%(asctime)s [%(threadName)s] [%(levelname)s] '
-        '[%(name)s]: %(message)s')
+    if log_id:
+        formatter = logging.Formatter(
+            '%(asctime)s [%(threadName)s] [%(levelname)s] '
+            '[%(name)s] [%(accession_id)s]: %(message)s')
+    else:
+        formatter = logging.Formatter(
+            '%(asctime)s [%(threadName)s] [%(levelname)s] '
+            '[%(name)s]: %(message)s')
     handler.setFormatter(formatter)
     return handler
