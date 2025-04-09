@@ -49,7 +49,10 @@ common_params = {
 
 common_param_descr = {
     'email': 'Your e-mail address (required by NCBI).',
-    'threads': 'Number of concurrent download jobs.',
+    'threads': 'Number of threads to be used for parallelization of '
+               'the data download from NCBI. Not to be confused with the '
+               'number of parsl workers which can be configured through '
+               'the parsl configuration file.',
     'log_level': 'Logging level.'
 }
 

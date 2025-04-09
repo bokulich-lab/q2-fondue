@@ -274,6 +274,8 @@ max_blocks = 4
 You can also find this sample config file [here](parallel.config). You can pass this config file to the `get-sequences` and `get-all` actions using the `--parallel-config` flag.
 For more information on parsl-based parallelization in QIIME 2, please refer to the [documentation](https://use.qiime2.org/en/latest/references/parallel-configuration.html#parallel-configuration).
 
+**Note:** Do not request more than 1 CPU per parsl worker - each worker will only process one run at a time so requesting more than 1 CPU will not speed up the process.
+
 ## Downstream analysis in QIIME 2
 For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.
 
