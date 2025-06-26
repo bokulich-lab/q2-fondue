@@ -23,8 +23,12 @@ BATCH_SIZE = 500
 
 
 def _get_run_ids(
-        email: str, n_jobs: int, ids: Union[list, None],
-        query: Union[str, None], source: str, log_level: str
+    email: str,
+    n_jobs: int,
+    ids: Union[list, None],
+    query: Union[str, None],
+    source: str,
+    log_level: str,
 ) -> list:
     """Pipeline to retrieve run IDs associated with BioSample query
     (provided in `query`) or other aggregate IDs like studies
@@ -48,12 +52,12 @@ def _get_run_ids(
 
     # create pipeline to fetch all run IDs
     elink = True
-    if source == 'bioproject':
-        db = 'bioproject'
-    elif source == 'biosample':
-        db = 'biosample'
+    if source == "bioproject":
+        db = "bioproject"
+    elif source == "biosample":
+        db = "biosample"
     else:
-        db = 'sra'
+        db = "sra"
         elink = False
 
     # find UIDS based on a query;
@@ -66,14 +70,12 @@ def _get_run_ids(
     # than 10000 BioProject IDs or the text query returns more
     # than 10000 IDs presumably)
     esearcher = searcher.Esearcher(
-        'esearcher', email, apikey=None,
-        apikey_var=None, threads=n_jobs, qid=None)
+        "esearcher", email, apikey=None, apikey_var=None, threads=n_jobs, qid=None
+    )
     esearch_response = esearcher.inquire(
-        {
-            'db': db, 'term': term,
-            'usehistory': False, 'rettype': 'json'
-        },
-        analyzer=ESearchAnalyzer(ids))
+        {"db": db, "term": term, "usehistory": False, "rettype": "json"},
+        analyzer=ESearchAnalyzer(ids),
+    )
 
     # use the UIDs to link to other DBs and fetch related records;
     # we won't be using multi-threading here as this shouldn't take
@@ -90,10 +92,7 @@ def _get_run_ids(
     for _ids in _chunker(esearch_response.result.uids, BATCH_SIZE):
         if elink:
             el = run_ids_pipeline.add_link(
-                {
-                    'db': 'sra', 'dbfrom': db,
-                    'id': _ids, 'link': False
-                },
+                {"db": "sra", "dbfrom": db, "id": _ids, "link": False},
                 analyzer=ElinkAnalyzer(),
             )
         else:
@@ -101,17 +100,18 @@ def _get_run_ids(
 
         # given SRA run IDs, fetch all metadata
         efetch_params = {
-            'rettype': 'docsum', 'retmode': 'xml',
-            'reqsize': BATCH_SIZE, 'retmax': len(_ids)
+            "rettype": "docsum",
+            "retmode": "xml",
+            "reqsize": BATCH_SIZE,
+            "retmax": len(_ids),
         }
         if not elink:
             # we need to specify these manually as in this scenario
             # EFetch is not linked to anything
-            efetch_params.update({'id': _ids, 'db': db})
+            efetch_params.update({"id": _ids, "db": db})
 
         run_ids_pipeline.add_fetch(
-            efetch_params,
-            analyzer=EFetchAnalyzer(log_level), dependency=el
+            efetch_params, analyzer=EFetchAnalyzer(log_level), dependency=el
         )
 
     econduit.run(run_ids_pipeline)

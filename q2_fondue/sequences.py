@@ -30,7 +30,9 @@ from q2_fondue.utils import (
     handle_threaded_exception,
     DownloadError,
     _has_enough_space,
-    _rewrite_fastq, _remove_empty, _make_empty_artifact,
+    _rewrite_fastq,
+    _remove_empty,
+    _make_empty_artifact,
 )
 
 threading.excepthook = handle_threaded_exception

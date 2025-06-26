@@ -8,6 +8,6 @@
 
 from qiime2.core.type import SemanticType
 
-SRAMetadata = SemanticType('SRAMetadata')
-SRAFailedIDs = SemanticType('SRAFailedIDs')
-NCBIAccessionIDs = SemanticType('NCBIAccessionIDs')
+SRAMetadata = SemanticType("SRAMetadata")
+SRAFailedIDs = SemanticType("SRAFailedIDs")
+NCBIAccessionIDs = SemanticType("NCBIAccessionIDs")

@@ -16,23 +16,22 @@ from q2_fondue.tests.test_sequences import SequenceTests
 
 
 class TestQuery(SequenceTests):
-    package = 'q2_fondue.tests'
+    package = "q2_fondue.tests"
 
-    @patch(
-        'q2_fondue.query._get_run_ids',
-        return_value=['SRR123', 'SRR234']
-    )
+    @patch("q2_fondue.query._get_run_ids", return_value=["SRR123", "SRR234"])
     def test_query(self, mock_ids):
-        query = 'some magical query text'
+        query = "some magical query text"
 
-        obs_ids, = fondue.actions.get_ids_from_query(
-            query, 'fake@email.com', 1, 'DEBUG'
+        (obs_ids,) = fondue.actions.get_ids_from_query(
+            query, "fake@email.com", 1, "DEBUG"
         )
         exp_ids = pd.DataFrame(
-            index=pd.Index(['SRR123', 'SRR234'], name='ID'), columns=[], )
+            index=pd.Index(["SRR123", "SRR234"], name="ID"),
+            columns=[],
+        )
 
         mock_ids.assert_called_once_with(
-            'fake@email.com', 1, None, query, 'biosample', 'DEBUG'
+            "fake@email.com", 1, None, query, "biosample", "DEBUG"
         )
         assert_frame_equal(obs_ids.view(pd.DataFrame), exp_ids)
 
