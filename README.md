@@ -171,14 +171,14 @@ where:
 qiime fondue get-ids-from-query \
               --p-query "txid410656[Organism] AND \"public\"[Filter] AND (chicken OR poultry)" \
               --p-email your_email@somewhere.com \
-              --p-n-jobs 2 \
+              --p-threads 2 \
               --o-ids run_ids.qza \
               --verbose
 ```
 where:
 - `--p-query` is the text search query to be executed on the BioSample database.
 - `--p-email` is your email address (required by NCBI).
-- `--p-n-jobs` is the number of parallel download jobs (defaults to 1).
+- `--p-threads` is the number of parallel download jobs (defaults to 1).
 - `--o-ids` is the output artifact containing the retrieved run IDs.
 
 ### Fetching metadata
@@ -187,7 +187,7 @@ To fetch metadata associated with a set of output IDs, execute the following com
 ```shell
 qiime fondue get-metadata \
               --i-accession-ids ids.qza \
-              --p-n-jobs 1 \
+              --p-threads 1 \
               --p-email your_email@somewhere.com \
               --o-metadata output_metadata.qza \
               --o-failed-runs failed_IDs.qza
@@ -195,7 +195,7 @@ qiime fondue get-metadata \
 
 where:
 - `--i-accession-ids` is an artifact containing run, study, BioProject, experiment or sample IDs
-- `--p-n-jobs` is a number of parallel download jobs (defaults to 1)
+- `--p-threads` is a number of parallel download jobs (defaults to 1)
 - `--p-email` is your email address (required by NCBI)
 - `--o-metadata` is the output metadata artifact
 - `--o-failed-runs` is the list of all run IDs for which fetching metadata failed, with their corresponding error messages
@@ -254,6 +254,27 @@ where:
 - `--i-accession-ids` is an artifact containing run, study, BioProject, experiment or sample IDs
 - `--p-email` is your email address (required by NCBI)
 - `--output-dir` directory where the downloaded metadata, sequences and IDs for failed downloads are stored as QIIME 2 artifacts
+
+## Parallelization
+q2-fondue makes use of the powerful parsl-based parallelization provided by the Q2 framework. By default, if no additional options are provided, all the data will be fetched sequentially, run by run. 
+To speed up the process, you can configure the actions to use multiple workers with each worker processing one run. Here is an example of the parsl config which will allow you to spin up 4 workers
+on your _local_ machine:
+```
+[parsl]
+
+[[parsl.executors]]
+class = "HighThroughputExecutor"
+label = "default"
+max_workers = 1
+
+[parsl.executors.provider]
+class = "LocalProvider"
+max_blocks = 4
+```
+You can also find this sample config file [here](parallel.config). You can pass this config file to the `get-sequences` and `get-all` actions using the `--parallel-config` flag.
+For more information on parsl-based parallelization in QIIME 2, please refer to the [documentation](https://use.qiime2.org/en/latest/references/parallel-configuration.html#parallel-configuration).
+
+**Note:** Do not request more than 1 CPU per parsl worker - each worker will only process one run at a time so requesting more than 1 CPU will not speed up the process.
 
 ## Downstream analysis in QIIME 2
 For more information on how to use q2-fondue outputs within the QIIME 2 ecosystem see section [Downstream analysis in QIIME 2](./tutorial/tutorial.md#downstream-analysis-in-qiime-2) in the tutorial.
