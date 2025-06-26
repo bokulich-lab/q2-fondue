@@ -1,4 +1,4 @@
-.PHONY: all lint test test-cov install dev clean distclean
+.PHONY: all lint test test-cov test-docker install dev clean distclean
 
 PYTHON ?= python
 
@@ -11,8 +11,11 @@ test: all
 	py.test
 
 test-cov: all
-	coverage run -m pytest
-	coverage xml
+	python -m pytest --cov=q2_fondue -n 4 && coverage xml -o coverage.xml
+
+test-docker: all
+	qiime info
+	qiime fondue --help
 
 install: all
 	bash install-sra-tools.sh
