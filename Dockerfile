@@ -27,7 +27,7 @@ RUN conda update -qy conda \
     && mamba clean --all --yes \
     && chmod -R a+rwx /opt/conda
 
-RUN mkdir .ncbi
+RUN mkdir -p .ncbi
 RUN printf '/LIBS/GUID = "%s"\n' `uuidgen` > .ncbi/user-settings.mkfg
 
 COPY . ./plugin
