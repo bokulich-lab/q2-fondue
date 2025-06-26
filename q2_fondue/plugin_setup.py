@@ -34,11 +34,13 @@ common_inputs = {
 }
 
 common_input_descriptions = {
-    'accession_ids': 'Artifact containing run, study, BioProject, experiment '
-                     'or sample IDs for which the metadata and/or sequences '
-                     'should be fetched. Associated DOI names can be provided'
-                     'in an optional column and are preserved in get-all'
-                     'and get-metadata actions.',
+    'accession_ids': (
+        'Artifact containing run, study, BioProject, experiment '
+        'or sample IDs for which the metadata and/or sequences '
+        'should be fetched. Associated DOI names can be provided'
+        'in an optional column and are preserved in get-all'
+        'and get-metadata actions.'
+    ),
 }
 
 common_params = {
@@ -49,32 +51,44 @@ common_params = {
 
 common_param_descr = {
     'email': 'Your e-mail address (required by NCBI).',
-    'threads': 'Number of threads to be used for parallelization of '
-               'the data download from NCBI. Not to be confused with the '
-               'number of parsl workers which can be configured through '
-               'the parsl configuration file.',
+    'threads': (
+        'Number of threads to be used for parallelization of '
+        'the data download from NCBI. Not to be confused with the '
+        'number of parsl workers which can be configured through '
+        'the parsl configuration file.'
+    ),
     'log_level': 'Logging level.'
 }
 
 input_descriptions = {
-    'linked_doi': 'Optional table containing linked DOI names that is '
-                  'only used if accession_ids does not contain any '
-                  'DOI names.'
+    'linked_doi': (
+        'Optional table containing linked DOI names that is '
+        'only used if accession_ids does not contain any '
+        'DOI names.'
+    )
 }
 
 output_descriptions = {
     'metadata': 'Table containing metadata for all the requested IDs.',
-    'single_reads': 'Artifact containing single-read fastq.gz files '
-                    'for all the requested IDs.',
-    'paired_reads': 'Artifact containing paired-end fastq.gz files '
-                    'for all the requested IDs.',
-    'failed_runs': 'List of all run IDs for which fetching {} failed, '
-                   'with their corresponding error messages.',
+    'single_reads': (
+        'Artifact containing single-read fastq.gz files '
+        'for all the requested IDs.'
+    ),
+    'paired_reads': (
+        'Artifact containing paired-end fastq.gz files '
+        'for all the requested IDs.'
+    ),
+    'failed_runs': (
+        'List of all run IDs for which fetching {} failed, '
+        'with their corresponding error messages.'
+    ),
     'ids': 'Artifact containing retrieved SRA run accession IDs.'
 }
 
-output_scraper_txt = 'Artifact containing all {} IDs scraped from ' \
-                     'a Zotero collection and associated DOI names.'
+output_scraper_txt = (
+    'Artifact containing all {} IDs scraped from '
+    'a Zotero collection and associated DOI names.'
+)
 
 citations = Citations.load('citations.bib', package='q2_fondue')
 
@@ -108,8 +122,10 @@ plugin.methods.register_function(
         'metadata': output_descriptions['metadata'],
         'failed_runs': output_descriptions['failed_runs'].format('metadata')
     },
-    name='Fetch sequence-related metadata based on run, study, BioProject, '
-         'experiment or sample ID.',
+    name=(
+        'Fetch sequence-related metadata based on run, study, BioProject, '
+        'experiment or sample ID.'
+    ),
     description=(
         'Fetch sequence-related metadata based on run, study, BioProject, '
         'experiment or sample ID using Entrez. All metadata will be collapsed '
@@ -139,8 +155,9 @@ plugin.methods.register_function(
         'threads': common_param_descr['threads'],
         'log_level': common_param_descr['log_level'],
         'retries': 'Number of retries to fetch sequences.',
-        'restricted_access': 'If sequence fetch requires dbGaP repository '
-        'key.',
+        'restricted_access': (
+            'If sequence fetch requires dbGaP repository key.'
+        ),
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -169,8 +186,9 @@ plugin.pipelines.register_function(
     parameter_descriptions={
         **common_param_descr,
         'retries': 'Number of retries to fetch sequences.',
-        'restricted_access': 'If sequence fetch requires dbGaP repository '
-        'key.',
+        'restricted_access': (
+            'If sequence fetch requires dbGaP repository key.'
+        ),
     },
     output_descriptions={
         'single_reads': output_descriptions['single_reads'],
@@ -211,11 +229,15 @@ plugin.pipelines.register_function(
         'failed_runs': output_descriptions['failed_runs'].format(
             'sequences and/or metadata ')
     },
-    name='Fetch sequence-related metadata and sequences of all run, study, '
-         'BioProject, experiment or sample IDs.',
-    description='Pipeline fetching all sequence-related metadata and raw '
-                'sequences of provided run, study, BioProject, experiment '
-                'or sample IDs.',
+    name=(
+        'Fetch sequence-related metadata and sequences of all run, study, '
+        'BioProject, experiment or sample IDs.'
+    ),
+    description=(
+        'Pipeline fetching all sequence-related metadata and raw '
+        'sequences of provided run, study, BioProject, experiment '
+        'or sample IDs.'
+    ),
     citations=[citations['Buchmann2019'], citations['SraToolkit']]
 )
 
@@ -227,8 +249,9 @@ plugin.methods.register_function(
     input_descriptions={'metadata': 'Metadata files to be merged together.'},
     parameter_descriptions={},
     output_descriptions={
-        'merged_metadata': 'Merged metadata containing all rows and columns '
-                           '(without duplicates).'
+        'merged_metadata': (
+            'Merged metadata containing all rows and columns (without duplicates).'
+        )
     },
     name='Merge several metadata files into a single metadata object.',
     description=(
@@ -248,19 +271,22 @@ plugin.methods.register_function(
         'seqs': 'Sequence artifacts to be combined together.'
     },
     parameter_descriptions={
-        'on_duplicates': 'Preferred behaviour when duplicated sequence IDs '
-                         'are encountered: "warn" displays a warning and '
-                         'continues to combining deduplicated samples while '
-                         '"error" raises an error and aborts further '
-                         'execution.'
+        'on_duplicates': (
+            'Preferred behaviour when duplicated sequence IDs '
+            'are encountered: "warn" displays a warning and '
+            'continues to combining deduplicated samples while '
+            '"error" raises an error and aborts further execution.'
+        )
     },
     output_descriptions={
         'combined_seqs': 'Sequences combined from all input artifacts.',
     },
     name='Combine sequences from multiple artifacts.',
-    description='Combine paired- or single-end sequences from multiple '
-                'artifacts, for example obtained by re-fetching failed '
-                'downloads.',
+    description=(
+        'Combine paired- or single-end sequences from multiple '
+        'artifacts, for example obtained by re-fetching failed '
+        'downloads.'
+    ),
     citations=[]
 )
 
@@ -290,8 +316,10 @@ plugin.methods.register_function(
         'experiment_ids': output_scraper_txt.format('experiment'),
         'sample_ids': output_scraper_txt.format('sample')
     },
-    name='Scrape Zotero collection for run, study, BioProject, experiment and '
-    'sample IDs, and associated DOI names.',
+    name=(
+        'Scrape Zotero collection for run, study, BioProject, experiment and '
+        'sample IDs, and associated DOI names.'
+    ),
     description=(
         'Scrape attachment files of a Zotero collection for run, study, '
         'BioProject, experiment and sample IDs, and associated DOI names.'
