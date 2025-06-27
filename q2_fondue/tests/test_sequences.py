@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -706,8 +706,10 @@ class TestSequenceFetching(SequenceTests):
         obs_single_files = set(glob.glob(f"{str(single)}/*.fastq.gz"))
         obs_paired_files = set(glob.glob(f"{str(paired)}/*.fastq.gz"))
         exp_single_files = {os.path.join(str(single), "xxx_01_L001_R1_001.fastq.gz")}
-        exp_paired_files = {os.path.join(str(paired), "xxx_00_L001_R1_001.fastq.gz"),
-                            os.path.join(str(paired), "xxx_00_L001_R2_001.fastq.gz")}
+        exp_paired_files = {
+            os.path.join(str(paired), "xxx_00_L001_R1_001.fastq.gz"),
+            os.path.join(str(paired), "xxx_00_L001_R2_001.fastq.gz"),
+        }
         self.assertSetEqual(obs_single_files, exp_single_files)
         self.assertSetEqual(obs_paired_files, exp_paired_files)
         pd.testing.assert_frame_equal(

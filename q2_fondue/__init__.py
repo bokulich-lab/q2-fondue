@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -11,6 +11,6 @@ import importlib
 try:
     from ._version import __version__
 except ModuleNotFoundError:
-    __version__ = '0.0.0+notfound'
+    __version__ = "0.0.0+notfound"
 
-importlib.import_module('q2_fondue.types')
+importlib.import_module("q2_fondue.types")

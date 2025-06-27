@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -14,10 +14,14 @@ from entrezpy.base.result import EutilsResult
 from entrezpy.efetch.efetch_analyzer import EfetchAnalyzer
 from xmltodict import parse as parsexml
 
-from q2_fondue.entrezpy_clients._utils import (rename_columns, set_up_logger)
+from q2_fondue.entrezpy_clients._utils import rename_columns, set_up_logger
 from q2_fondue.entrezpy_clients._sra_meta import (
-    LibraryMetadata, SRARun, SRAExperiment, SRASample, SRAStudy,
-    META_REQUIRED_COLUMNS
+    LibraryMetadata,
+    SRARun,
+    SRAExperiment,
+    SRASample,
+    SRAStudy,
+    META_REQUIRED_COLUMNS,
 )
 
 
@@ -41,10 +45,16 @@ class EFetchResult(EutilsResult):
         return True if self.size() == 0 else False
 
     def dump(self):
-        return {self: {'dump': {'metadata': self.metadata,
-                                'query_id': self.query_id,
-                                'db': self.db,
-                                'eutil': self.function}}}
+        return {
+            self: {
+                "dump": {
+                    "metadata": self.metadata,
+                    "query_id": self.query_id,
+                    "db": self.db,
+                    "eutil": self.function,
+                }
+            }
+        }
 
     def get_link_parameter(self, reqnum=0):
         return {}
@@ -57,10 +67,10 @@ class EFetchResult(EutilsResult):
                 corresponding to the run IDs.
         """
         df = pd.concat([v.generate_meta() for v in self.studies.values()])
-        df.index.name = 'ID'
+        df.index.name = "ID"
 
         # remove empty columns, if any
-        df.dropna(axis=1, inplace=True, how='all')
+        df.dropna(axis=1, inplace=True, how="all")
 
         # clean up column names
         df = rename_columns(df)
@@ -88,24 +98,24 @@ class EFetchResult(EutilsResult):
             response (io.StringIO): Response received from Efetch.
         """
         response = json.loads(json.dumps(parsexml(response.read())))
-        result = response['eSummaryResult'].get('DocSum')
+        result = response["eSummaryResult"].get("DocSum")
         if result:
             result = [result] if not isinstance(result, list) else result
             for content in result:
-                content = content.get('Item')
+                content = content.get("Item")
                 for item in content:
                     for k, v in item.items():
-                        if 'Run acc' in v:
-                            runs = f'<Runs>{v.strip()}</Runs>'
+                        if "Run acc" in v:
+                            runs = f"<Runs>{v.strip()}</Runs>"
                             runs = json.loads(json.dumps(parsexml(runs)))
-                            runs = runs['Runs'].get('Run')
+                            runs = runs["Runs"].get("Run")
                             runs = [runs] if isinstance(runs, dict) else runs
-                            self.metadata += [x.get('@acc') for x in runs]
+                            self.metadata += [x.get("@acc") for x in runs]
             self.metadata = list(set(self.metadata))
         else:
             self.logger.error(
-                'Document summary was not found in the result received from '
-                f'EFetch. The contents was: {json.dumps(response)}.'
+                "Document summary was not found in the result received from "
+                f"EFetch. The contents was: {json.dumps(response)}."
             )
 
     @staticmethod
@@ -124,11 +134,10 @@ class EFetchResult(EutilsResult):
         if bioproject:  # if not found, try elsewhere:
             if isinstance(bioproject, list):
                 bioproject_id = next(
-                    (x for x in bioproject
-                     if x['@namespace'].lower() == 'bioproject')
-                ).get('#text')
+                    (x for x in bioproject if x["@namespace"].lower() == "bioproject")
+                ).get("#text")
             else:
-                bioproject_id = bioproject.get('#text')
+                bioproject_id = bioproject.get("#text")
         else:
             bioproject_id = None
         return bioproject_id
@@ -144,23 +153,22 @@ class EFetchResult(EutilsResult):
                 the XML response.
 
         """
-        study_ids = attributes['STUDY']['IDENTIFIERS'].get('EXTERNAL_ID')
-        study_id = attributes['STUDY']['IDENTIFIERS'].get('PRIMARY_ID')
+        study_ids = attributes["STUDY"]["IDENTIFIERS"].get("EXTERNAL_ID")
+        study_id = attributes["STUDY"]["IDENTIFIERS"].get("PRIMARY_ID")
         if study_id not in self.studies.keys():
             bioproject_id = self._find_bioproject_id(study_ids)
 
-            org = attributes['Organization'].get('Name')
+            org = attributes["Organization"].get("Name")
             if isinstance(org, dict):
-                org = org.get('#text')
+                org = org.get("#text")
 
-            custom_meta = self._extract_custom_attributes(
-                attributes['STUDY'], 'study')
+            custom_meta = self._extract_custom_attributes(attributes["STUDY"], "study")
 
             self.studies[study_id] = SRAStudy(
                 id=study_id,
                 bioproject_id=bioproject_id,
                 center_name=org,
-                custom_meta=custom_meta
+                custom_meta=custom_meta,
             )
         return study_id
 
@@ -177,40 +185,39 @@ class EFetchResult(EutilsResult):
         Returns:
             sample_id (str): ID of the processed sample.
         """
-        if 'Pool' in attributes.keys():
-            pool_meta = attributes['Pool'].get('Member')
+        if "Pool" in attributes.keys():
+            pool_meta = attributes["Pool"].get("Member")
         else:
-            pool_meta = attributes['SAMPLE']
-        sample_attributes = attributes['SAMPLE']
+            pool_meta = attributes["SAMPLE"]
+        sample_attributes = attributes["SAMPLE"]
         if not isinstance(pool_meta, list):
             # we have one sample
             pool_meta = [pool_meta]
         sample_ids = []
         for sample in pool_meta:
-            sample_id = sample.get('@accession')
+            sample_id = sample.get("@accession")
             if sample_id not in self.samples.keys():
-                biosample_id = sample['IDENTIFIERS'].get('EXTERNAL_ID')
+                biosample_id = sample["IDENTIFIERS"].get("EXTERNAL_ID")
                 if isinstance(biosample_id, list):
                     biosample_id = next(
-                        (x for x in biosample_id if
-                         x['@namespace'] == 'BioSample')
+                        (x for x in biosample_id if x["@namespace"] == "BioSample")
                     )
                 if isinstance(sample_attributes, list):
                     sample_attributes = next(
-                        (x for x in sample_attributes if
-                         x['@accession'] == sample_id)
+                        (x for x in sample_attributes if x["@accession"] == sample_id)
                     )
                 custom_meta = self._extract_custom_attributes(
-                    sample_attributes, 'sample')
+                    sample_attributes, "sample"
+                )
                 self.samples[sample_id] = SRASample(
                     id=sample_id,
-                    name=sample.get('@sample_name'),
-                    title=sample.get('@sample_title'),
-                    biosample_id=biosample_id.get('#text'),
-                    organism=sample.get('@organism', ''),
-                    tax_id=sample.get('@tax_id', ''),
+                    name=sample.get("@sample_name"),
+                    title=sample.get("@sample_title"),
+                    biosample_id=biosample_id.get("#text"),
+                    organism=sample.get("@organism", ""),
+                    tax_id=sample.get("@tax_id", ""),
                     study_id=study_id,
-                    custom_meta=custom_meta
+                    custom_meta=custom_meta,
                 )
 
                 # append sample to study
@@ -228,11 +235,11 @@ class EFetchResult(EutilsResult):
         Returns:
             library_meta (LibraryMetadata): Library metadata object.
         """
-        lib_meta = attributes['EXPERIMENT']['DESIGN'].get('LIBRARY_DESCRIPTOR')
+        lib_meta = attributes["EXPERIMENT"]["DESIGN"].get("LIBRARY_DESCRIPTOR")
 
-        keys = ['name', 'selection', 'source']
-        lib = {k: lib_meta.get(f'LIBRARY_{k.upper()}') for k in keys}
-        lib['layout'] = list(lib_meta.get('LIBRARY_LAYOUT').keys())[0]
+        keys = ["name", "selection", "source"]
+        lib = {k: lib_meta.get(f"LIBRARY_{k.upper()}") for k in keys}
+        lib["layout"] = list(lib_meta.get("LIBRARY_LAYOUT").keys())[0]
 
         return LibraryMetadata(**lib)
 
@@ -249,29 +256,25 @@ class EFetchResult(EutilsResult):
         Returns:
             exp_id (str): ID of the processed study.
         """
-        exp_meta = attributes['EXPERIMENT']
-        exp_id = exp_meta['IDENTIFIERS'].get('PRIMARY_ID')
+        exp_meta = attributes["EXPERIMENT"]
+        exp_id = exp_meta["IDENTIFIERS"].get("PRIMARY_ID")
         if exp_id not in self.experiments.keys():
-            platform = list(exp_meta['PLATFORM'].keys())[0]
-            instrument = exp_meta['PLATFORM'][platform].get('INSTRUMENT_MODEL')
-            custom_meta = self._extract_custom_attributes(
-                exp_meta, 'experiment'
-            )
+            platform = list(exp_meta["PLATFORM"].keys())[0]
+            instrument = exp_meta["PLATFORM"][platform].get("INSTRUMENT_MODEL")
+            custom_meta = self._extract_custom_attributes(exp_meta, "experiment")
             self.experiments[exp_id] = SRAExperiment(
                 id=exp_id,
                 instrument=instrument,
                 platform=platform,
                 sample_id=sample_id,
                 library=self._extract_library_info(attributes),
-                custom_meta=custom_meta
+                custom_meta=custom_meta,
             )
             # append experiment to sample
-            self.samples[sample_id].experiments.append(
-                self.experiments[exp_id])
+            self.samples[sample_id].experiments.append(self.experiments[exp_id])
         return exp_id
 
-    def _create_single_run(
-            self, attributes: dict, exp_id: str, desired_id: str) -> str:
+    def _create_single_run(self, attributes: dict, exp_id: str, desired_id: str) -> str:
         """Creates a single SRARun object.
 
         Information like Run ID, count of bases as well as other custom
@@ -285,28 +288,26 @@ class EFetchResult(EutilsResult):
         Returns:
             run_id (str): ID of the processed run.
         """
-        runset = attributes['RUN_SET']['RUN']
+        runset = attributes["RUN_SET"]["RUN"]
         if not isinstance(runset, list):
             runset = [runset]
 
-        run = next(
-            (x for x in runset if x['@accession'] == desired_id)
-        )
+        run = next((x for x in runset if x["@accession"] == desired_id))
         pool_meta = self._get_pool_meta_from_run(run)
 
-        run_id = run.get('@accession')
-        is_public = True if run.get('@is_public') == 'true' else False
-        custom_meta = self._extract_custom_attributes(run, 'run')
+        run_id = run.get("@accession")
+        is_public = True if run.get("@is_public") == "true" else False
+        custom_meta = self._extract_custom_attributes(run, "run")
 
         if run_id not in self.runs.keys():
             self.runs[run_id] = SRARun(
                 id=run_id,
                 public=is_public,
-                bytes=int(pool_meta.get('size')),
-                bases=int(pool_meta.get('bases')),
-                spots=int(pool_meta.get('spots')),
+                bytes=int(pool_meta.get("size")),
+                bases=int(pool_meta.get("bases")),
+                spots=int(pool_meta.get("spots")),
                 experiment_id=exp_id,
-                custom_meta=custom_meta
+                custom_meta=custom_meta,
             )
             # append run to experiment
             self.experiments[exp_id].runs.append(self.runs[run_id])
@@ -315,22 +316,21 @@ class EFetchResult(EutilsResult):
     @staticmethod
     def _get_pool_meta_from_run(run: dict) -> dict:
         """Extracts base and spot count from run metadata."""
-        bases = run.get('@total_bases')
-        spots = run.get('@total_spots')
-        size = run.get('@size', 0)
+        bases = run.get("@total_bases")
+        spots = run.get("@total_spots")
+        size = run.get("@size", 0)
 
         if not bases:
-            bases = run.get('Bases')
-            bases = bases.get('@count', 0) if bases else 0
+            bases = run.get("Bases")
+            bases = bases.get("@count", 0) if bases else 0
 
         if not spots:
-            stats = run.get('Statistics')
-            spots = stats.get('@nspots', 0) if stats else 0
+            stats = run.get("Statistics")
+            spots = stats.get("@nspots", 0) if stats else 0
 
-        return {'bases': bases, 'spots': spots, 'size': size}
+        return {"bases": bases, "spots": spots, "size": size}
 
-    def _process_single_id(
-            self, attributes: dict, desired_id: str) -> List[str]:
+    def _process_single_id(self, attributes: dict, desired_id: str) -> List[str]:
         """Processes metadata obtained for a single accession ID.
 
         Args:
@@ -375,22 +375,26 @@ class EFetchResult(EutilsResult):
         if isinstance(attributes, dict):
             attributes = [attributes]
         attributes = [attr for attr in attributes if "VALUE" in attr.keys()]
-        attrs_sorted = sorted(attributes, key=lambda x: (x['TAG'], x['VALUE']))
-        tags = [x['TAG'] for x in attrs_sorted]
-        values = [x['VALUE'] for x in attrs_sorted]
+        attrs_sorted = sorted(attributes, key=lambda x: (x["TAG"], x["VALUE"]))
+        tags = [x["TAG"] for x in attrs_sorted]
+        values = [x["VALUE"] for x in attrs_sorted]
 
         # de-duplicate tags
         tags_dedupl = []
         for i, tag in enumerate(tags):
             total, count = tags.count(tag), tags[:i].count(tag)
             if total > 1:
-                self.logger.debug(
-                    f'One of the metadata keys ({tag}) is duplicated. '
-                    f'It will be retained with a numeric suffix.'
-                ) if count == 0 else False
-                tags_dedupl.append(f'{tag}_{count + 1} [{level}]')
+                (
+                    self.logger.debug(
+                        f"One of the metadata keys ({tag}) is duplicated. "
+                        f"It will be retained with a numeric suffix."
+                    )
+                    if count == 0
+                    else False
+                )
+                tags_dedupl.append(f"{tag}_{count + 1} [{level}]")
             else:
-                tags_dedupl.append(f'{tag} [{level}]')
+                tags_dedupl.append(f"{tag} [{level}]")
 
         return {t: v for t, v in zip(tags_dedupl, values)}
 
@@ -407,18 +411,18 @@ class EFetchResult(EutilsResult):
         """
         processed_meta = {}
         level = level.upper()
-        level_items = attributes.get(f'{level}_ATTRIBUTES')
+        level_items = attributes.get(f"{level}_ATTRIBUTES")
         if level_items:
-            level_attributes = level_items.get(f'{level}_ATTRIBUTE')
+            level_attributes = level_items.get(f"{level}_ATTRIBUTE")
             try:
-                attr_dedupl = self._custom_attributes_to_dict(
-                    level_attributes, level)
+                attr_dedupl = self._custom_attributes_to_dict(level_attributes, level)
                 processed_meta.update(attr_dedupl)
             except Exception as e:
                 self.logger.exception(
-                    f'Exception has occurred when processing {level} '
+                    f"Exception has occurred when processing {level} "
                     f'attributes: "{e}". Contents of the metadata '
-                    f'was: {attributes}.')
+                    f"was: {attributes}."
+                )
                 raise
         return processed_meta
 
@@ -446,7 +450,7 @@ class EFetchResult(EutilsResult):
         """
         run_id_map = {}
         for i, res in enumerate(parsed_results):
-            runset = res.get('RUN_SET')
+            runset = res.get("RUN_SET")
             runset = [runset] if not isinstance(runset, list) else runset
 
             run_id_map[i] = []
@@ -456,9 +460,9 @@ class EFetchResult(EutilsResult):
                 for r in run:
                     r = [r] if not isinstance(r, list) else r
                     for _r in r:
-                        _r = _r.get('RUN')
+                        _r = _r.get("RUN")
                         _r = [_r] if not isinstance(_r, list) else _r
-                        run_ids.extend([__r.get('@accession') for __r in _r])
+                        run_ids.extend([__r.get("@accession") for __r in _r])
                 run_id_map[i].extend(run_ids)
 
         new_map = {}
@@ -482,8 +486,9 @@ class EFetchResult(EutilsResult):
         """
         # use json to quickly get rid of OrderedDicts
         self.metadata_raw = json.loads(json.dumps(parsexml(response.read())))
-        parsed_results = self.metadata_raw[
-            'EXPERIMENT_PACKAGE_SET']['EXPERIMENT_PACKAGE']
+        parsed_results = self.metadata_raw["EXPERIMENT_PACKAGE_SET"][
+            "EXPERIMENT_PACKAGE"
+        ]
 
         # TODO: we should also handle extracting multiple runs
         #  from the same experiment
@@ -496,7 +501,8 @@ class EFetchResult(EutilsResult):
             if uid in found_uids:
                 current_run = run_ids_map[uid]
                 self.metadata += self._process_single_id(
-                    parsed_results[current_run], desired_id=uid)
+                    parsed_results[current_run], desired_id=uid
+                )
 
 
 class EFetchAnalyzer(EfetchAnalyzer):
@@ -517,7 +523,7 @@ class EFetchAnalyzer(EfetchAnalyzer):
 
     def analyze_result(self, response, request):
         self.init_result(response, request)
-        if self.response_type == 'docsum':
+        if self.response_type == "docsum":
             # we asked for IDs
             self.result.extract_run_ids(response)
         else:
@@ -527,8 +533,7 @@ class EFetchAnalyzer(EfetchAnalyzer):
     # override the base method to enable continuation even if
     # self.result is None
     def parse(self, raw_response, request):
-        response = self.convert_response(
-            raw_response.read().decode('utf-8'), request)
+        response = self.convert_response(raw_response.read().decode("utf-8"), request)
         if self.isErrorResponse(response, request):
             self.hasErrorResponse = True
             self.analyze_error(response, request)

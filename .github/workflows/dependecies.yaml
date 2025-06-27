@@ -1,0 +1,9 @@
+name: Dependency check
+on:
+  pull_request:
+    branches: ["main"]
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+jobs:
+  ci:
+    uses: bokulich-lab/utilities/.github/workflows/dependencies.yaml@main

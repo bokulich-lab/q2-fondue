@@ -4,7 +4,7 @@ TOOLKIT_VER="3.0.0"
 
 if [[ "$OSTYPE" == "linux"* ]]; then
   LINUX_VER=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-  if [[ "$LINUX_VER" == '"Ubuntu"' ]]; then
+  if [[ "$LINUX_VER" == '"Ubuntu"' || "$LINUX_VER" == '"Debian GNU/Linux"' ]]; then
     OS_VER="ubuntu64"
   elif [[ "$LINUX_VER" == '"CentOS Linux"' ]]; then
     OS_VER="centos_linux64"

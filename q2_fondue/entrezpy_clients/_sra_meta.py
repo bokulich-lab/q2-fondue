@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -16,16 +16,29 @@ from q2_fondue.entrezpy_clients._utils import get_attrs
 
 
 META_REQUIRED_COLUMNS = [
-    'Experiment ID', 'Biosample ID', 'Bioproject ID', 'Study ID',
-    'Sample Accession', 'Organism', 'Library Source', 'Library Layout',
-    'Library Selection', 'Instrument', 'Platform', 'Bases', 'Spots',
-    'Avg Spot Len', 'Bytes', 'Public'
+    "Experiment ID",
+    "Biosample ID",
+    "Bioproject ID",
+    "Study ID",
+    "Sample Accession",
+    "Organism",
+    "Library Source",
+    "Library Layout",
+    "Library Selection",
+    "Instrument",
+    "Platform",
+    "Bases",
+    "Spots",
+    "Avg Spot Len",
+    "Bytes",
+    "Public",
 ]
 
 
 @dataclass
 class LibraryMetadata:
     """A class for storing sequencing library metadata."""
+
     name: str
     layout: str
     selection: str
@@ -35,7 +48,8 @@ class LibraryMetadata:
         index = get_attrs(self)
         return pd.DataFrame(
             data=[getattr(self, k) for k in index],
-            index=[f"library_{x}" for x in index]).T
+            index=[f"library_{x}" for x in index],
+        ).T
 
 
 @dataclass
@@ -49,6 +63,7 @@ class SRABaseMeta(metaclass=ABCMeta):
         child (str): a one-word description of the child type for
             the given object (e.g., a 'sample' is a child of a 'study').
     """
+
     id: str
     custom_meta: Union[dict, None]
     child: str = None
@@ -56,19 +71,17 @@ class SRABaseMeta(metaclass=ABCMeta):
     def __post_init__(self):
         """Initializes custom metadata DataFrame."""
         if self.custom_meta:
-            self.custom_meta_df = pd.DataFrame(
-                self.custom_meta, index=[self.id])
+            self.custom_meta_df = pd.DataFrame(self.custom_meta, index=[self.id])
         else:
             self.custom_meta_df = None
 
     def __eq__(self, other):
         """Compares all attributes. To be used on subclasses that contain
-            DataFrames as attributes."""
+        DataFrames as attributes."""
         same = {}
         for k, v in vars(self).items():
             if isinstance(v, pd.DataFrame):
-                same[k] = self.__getattribute__(k).equals(
-                    other.__getattribute__(k))
+                same[k] = self.__getattribute__(k).equals(other.__getattribute__(k))
             else:
                 same[k] = self.__getattribute__(k) == other.__getattribute__(k)
         return all(same.values())
@@ -86,14 +99,16 @@ class SRABaseMeta(metaclass=ABCMeta):
             base_meta (pd.DataFrame): Requested base metadata.
         """
         index = get_attrs(
-            self,
-            excluded=('child', 'custom_meta', 'custom_meta_df') + excluded)
+            self, excluded=("child", "custom_meta", "custom_meta_df") + excluded
+        )
         base_meta = pd.DataFrame(
-            data={k: getattr(self, k) for k in index}, index=[self.id])
+            data={k: getattr(self, k) for k in index}, index=[self.id]
+        )
 
         if self.custom_meta:
             base_meta = pd.concat(
-                [base_meta, self.custom_meta_df], axis=1,
+                [base_meta, self.custom_meta_df],
+                axis=1,
             )
 
         return base_meta
@@ -105,13 +120,14 @@ class SRABaseMeta(metaclass=ABCMeta):
         Returns:
              child_meta (pd.DataFrame): Requested children objects' metadata.
         """
-        child_meta_dfs = [x.generate_meta() for x in
-                          self.__getattribute__(f'{self.child}s')]
+        child_meta_dfs = [
+            x.generate_meta() for x in self.__getattribute__(f"{self.child}s")
+        ]
         if child_meta_dfs:
             child_meta = pd.concat(child_meta_dfs)
         else:
             child_meta = pd.DataFrame()
-        child_meta.index.name = f'{self.child}_id'
+        child_meta.index.name = f"{self.child}_id"
         return child_meta
 
     @abstractmethod
@@ -140,6 +156,7 @@ class SRARun(SRABaseMeta):
         experiment_id (str): ID of the experiment which the run belongs to.
         child (str): Run's child type (None, as runs have no children objects).
     """
+
     public: bool = True
     bytes: int = None
     bases: int = None
@@ -152,7 +169,7 @@ class SRARun(SRABaseMeta):
         """Calculates an average spot length."""
         super().__post_init__()
         if self.spots > 0:
-            self.avg_spot_len = int(self.bases/self.spots)
+            self.avg_spot_len = int(self.bases / self.spots)
         else:
             self.avg_spot_len = 0
 
@@ -162,7 +179,7 @@ class SRARun(SRABaseMeta):
         Returns:
             pd.DataFrame: Run's metadata.
         """
-        return self.get_base_metadata(excluded=('id',))
+        return self.get_base_metadata(excluded=("id",))
 
 
 @dataclass
@@ -177,12 +194,13 @@ class SRAExperiment(SRABaseMeta):
         child (str): Runs are children of experiment objects.
 
     """
+
     instrument: str = None
     platform: str = None
     library: LibraryMetadata = None
     runs: List[SRARun] = field(default_factory=list)
     sample_id: str = None
-    child: str = 'run'
+    child: str = "run"
 
     def generate_meta(self) -> pd.DataFrame:
         """Generates experiment's metadata.
@@ -192,7 +210,7 @@ class SRAExperiment(SRABaseMeta):
         Returns:
             pd.DataFrame: Experiment's metadata with all of its children.
         """
-        exp_meta = self.get_base_metadata(excluded=('id', 'runs', 'library'))
+        exp_meta = self.get_base_metadata(excluded=("id", "runs", "library"))
         lib_meta = self.library.generate_meta()
         lib_meta.index = exp_meta.index
 
@@ -200,8 +218,9 @@ class SRAExperiment(SRABaseMeta):
         runs_meta = self.get_child_metadata()
         if len(runs_meta) > 0:
             runs_merged = runs_meta.merge(
-                exp_meta, left_on='experiment_id', right_index=True)
-            runs_merged.index.name = 'run_id'
+                exp_meta, left_on="experiment_id", right_index=True
+            )
+            runs_merged.index.name = "run_id"
             return runs_merged
         else:
             return exp_meta
@@ -222,6 +241,7 @@ class SRASample(SRABaseMeta):
             belonging to the sample.
         child (str): = Experiments are children of sample objects.
     """
+
     name: str = None
     title: str = None
     biosample_id: str = None
@@ -229,7 +249,7 @@ class SRASample(SRABaseMeta):
     tax_id: str = None
     study_id: str = None
     experiments: List[SRAExperiment] = field(default_factory=list)
-    child: str = 'experiment'
+    child: str = "experiment"
 
     def generate_meta(self) -> pd.DataFrame:
         """Generates SRA sample's metadata.
@@ -239,12 +259,13 @@ class SRASample(SRABaseMeta):
         Returns:
             pd.DataFrame: Sample's metadata with all of its children.
         """
-        sample_meta = self.get_base_metadata(excluded=('id', 'experiments'))
+        sample_meta = self.get_base_metadata(excluded=("id", "experiments"))
         exps_meta = self.get_child_metadata()
         if len(exps_meta) > 0:
             exps_merged = exps_meta.merge(
-                sample_meta, left_on='sample_id', right_index=True)
-            exps_merged.index.name = 'run_id'
+                sample_meta, left_on="sample_id", right_index=True
+            )
+            exps_merged.index.name = "run_id"
             return exps_merged
         else:
             return sample_meta
@@ -262,10 +283,11 @@ class SRAStudy(SRABaseMeta):
         samples (List[SRASample]): All SRA samples belonging to the study.
         child (str): Samples are children of study objects.
     """
+
     bioproject_id: str = None
     center_name: str = None
     samples: List[SRASample] = field(default_factory=list)
-    child: str = 'sample'
+    child: str = "sample"
 
     def generate_meta(self) -> pd.DataFrame:
         """Generates SRA study's metadata.
@@ -275,12 +297,13 @@ class SRAStudy(SRABaseMeta):
         Returns:
             pd.DataFrame: Study's metadata with all of its children.
         """
-        study_meta = self.get_base_metadata(excluded=('id', 'samples'))
+        study_meta = self.get_base_metadata(excluded=("id", "samples"))
         samples_meta = self.get_child_metadata()
         if len(samples_meta) > 0:
             samples_merged = samples_meta.merge(
-                study_meta, left_on='study_id', right_index=True)
-            samples_merged.index.name = 'run_id'
+                study_meta, left_on="study_id", right_index=True
+            )
+            samples_merged.index.name = "run_id"
             return samples_merged
         else:
             return study_meta

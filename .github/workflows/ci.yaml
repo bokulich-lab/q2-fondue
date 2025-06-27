@@ -1,0 +1,14 @@
+name: CI
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+    tags: ["*"]
+
+jobs:
+  ci:
+    uses: bokulich-lab/utilities/.github/workflows/ci.yaml@main
+    with:
+      distro: moshpit
+      build_docker: true

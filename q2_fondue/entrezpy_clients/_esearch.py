@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -15,8 +15,9 @@ from entrezpy.esearch.esearch_result import EsearchResult
 
 class ESearchResult(EsearchResult):
     """Entrezpy client for ESearch utility used to search for or validate
-        provided accession IDs.
+    provided accession IDs.
     """
+
     def __init__(self, response, request):
         super().__init__(response, request)
         self.result = None
@@ -42,15 +43,15 @@ class ESearchResult(EsearchResult):
         ambiguous_ids = leftover_ids[leftover_ids > 0]
         invalid_ids = leftover_ids[leftover_ids == 0]
 
-        error_msg = 'Some of the IDs are invalid or ambiguous:'
+        error_msg = "Some of the IDs are invalid or ambiguous:"
         if ambiguous_ids.shape[0] > 0:
             error_msg += f'\n Ambiguous IDs: {", ".join(ambiguous_ids.index)}'
         if invalid_ids.shape[0] > 0:
             error_msg += f'\n Invalid IDs: {", ".join(invalid_ids.index)}'
         self.logger.warning(error_msg)
         return {
-            **{_id: 'ID is ambiguous.' for _id in ambiguous_ids.index},
-            **{_id: 'ID is invalid.' for _id in invalid_ids.index}
+            **{_id: "ID is ambiguous." for _id in ambiguous_ids.index},
+            **{_id: "ID is invalid." for _id in invalid_ids.index},
         }
 
     def parse_search_results(self, response, uids: Union[List[str], None]):
@@ -66,16 +67,15 @@ class ESearchResult(EsearchResult):
                 as a query.
 
         """
-        translation_stack = response['esearchresult'].get('translationstack')
+        translation_stack = response["esearchresult"].get("translationstack")
         if not translation_stack:
-            self.result = pd.Series({x: 0 for x in uids}, name='count')
+            self.result = pd.Series({x: 0 for x in uids}, name="count")
             return
 
         # filter out only positive hits
         found_terms = [x for x in translation_stack if isinstance(x, dict)]
         found_terms = {
-            x['term'].replace('[All Fields]', ''): int(x['count'])
-            for x in found_terms
+            x["term"].replace("[All Fields]", ""): int(x["count"]) for x in found_terms
         }
 
         # find ids that are missing
@@ -84,7 +84,7 @@ class ESearchResult(EsearchResult):
             missing_ids = {x: 0 for x in missing_ids}
             found_terms.update(missing_ids)
 
-        self.result = pd.Series(found_terms, name='count')
+        self.result = pd.Series(found_terms, name="count")
 
 
 class ESearchAnalyzer(EsearchAnalyzer):

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -18,9 +18,13 @@ from qiime2 import Artifact
 
 from q2_fondue.entrezpy_clients._esearch import ESearchAnalyzer
 from q2_fondue.entrezpy_clients._utils import (
-    PREFIX, InvalidIDs, set_up_logger, set_up_entrezpy_logging)
+    PREFIX,
+    InvalidIDs,
+    set_up_logger,
+    set_up_entrezpy_logging,
+)
 
-LOGGER = set_up_logger('INFO', logger_name=__name__)
+LOGGER = set_up_logger("INFO", logger_name=__name__)
 
 
 class DownloadError(Exception):
@@ -29,11 +33,12 @@ class DownloadError(Exception):
 
 def _chunker(seq, size):
     # source: https://stackoverflow.com/a/434328/579416
-    return (seq[pos:pos + size] for pos in range(0, len(seq), size))
+    return (seq[pos : pos + size] for pos in range(0, len(seq), size))
 
 
 def _validate_run_ids(
-        email: str, n_jobs: int, run_ids: List[str], log_level: str) -> dict:
+    email: str, n_jobs: int, run_ids: List[str], log_level: str
+) -> dict:
     """Validates provided accession IDs using ESearch.
 
     Args:
@@ -50,17 +55,13 @@ def _validate_run_ids(
     invalid_ids = {}
     for batch in _chunker(run_ids, 10000):
         esearcher = es.Esearcher(
-            'esearcher', email, apikey=None,
-            apikey_var=None, threads=0, qid=None
+            "esearcher", email, apikey=None, apikey_var=None, threads=0, qid=None
         )
         set_up_entrezpy_logging(esearcher, log_level)
 
         esearch_response = esearcher.inquire(
-            {
-                'db': 'sra',
-                'term': " OR ".join(batch),
-                'usehistory': False
-            }, analyzer=ESearchAnalyzer(batch)
+            {"db": "sra", "term": " OR ".join(batch), "usehistory": False},
+            analyzer=ESearchAnalyzer(batch),
         )
         invalid_ids.update(esearch_response.result.validate_result())
 
@@ -72,26 +73,32 @@ def _determine_id_type(ids: list):
     for kind in PREFIX.keys():
         if all([x in PREFIX[kind] for x in ids]):
             return kind
-    raise InvalidIDs('The type of provided IDs is either not supported or '
-                     'IDs of mixed types were provided. Please provide IDs '
-                     'corresponding to either SRA run (#S|E|DRR), study '
-                     '(#S|E|DRP) or NCBI BioProject IDs (#PRJ).')
+    raise InvalidIDs(
+        "The type of provided IDs is either not supported or "
+        "IDs of mixed types were provided. Please provide IDs "
+        "corresponding to either SRA run (#S|E|DRR), study "
+        "(#S|E|DRP) or NCBI BioProject IDs (#PRJ)."
+    )
 
 
 def handle_threaded_exception(args):
-    logger = set_up_logger('DEBUG', logger_name='ThreadedErrorsManager')
-    msg = 'Data fetching was interrupted by the following error: \n'
+    logger = set_up_logger("DEBUG", logger_name="ThreadedErrorsManager")
+    msg = "Data fetching was interrupted by the following error: \n"
 
-    if 'gaierror is not JSON serializable' in str(args.exc_value):
-        msg += 'EntrezPy failed to connect to NCBI. Please check your ' \
-               'internet connection and try again. It may help to wait ' \
-               'a few minutes before retrying.'
+    if "gaierror is not JSON serializable" in str(args.exc_value):
+        msg += (
+            "EntrezPy failed to connect to NCBI. Please check your "
+            "internet connection and try again. It may help to wait "
+            "a few minutes before retrying."
+        )
     # silence threads exiting correctly
-    elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == '0':
+    elif issubclass(args.exc_type, SystemExit) and str(args.exc_value) == "0":
         return
     else:
-        msg += f'Caught {args.exc_type} with value "{args.exc_value}" ' \
-               f'in thread {args.thread}'
+        msg += (
+            f'Caught {args.exc_type} with value "{args.exc_value}" '
+            f"in thread {args.thread}"
+        )
 
     logger.exception(msg)
 
@@ -118,21 +125,20 @@ def _has_enough_space(acc_id: str, output_dir: str) -> bool:
     if acc_id is None:
         return True
 
-    cmd_fasterq = ['fasterq-dump', '--size-check', 'only', '-x', acc_id]
-    result = subprocess.run(
-        cmd_fasterq, text=True, capture_output=True, cwd=output_dir
-    )
+    cmd_fasterq = ["fasterq-dump", "--size-check", "only", "-x", acc_id]
+    result = subprocess.run(cmd_fasterq, text=True, capture_output=True, cwd=output_dir)
 
     if result.returncode == 0:
         return True
-    elif result.returncode == 3 and 'disk-limit exeeded' in result.stderr:
-        LOGGER.warning('Not enough space to fetch run %s.', acc_id)
+    elif result.returncode == 3 and "disk-limit exeeded" in result.stderr:
+        LOGGER.warning("Not enough space to fetch run %s.", acc_id)
         return False
     else:
         LOGGER.error(
             'fasterq-dump exited with a "%s" error code (the message '
             'was: "%s"). We will try to fetch the next accession ID.',
-            result.returncode, result.stderr
+            result.returncode,
+            result.stderr,
         )
         return True
 
@@ -147,7 +153,7 @@ def _rewrite_fastq(file_in: str, file_out: str) -> None:
         file_in (str): Path to input uncompressed FASTQ file
         file_out (str): Path where compressed FASTQ file should be written
     """
-    with open(file_in, 'rb') as f_in, gzip.open(file_out, 'wb') as f_out:
+    with open(file_in, "rb") as f_in, gzip.open(file_out, "wb") as f_out:
         shutil.copyfileobj(f_in, f_out)
 
 

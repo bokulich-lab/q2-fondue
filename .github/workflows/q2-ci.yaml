@@ -1,0 +1,13 @@
+name: QIIME 2 CI
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+jobs:
+  qiime-ci:
+    uses: qiime2/distributions/.github/workflows/lib-ci-dev.yaml@dev
+    with:
+      distro: moshpit
+      recipe-path: 'conda-recipe'

@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -8,6 +8,6 @@
 
 from qiime2.core.type import SemanticType
 
-SRAMetadata = SemanticType('SRAMetadata')
-SRAFailedIDs = SemanticType('SRAFailedIDs')
-NCBIAccessionIDs = SemanticType('NCBIAccessionIDs')
+SRAMetadata = SemanticType("SRAMetadata")
+SRAFailedIDs = SemanticType("SRAFailedIDs")
+NCBIAccessionIDs = SemanticType("NCBIAccessionIDs")

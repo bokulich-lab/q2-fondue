@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2022, Bokulich Laboratories.
+# Copyright (c) 2025, Bokulich Laboratories.
 #
 # Distributed under the terms of the Modified BSD License.
 #
@@ -7,15 +7,24 @@
 # ----------------------------------------------------------------------------
 
 from ._format import (
-    SRAMetadataFormat, SRAMetadataDirFmt,
-    SRAFailedIDsFormat, SRAFailedIDsDirFmt,
-    NCBIAccessionIDsFormat, NCBIAccessionIDsDirFmt
+    SRAMetadataFormat,
+    SRAMetadataDirFmt,
+    SRAFailedIDsFormat,
+    SRAFailedIDsDirFmt,
+    NCBIAccessionIDsFormat,
+    NCBIAccessionIDsDirFmt,
 )
 from ._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
 
 __all__ = [
-    'SRAMetadataFormat', 'SRAMetadataDirFmt', 'SRAMetadata',
-    'SRAFailedIDsFormat', 'SRAFailedIDsDirFmt', 'SRAFailedIDs',
-    'NCBIAccessionIDsFormat', 'NCBIAccessionIDsDirFmt', 'NCBIAccessionIDs'
+    "SRAMetadataFormat",
+    "SRAMetadataDirFmt",
+    "SRAMetadata",
+    "SRAFailedIDsFormat",
+    "SRAFailedIDsDirFmt",
+    "SRAFailedIDs",
+    "NCBIAccessionIDsFormat",
+    "NCBIAccessionIDsDirFmt",
+    "NCBIAccessionIDs",
 ]
