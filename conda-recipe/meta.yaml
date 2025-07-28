@@ -16,14 +16,14 @@ requirements:
   - versioningit
   - wheel
   run:
-  - entrezpy >=2.1.2
+  - entrezpy {{ entrezpy }}
   - xmltodict
   - python {{ python }}
   - python-dotenv
   - pyzotero
   - q2-types >={{ q2_types }}
   - qiime2 >={{ qiime2 }}
-  - tqdm >=4.62.3
+  - tqdm {{ tqdm }}
   build:
   - python {{ python }}
   - setuptools
