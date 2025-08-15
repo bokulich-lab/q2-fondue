@@ -123,7 +123,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_determine_id_type_mixed(self):
         ids = ["SRS123", "ERR123"]
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             InvalidIDs, "type of provided IDs is either not supported"
         ):
             _determine_id_type(ids)
@@ -131,7 +131,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_determine_id_type_unknown(self):
         ids = ["ABC123", "DEF123"]
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             InvalidIDs, "type of provided IDs is either not supported"
         ):
             _determine_id_type(ids)
@@ -392,7 +392,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_get_run_meta_no_valid_ids(self, patch_ef, patch_val, patch_es):
         patch_val.return_value = {"AB": "ID is invalid.", "cd": "ID is ambiguous."}
 
-        with self.assertRaisesRegexp(InvalidIDs, "All provided IDs were invalid."):
+        with self.assertRaisesRegex(InvalidIDs, "All provided IDs were invalid."):
             _ = _get_run_meta(
                 "someone@somewhere.com",
                 1,

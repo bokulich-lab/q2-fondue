@@ -37,7 +37,7 @@ class TestFormats(TestPluginBase):
     def test_sra_metadata_fmt_missing_columns(self):
         meta_path = self.get_data_path("sra-metadata-missing-columns.tsv")
         format = SRAMetadataFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError,
             "Some required columns are missing from the metadata file: "
             "Organism, Instrument, Platform, Bases, Bytes, Public, "
@@ -48,7 +48,7 @@ class TestFormats(TestPluginBase):
     def test_sra_metadata_fmt_missing_ids(self):
         meta_path = self.get_data_path("sra-metadata-missing-ids.tsv")
         format = SRAMetadataFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError,
             "Some samples are missing IDs in the following fields: "
             "Biosample ID, Study ID",
@@ -68,7 +68,7 @@ class TestFormats(TestPluginBase):
     def test_sra_failed_ids_fmt_many_columns(self):
         meta_path = self.get_data_path("sra-metadata.tsv")
         format = SRAFailedIDsFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError, "Failed IDs artifact should only contain a single column"
         ):
             format.validate()
@@ -101,7 +101,7 @@ class TestFormats(TestPluginBase):
     def test_ncbi_accession_ids_fmt_many_columns(self):
         meta_path = self.get_data_path("sra-metadata.tsv")
         format = NCBIAccessionIDsFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError, "NCBI Accession IDs artifact should only contain"
         ):
             format.validate()
@@ -109,7 +109,7 @@ class TestFormats(TestPluginBase):
     def test_ncbi_accession_ids_fmt_wrong_ids(self):
         meta_path = self.get_data_path("ncbi-ids-wrong.tsv")
         format = NCBIAccessionIDsFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError, "Some of the provided IDs are invalid"
         ):
             format.validate()
@@ -122,13 +122,13 @@ class TestFormats(TestPluginBase):
     def test_ncbi_accession_ids_fmt_other_than_doi(self):
         meta_path = self.get_data_path("ncbi-ids-runs-no-doi.tsv")
         format = NCBIAccessionIDsFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(ValidationError, "should only contain a single"):
+        with self.assertRaisesRegex(ValidationError, "should only contain a single"):
             format.validate()
 
     def test_ncbi_accession_ids_fmt_wrong_id_header(self):
         meta_path = self.get_data_path("ncbi-ids-runs-wrong-id-header.tsv")
         format = NCBIAccessionIDsFormat(meta_path, mode="r")
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             ValidationError, "IDs artifact must contain a valid"
         ):
             format.validate()
