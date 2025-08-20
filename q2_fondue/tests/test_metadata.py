@@ -499,21 +499,50 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                         ),
                     ]
                 )
-            self.fake_econduit.pipeline.add_fetch.has_calls(
-                [
-                    call(
-                        {
-                            "rettype": "docsum",
-                            "retmode": "xml",
-                            "reqsize": 6,
-                            "retmax": 2,
-                        },
-                        analyzer=ANY,
-                        dependency=ANY,
-                    )
-                ]
-                * 2
-            )
+            if db2search not in ("bioproject", "biosample"):
+                self.fake_econduit.pipeline.add_fetch.assert_has_calls(
+                    [
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                                "id": fake_uids[:6],
+                                "db": "sra"
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        ),
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                                "id": fake_uids[6:],
+                                "db": "sra"
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        )
+                    ]
+                )
+            else:
+                self.fake_econduit.pipeline.add_fetch.assert_has_calls(
+                    [
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        )
+                    ] * 2
+                )
             mock_get.assert_called_once_with(
                 "someone@somewhere.com", 1, exp_ids, True, "INFO", ANY
             )
