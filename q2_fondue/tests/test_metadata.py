@@ -509,7 +509,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                                 "reqsize": 6,
                                 "retmax": 6,
                                 "id": fake_uids[:6],
-                                "db": "sra"
+                                "db": "sra",
                             },
                             analyzer=ANY,
                             dependency=ANY,
@@ -521,11 +521,11 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                                 "reqsize": 6,
                                 "retmax": 6,
                                 "id": fake_uids[6:],
-                                "db": "sra"
+                                "db": "sra",
                             },
                             analyzer=ANY,
                             dependency=ANY,
-                        )
+                        ),
                     ]
                 )
             else:
@@ -541,7 +541,8 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                             analyzer=ANY,
                             dependency=ANY,
                         )
-                    ] * 2
+                    ]
+                    * 2
                 )
             mock_get.assert_called_once_with(
                 "someone@somewhere.com", 1, exp_ids, True, "INFO", ANY
