@@ -123,7 +123,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_determine_id_type_mixed(self):
         ids = ["SRS123", "ERR123"]
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             InvalidIDs, "type of provided IDs is either not supported"
         ):
             _determine_id_type(ids)
@@ -131,7 +131,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_determine_id_type_unknown(self):
         ids = ["ABC123", "DEF123"]
 
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
             InvalidIDs, "type of provided IDs is either not supported"
         ):
             _determine_id_type(ids)
@@ -392,7 +392,7 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
     def test_get_run_meta_no_valid_ids(self, patch_ef, patch_val, patch_es):
         patch_val.return_value = {"AB": "ID is invalid.", "cd": "ID is ambiguous."}
 
-        with self.assertRaisesRegexp(InvalidIDs, "All provided IDs were invalid."):
+        with self.assertRaisesRegex(InvalidIDs, "All provided IDs were invalid."):
             _ = _get_run_meta(
                 "someone@somewhere.com",
                 1,
@@ -499,21 +499,51 @@ class TestMetadataFetching(_TestPluginWithEntrezFakeComponents):
                         ),
                     ]
                 )
-            self.fake_econduit.pipeline.add_fetch.has_calls(
-                [
-                    call(
-                        {
-                            "rettype": "docsum",
-                            "retmode": "xml",
-                            "reqsize": 6,
-                            "retmax": 2,
-                        },
-                        analyzer=ANY,
-                        dependency=ANY,
-                    )
-                ]
-                * 2
-            )
+            if db2search not in ("bioproject", "biosample"):
+                self.fake_econduit.pipeline.add_fetch.assert_has_calls(
+                    [
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                                "id": fake_uids[:6],
+                                "db": "sra",
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        ),
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                                "id": fake_uids[6:],
+                                "db": "sra",
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        ),
+                    ]
+                )
+            else:
+                self.fake_econduit.pipeline.add_fetch.assert_has_calls(
+                    [
+                        call(
+                            {
+                                "rettype": "docsum",
+                                "retmode": "xml",
+                                "reqsize": 6,
+                                "retmax": 6,
+                            },
+                            analyzer=ANY,
+                            dependency=ANY,
+                        )
+                    ]
+                    * 2
+                )
             mock_get.assert_called_once_with(
                 "someone@somewhere.com", 1, exp_ids, True, "INFO", ANY
             )
