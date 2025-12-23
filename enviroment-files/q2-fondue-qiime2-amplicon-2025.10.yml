@@ -6,7 +6,6 @@ dependencies:
   - qiime2-amplicon
   - entrezpy 
   - xmltodict
-  - pythonconda 
   - python-dotenv
   - pyzotero
   - q2-types
