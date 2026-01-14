@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 
-TOOLKIT_VER="3.0.0"
+TOOLKIT_VER="3.2.1"
+# https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/3.2.1/
 
 if [[ "$OSTYPE" == "linux"* ]]; then
   LINUX_VER=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
   if [[ "$LINUX_VER" == '"Ubuntu"' || "$LINUX_VER" == '"Debian GNU/Linux"' ]]; then
     OS_VER="ubuntu64"
-  elif [[ "$LINUX_VER" == '"CentOS Linux"' ]]; then
-    OS_VER="centos_linux64"
+  elif [[ "$LINUX_VER" == '"AlmaLinux"' ]]; then
+    OS_VER="alma_linux64"
   else
     echo "Detected OS version (${LINUX_VER}) is not supported. Aborting."
     exit 1
   fi
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  OS_VER="mac64"
+  OS_VER="mac-x86_64"
 else
   echo "Detected OS version (${OSTYPE}) is not supported. Aborting."
   exit 1
