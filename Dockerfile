@@ -42,6 +42,8 @@ RUN echo "source tab-qiime" >> $HOME/.bashrc
 
 FROM base AS test
 
+LABEL quay.expires-after=4w
+
 RUN mamba run -n ${PLUGIN_NAME} pip install pytest pytest-cov coverage parameterized pytest-xdist
 CMD mamba run -n ${PLUGIN_NAME} make -f ./plugin/Makefile test-cov
 

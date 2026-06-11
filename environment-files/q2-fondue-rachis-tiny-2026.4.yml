@@ -1,0 +1,16 @@
+channels:
+- https://packages.qiime2.org/qiime2/2026.4/tiny/released
+- conda-forge
+- bioconda
+dependencies:
+  - rachis-tiny
+  - entrezpy 
+  - xmltodict
+  - python-dotenv
+  - pyzotero
+  - q2-types
+  - tqdm 
+  - pip
+  - pip:
+    - q2-fondue@git+https://github.com/bokulich-lab/q2-fondue.git@2026.4.0
+ 

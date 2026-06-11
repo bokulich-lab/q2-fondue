@@ -26,7 +26,6 @@ from q2_fondue.entrezpy_clients._utils import (
 )
 from q2_fondue.entrezpy_clients._pipelines import _get_run_ids
 
-
 threading.excepthook = handle_threaded_exception
 BATCH_SIZE = 150
 

@@ -14,7 +14,6 @@ import threading
 from q2_fondue.utils import handle_threaded_exception
 from qiime2 import Artifact
 
-
 threading.excepthook = handle_threaded_exception
 
 
