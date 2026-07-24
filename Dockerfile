@@ -1,9 +1,12 @@
-FROM continuumio/miniconda3:latest AS base
+FROM mambaorg/micromamba:2.4.0 AS base
+
+USER root
 
 ARG ENVIRONMENT
 ARG PLUGIN_NAME
 
-ENV PLUGIN_NAME=$PLUGIN_NAME
+ENV PLUGIN_NAME=$PLUGIN_NAME \
+    ENV_NAME=$PLUGIN_NAME
 ENV PATH=/opt/conda/envs/${PLUGIN_NAME}/bin:$PATH \
     LC_ALL=C.UTF-8 LANG=C.UTF-8 \
     MPLBACKEND=agg \
@@ -13,30 +16,22 @@ ENV PATH=/opt/conda/envs/${PLUGIN_NAME}/bin:$PATH \
 
 WORKDIR /home/qiime2
 COPY environment.yml .
-COPY install-sra-tools.sh .
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends wget curl procps make \
+RUN apt-get update && apt-get install -y --no-install-recommends wget procps make git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN conda update -qy conda \
-    && conda install -c conda-forge -qy mamba \
-    && mamba env create -n ${PLUGIN_NAME} --file environment.yml \
-    && mamba run -n ${PLUGIN_NAME} bash install-sra-tools.sh \
-    && mamba clean --all --yes \
+RUN micromamba create --yes -n ${PLUGIN_NAME} --file environment.yml \
+    && micromamba clean --all --yes \
     && chmod -R a+rwx /opt/conda
 
-RUN mkdir -p .ncbi
-RUN printf '/LIBS/GUID = "%s"\n' `uuidgen` > .ncbi/user-settings.mkfg
-
 COPY . ./plugin
-RUN mamba run -n ${PLUGIN_NAME} pip install ./plugin
+RUN micromamba run -n ${PLUGIN_NAME} pip install ./plugin
 
-RUN /bin/bash -c "source activate ${PLUGIN_NAME}"
 ENV CONDA_PREFIX=/opt/conda/envs/${PLUGIN_NAME}/
-RUN mamba run -n ${PLUGIN_NAME} qiime dev refresh-cache
-RUN echo "source activate ${PLUGIN_NAME}" >> $HOME/.bashrc
+RUN micromamba run -n ${PLUGIN_NAME} qiime dev refresh-cache
+RUN echo 'eval "$(micromamba shell hook --shell bash)"' >> $HOME/.bashrc \
+    && echo "micromamba activate ${PLUGIN_NAME}" >> $HOME/.bashrc
 RUN echo "source tab-qiime" >> $HOME/.bashrc
 
 
@@ -44,8 +39,9 @@ FROM base AS test
 
 LABEL quay.expires-after=4w
 
-RUN mamba run -n ${PLUGIN_NAME} pip install pytest pytest-cov coverage parameterized pytest-xdist
-CMD mamba run -n ${PLUGIN_NAME} make -f ./plugin/Makefile test-cov
+RUN micromamba run -n ${PLUGIN_NAME} pip install pytest pytest-cov coverage parameterized pytest-xdist
+CMD micromamba run -n ${PLUGIN_NAME} make -f ./plugin/Makefile test-cov
+RUN chmod -R a+rwx /home/qiime2
 
 FROM base AS prod
 
