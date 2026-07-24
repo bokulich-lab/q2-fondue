@@ -17,7 +17,7 @@ ENV PATH=/opt/conda/envs/${PLUGIN_NAME}/bin:$PATH \
 WORKDIR /home/qiime2
 COPY environment.yml .
 
-RUN apt-get update && apt-get install -y --no-install-recommends wget procps make \
+RUN apt-get update && apt-get install -y --no-install-recommends wget procps make git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
