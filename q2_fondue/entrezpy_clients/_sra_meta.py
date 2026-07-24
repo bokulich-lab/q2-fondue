@@ -14,7 +14,6 @@ import pandas as pd
 
 from q2_fondue.entrezpy_clients._utils import get_attrs
 
-
 META_REQUIRED_COLUMNS = [
     "Experiment ID",
     "Biosample ID",

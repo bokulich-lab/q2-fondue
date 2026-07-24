@@ -16,7 +16,6 @@ from ._format import (
 )
 from ._type import SRAMetadata, SRAFailedIDs, NCBIAccessionIDs
 
-
 __all__ = [
     "SRAMetadataFormat",
     "SRAMetadataDirFmt",

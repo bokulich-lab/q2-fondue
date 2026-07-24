@@ -1,0 +1,16 @@
+channels:
+- https://packages.qiime2.org/qiime2/2025.10/amplicon/released
+- conda-forge
+- bioconda
+dependencies:
+  - qiime2-amplicon
+  - entrezpy 
+  - xmltodict
+  - python-dotenv
+  - pyzotero
+  - q2-types
+  - tqdm 
+  - pip
+  - pip:
+    - q2-fondue@git+https://github.com/bokulich-lab/q2-fondue.git@main
+ 
