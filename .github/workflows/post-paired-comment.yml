@@ -1,0 +1,19 @@
+# this is an accessory to lib-ci-dev's Paired- PR functionality
+# if someone opens up Paired- PRs from their forks of the canonical repos
+# this workflow subverts the need for a write-access token from GHA
+# the comment is created and then stored as an artifact from ci-dev
+# then this workflow downloads that artifact using the canonical repo's token
+# which has write access & can post the comment
+name: post paired reverse deps comment
+on:
+  workflow_run:
+    workflows: ["QIIME 2 CI"]
+    types: [completed]
+
+jobs:
+  post:
+    if: github.event.workflow_run.event == 'pull_request'
+    uses: qiime2/distributions/.github/workflows/lib-post-paired-comment.yaml@dev
+    with:
+      run-id: ${{ github.event.workflow_run.id }}
+    secrets: inherit
