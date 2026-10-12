@@ -512,7 +512,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
             "scraper_items_journalarticle.json"
         )
         patch_zot_txt.side_effect = [
-            zotero_errors.ResourceNotFoundError,
+            zotero_errors.ResourceNotFound,
             {
                 "content": "This is full-text with PRJEB4519.",
                 "indexedPages": 50,
@@ -544,7 +544,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # define patched outputs
         patch_items.return_value = self._open_json_file("scraper_items_no_doi.json")
         patch_zot_txt.side_effect = [
-            zotero_errors.ResourceNotFoundError,
+            zotero_errors.ResourceNotFound,
             {
                 "content": "This is full-text with PRJEB4519.",
                 "indexedPages": 50,
@@ -567,7 +567,7 @@ class TestCollectionScraping(TestUtils4CollectionScraping):
         # define patched outputs
         patch_items.return_value = self._open_json_file("scraper_items_no_doi.json")
         patch_zot_txt.side_effect = [
-            zotero_errors.ResourceNotFoundError,
+            zotero_errors.ResourceNotFound,
             {
                 "content": "This is full-text with PRJEB4519.",
                 "indexedPages": 50,
