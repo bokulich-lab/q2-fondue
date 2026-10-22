@@ -18,11 +18,9 @@ test-docker: all
 	qiime fondue --help
 
 install: all
-	bash install-sra-tools.sh
 	$(PYTHON) -m pip install -v .
 
 dev: all
-	bash install-sra-tools.sh
 	pip install coverage parameterized
 	pip install -e .
 
