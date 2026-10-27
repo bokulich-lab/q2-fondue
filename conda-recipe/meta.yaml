@@ -24,6 +24,7 @@ requirements:
   - pyzotero
   - q2-types >={{ q2_types }}
   - qiime2 >={{ qiime2 }}
+  - sra-tools
   - tqdm {{ tqdm }}
   build:
   - python {{ python }}
