@@ -19,7 +19,6 @@ There are multiple options to install q2-fondue (**v2024.5** or higher) - each t
 
 ### Option 1: Install q2-fondue with QIIME 2 moshpit distribution
 q2-fondue is a part of the QIIME 2 moshpit distribution and you can install it as outlined in the [QIIME 2 installation instructions](https://docs.qiime2.org/).
-After that, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 ### Option 2: Install q2-fondue within a QIIME 2 amplicon conda environment
 * Install the QIIME 2 amplicon distribution within a conda environment as described in [the official QIIME 2 documentation](https://docs.qiime2.org/).
@@ -31,7 +30,6 @@ mamba install -y \
    -c conda-forge -c bioconda -c defaults \
    q2-fondue
 ```
-* Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 ### Option 3: Minimal fondue environment
 * Start with installing [mamba](https://mamba.readthedocs.io/en/latest/index.html) in your base environment:
@@ -47,26 +45,30 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
-* Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 Note: You can replace the version number `2024.5` with later releases if they are already available.
 
-### Mandatory configuration for all three options
-* Refresh the QIIME 2 CLI cache and see that everything worked:
+### Verify the installation
+Refresh the QIIME 2 CLI cache and check that q2-fondue is available:
 ```shell
 qiime dev refresh-cache
 qiime fondue --help
 ```
-* Run the `vdb-config` tool to make sure the wrapped SRA Toolkit is configured on your system.
-The command below will open the configuration interface - everything should be already configured, so you
-can directly exit by pressing **x** (this step is still required to ensure everything is working as expected).
-Feel free to adjust the configuration, if you need to change e.g. the cache location.
-For more information see [here](https://github.com/ncbi/sra-tools/wiki/05.-Toolkit-Configuration).
+
+### Optional SRA Toolkit configuration
+You do not need to run `vdb-config -i` before using q2-fondue. SRA Toolkit
+initializes its user configuration automatically when needed.
+
+To customize the settings, activate your q2-fondue conda environment and open the
+configuration interface:
 ```shell
 vdb-config -i
 ```
-* In case you need to configure a proxy server, run the following command
-(this can also be done using the graphical interface described above):
+
+For details and available settings,
+see the [SRA Toolkit configuration documentation](https://github.com/ncbi/sra-tools/wiki/05.-Toolkit-Configuration).
+
+You can also configure a proxy without opening the interface:
 ```shell
 vdb-config --proxy <your proxy URL> --proxy-disable no
 ```
@@ -81,7 +83,6 @@ mamba create -y -n fondue \
 
 conda activate fondue
 ```
-Now, don't forget to run **[the mandatory configuration step](#mandatory-configuration-for-all-three-options)**!
 
 Alternatively, a minimal Docker image is available to run q2-fondue==v2023.7:
 * Install [Docker](https://docs.docker.com/engine/install/) with the linked instructions
